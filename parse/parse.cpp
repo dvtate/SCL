@@ -364,7 +364,7 @@ static inline bool reduce_invocations(std::vector<AST>& stack) {
 		if (isOperand(stack[stack.size() - 2])) {
 			stack.pop_back();
 			const AST macro_id = stack.back();
-			stack.back() = AST(AST::NodeType::MACRO_INVOKE, Token(Token::t::OPERATOR, "@"))
+			stack.back() = AST(AST::NodeType::MACRO_INVOKE, Token(Token::t::OPERATOR, "@"));
 		}
 	}
 
