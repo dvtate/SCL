@@ -167,7 +167,7 @@ static inline int prev_operator(std::vector<AST>& stack) {
 	return -1;
 }
 
-static inline void reduce_operator(std::vector<AST>& stack, const size_t i) {
+static inline const char* reduce_operator(std::vector<AST>& stack, const size_t i) {
 	// all operators are binary except: "neg", "let", and !
 	// oddballs: , ; :
 	AST n = stack[i];
@@ -176,7 +176,7 @@ static inline void reduce_operator(std::vector<AST>& stack, const size_t i) {
 	// return kv pair
 	if (op == ":") {
 		if (stack.size() - i != 2 || stack.size() < 3)
-			throw std::vector<SyntaxError>{SyntaxError(n.token, "invalid colon")};
+			return "invalid colon";
 
 		const AST r = stack.back();
 		stack.pop_back();
@@ -186,40 +186,64 @@ static inline void reduce_operator(std::vector<AST>& stack, const size_t i) {
 		n.members.emplace_back(l);
 		n.members.emplace_back(r);
 		stack.back() = n;
-		return;
+		return nullptr;
+	}
+
+	if (op == ";"){
+
 	}
 
 	// unary
 	if (op == "neg" || op == "!") {
 		if (stack.size() - i != 2)
-			throw std::vector<SyntaxError>{SyntaxError(n.token, "invalid unary operation: ")};
+			return "invalid unary operation";
 		n.type = AST::OPERATION;
 		n.members.emplace_back(stack.back());
 		stack.pop_back();
 		stack.back() = n;
-		return;
+		return nullptr;
 	}
 
 	// declaration
 	if (op == "let") {
 		if (stack.size() - i != 2)
-			throw std::vector<SyntaxError>{SyntaxError(n.token, "invalid declaration")};
+			return "invalid declaration";
 		n.type = AST::NodeType::DECLARATION;
 		n.members.emplace_back(stack.back());
 		stack.pop_back();
 		stack.back() = n;
 		//
-		return;
+		return nullptr;
 	}
 
 	if (op == ";") {
-		if (stack.size() - 1 != 2) {
+		// not an infix operator
+		if (stack.size() - i < 1)
+			return "unexpected semicolon";
+		stack.pop_back();
+		if (stack.empty())
+			return nullptr;
 
+		if (stack.back().type == AST::NodeType::STATEMENTS)
+			return nullptr;
+
+		AST b = stack.back();
+		stack.pop_back();
+		if (stack.empty()) {
+			stack.emplace_back(AST(AST::NodeType::STATEMENTS, Token(Token::t::OPERATOR, ";", b.token.pos), { b }));
+			return nullptr;
 		}
+		if (stack.back().type != AST::NodeType::STATEMENTS)
+			throw std::vector<SyntaxError>{SyntaxError(stack.back().token, "invalid statement")};
+
+		stack.back().members.emplace_back(b);
+		return nullptr;
+
 	}
+
 	// generic infix operation
 	if (stack.size() - i != 2 || stack.size() < 3)
-		throw std::vector<SyntaxError>{SyntaxError(n.token, "invalid infix operator: " + n.token.token )};
+		return "invalid infix operator";
 
 	const AST r = stack.back();
 	stack.pop_back(); // pop r
@@ -242,6 +266,8 @@ static inline void reduce_operator(std::vector<AST>& stack, const size_t i) {
 
 	stack.back() = n;
 
+	return nullptr;
+
 }
 
 static inline bool reduce_operators(std::vector<struct AST>& stack, const AST& n) {
@@ -257,16 +283,17 @@ static inline bool reduce_operators(std::vector<struct AST>& stack, const AST& n
 		const auto prec_p = op_prec.at(stack[i].token.token);
 		const auto prec_n = op_prec.at(n.token.token);
 		// reduce if it's lower precedence than prev operator
-		if (prec_n <= prec_p) {
-			reduce_operator(stack, i);
-			return true;
+		if (prec_n <= prec_p || stack[i].token.token == ";") {
+			return !reduce_operator(stack, i);
+			//return true;
 		} else {
 			return false;
 		}
 	}
 
-	// assumed end of expr, reduce it before adding more
-	if (n.type != AST::NodeType::LIST_OPEN && n.type != AST::PAREN_OPEN && isOperand(stack.back())) {
+	// assumed/given end of expr, reduce it before adding more
+	if ((n.type != AST::NodeType::LIST_OPEN && n.type != AST::PAREN_OPEN && isOperand(stack.back()))
+		|| (stack.back().token.token == ";" && stack.back().type != AST::NodeType::STATEMENTS)) {
 		reduce_operator(stack, prev_operator(stack));
 		return true;
 	}
@@ -363,8 +390,9 @@ static inline bool reduce_invocations(std::vector<AST>& stack) {
 		const AST arg = stack.back();
 		if (isOperand(stack[stack.size() - 2])) {
 			stack.pop_back();
-			const AST macro_id = stack.back();
-			stack.back() = AST(AST::NodeType::MACRO_INVOKE, Token(Token::t::OPERATOR, "@"));
+			stack.back() = AST(AST::NodeType::MACRO_INVOKE, Token(Token::t::OPERATOR, "@"), {
+				stack.back(), arg
+			});
 		}
 	}
 
@@ -384,9 +412,11 @@ static inline bool reduce(const std::vector<Token>& tokens, size_t& i, std::vect
 		return false;
 
 	return
-			reduce_operators(stack, n) ||
-			reduce_containers(stack)   ||
-			reduce_invocations(stack);
+			reduce_invocations(stack)
+			||
+			reduce_containers(stack)
+			||
+			reduce_operators(stack, n);
 
 }
 

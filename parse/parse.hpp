@@ -14,9 +14,7 @@
 class AST {
 public:
 	enum NodeType {
-		STATEMENT,   // marked with semicolon so that it's not used as an operand
-		STATEMENT_SERIES,
-		END_STATEMENT, // semicolon
+		STATEMENTS, // semicolon delineated
 
 		// operand types
 				OPERATION = 2, // parsed operator args put in this->members
@@ -30,7 +28,7 @@ public:
 		LIST = 10,
 
 		// containers
-				MACRO_OPEN,
+		MACRO_OPEN,
 		LIST_OPEN,
 		PAREN_OPEN,
 		CONT_CLOSE,
@@ -40,7 +38,7 @@ public:
 		COMMA_SERIES,
 
 		// syntax sugar
-				MEMBER_REQUEST, // bracket operators
+		MEMBER_REQUEST, // bracket operators
 		MACRO_INVOKE,
 
 		BRK_EXPR, // bracket operator

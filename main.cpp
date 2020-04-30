@@ -55,6 +55,7 @@ int main(int argc, char** argv) {
 		}
 	}
 
+	// they want a shell
 	if (fname == nullptr || !(run || compile || out_bc || out_bct)) {
 
 	}
