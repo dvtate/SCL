@@ -23,6 +23,7 @@ std::string debug_AST(const AST& tree) {
 std::vector<std::string> keywords;
 
 std::unordered_map<std::string, signed char> op_prec = {
+		{ "(:", 22 },
 		{ "{", 22  },
 		{ "(",  21 },
 		{ "[",  20 },
@@ -360,7 +361,7 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 						SyntaxError(stack.back().token, "unexpected `]`"),
 				};
 			stack.pop_back();
-			for (unsigned short m = i; m < stack.size(); m++)
+			for (unsigned short m = i + 1; m < stack.size(); m++)
 				stack[i].members.emplace_back(stack[m]);
 			while (stack.size() > i + 1)
 				stack.pop_back();

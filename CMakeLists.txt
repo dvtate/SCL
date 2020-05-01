@@ -3,4 +3,4 @@ project(dlang)
 
 set(CMAKE_CXX_STANDARD 17)
 
-add_executable(dlang main.cpp parse/lex.cpp parse/parse.cpp)
+add_executable(dlang main.cpp parse/lex.cpp parse/parse.cpp vm/operator.cpp vm/operator.hpp vm/value.cpp vm/value.hpp vm/rt_macro.cpp vm/rt_macro.hpp vm/gc.cpp vm/gc.hpp vm/reference.cpp vm/reference.hpp)

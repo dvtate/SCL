@@ -17,15 +17,15 @@ public:
 		STATEMENTS, // semicolon delineated
 
 		// operand types
-				OPERATION = 2, // parsed operator args put in this->members
+		OPERATION = 2, // parsed operator args put in this->members
 		EXPRESSION = 3,
 		NUM_LITERAL = 4,
 		STR_LITERAL = 5,
-		ENUM_LITERAL = 6,
+		ENUM_LITERAL = 6, // ie: true,false,null,empty
 		IDENTIFIER = 7,
 		MACRO = 8,	// macro literal
-		OBJECT = 9,	//
-		LIST = 10,
+		OBJECT = 9,	// { ... }
+		LIST = 10, // [ ... ]
 
 		// containers
 		MACRO_OPEN,
@@ -34,7 +34,7 @@ public:
 		CONT_CLOSE,
 
 		// separators
-				KV_PAIR,
+		KV_PAIR,
 		COMMA_SERIES,
 
 		// syntax sugar
