@@ -36,14 +36,13 @@ class Command {
 
 	} instr;
 
+	union {
+		uint64_t i64;
+		uint16_t i16;
 
-	union Arg {
 
 	} arg;
 
-	enum ArgType {
-
-	} arg_type;
 };
 
 
