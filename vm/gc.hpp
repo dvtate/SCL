@@ -25,7 +25,7 @@ struct gc_item {
 	std::atomic<unsigned long> rc = 1;
 };
 
-void* gc_mallloc(VM& vm, std::size_t size);
+void* gc_malloc(VM& vm, std::size_t size);
 
 
 
