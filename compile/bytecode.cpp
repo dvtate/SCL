@@ -23,7 +23,14 @@ std::string compile_text(std::vector<Command> cmds)
 // return number of bytes stored in ret
 std::vector<char> compile_bin(std::vector<Command> cmds)
 {
-	// this will have horrible performance...
 	std::vector<char> ret;
-	char* buff =
+	char* buff = (char*) malloc(50);
+	int n;
+	for (Command& cmd : cmds) {
+		n = cmd.compile(buff);
+		for (unsigned short i = 0; i < n; i++)
+			ret.push_back(buff[i]);
+	}
+
+	return ret;
 }
