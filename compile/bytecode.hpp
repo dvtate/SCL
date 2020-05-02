@@ -16,7 +16,7 @@ std::string compile_text(std::vector<Command>);
 
 // convert to compressed binary format
 // return number of bytes stored in ret
-std::size_t compile_bin(std::vector<Command>, char*& ret);
+std::vector<char> compile_bin(std::vector<Command>);
 
 
 #endif //DLANG_BYTECODE_HPP
