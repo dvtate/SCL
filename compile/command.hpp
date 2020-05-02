@@ -15,10 +15,10 @@ class Command {
 public:
 
 	// mnemonic instruction
-	enum OPCode : uint8_t {
-
+	enum OPCode : char {
+		END_LIT_STRING = 0,
 		// these go in lit header
-		START_LIT_STRING = 0,
+		START_LIT_STRING = 1,
 		START_LIT_MACRO,
 		START_LIT_JSON,
 		//END_LIT_STRING,		// just use '\0'...
@@ -40,6 +40,8 @@ public:
 			// arg: int64, lit id
 		BUILTIN_OP,		// operate on stack
 			// arg: int16, builtin operator id
+		KW_VAL, 		// builtin keyword-literal (ie- print)
+			// arg: int16
 
 		// begin fault table
 		ID_NAME,		// user-defined identifier name
@@ -53,7 +55,7 @@ public:
 		SRC_POS,		// original file position
 			// arg: int64
 
-	} instr : 8;
+	} instr;
 
 	std::variant<uint16_t, int64_t, double, std::string> arg;
 
@@ -90,7 +92,11 @@ public:
 				return "\tliteral #" + std::to_string((uint64_t) std::get<int64_t>(this->arg));
 			case OPCode::BUILTIN_OP:
 				// switch (std::get<int16_t>(this->arg)) { ... }
-				return "\tOP #" + std::to_string((uint16_t) std::get<int16_t>(this->arg));
+				return "\tOP #" + std::to_string(std::get<uint16_t>(this->arg));
+			case OPCode::KW_VAL:
+				// switch (std::get<int16_t>(this->arg)) { ... }
+				return "\tKW_LIT #" + std::to_string(std::get<uint16_t>(this->arg));
+
 
 				// dont care about fault table yet
 			default:
@@ -107,10 +113,10 @@ public:
 		switch (this->instr) {
 			case OPCode::F64_LIT:
 				return ArgType::FLOAT;
-			case OPCode::I64_LIT: case OPCode::DECL_IDL: case OPCode::USE_ID: case OPCode::USE_LIT:
+			case OPCode::I64_LIT: case OPCode::DECL_ID: case OPCode::USE_ID: case OPCode::USE_LIT:
 			case OPCode::ID_ID: case OPCode::SRC_POS: case OPCode::DEST_POS:
 				return ArgType::INT64;
-			case OPCode::BUILTIN_OP:
+			case OPCode::BUILTIN_OP: case OPCode::KW_VAL:
 				return ArgType::INT16;
 			case OPCode::START_LIT_STRING: case OPCode::START_LIT_JSON: case OPCode::ID_NAME: case OPCode::FILE_NAME:
 				return ArgType::STRING;
