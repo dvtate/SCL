@@ -16,7 +16,7 @@
 
 /* Semantic Analysis
  *
- * Convert Syntactic Sugar:
+ * Reduce Syntax:
  * - Convert Builtin-identifiers/constants (ie - print)
  * - Handle operator associativity
  * - Convert complex let expressions
@@ -26,18 +26,17 @@
  * - remove PAREN_EXPRs
  * - Convert function calls on CSV's to list
  *
- * Safety/Debugging:
+ * Check Safety:
  * - basic typechecking and type deduction
  * - use before declaration (maybe remove in future)
  * -
  *
- * Optimizations:
+ * Optimize performance:
  * - Simplify Const-exprs
  * - macro inlining
  * - no construction-call-destruction for arguments
- * - replace object memeber requests with index operation (compile-time IC)
+ * - replace object member requests with index operation (compile-time IC)
  */
-
 
 
 class SemanticError {
@@ -45,9 +44,9 @@ public:
 	std::string msg;
 	unsigned long long int pos;
 	std::string file;
-	bool is_warning;
-	SemanticError(std::string&& message, const std::size_t position, std::string&& fname, bool is_warning = false):
-			msg(message), pos(position), file(fname), is_warning(is_warning) {}
+	bool is_warn;
+	SemanticError(std::string message, const unsigned long long position, std::string fname, bool is_warning = false):
+			msg(std::move(message)), pos(position), file(std::move(fname)), is_warn(is_warning) {}
 };
 
 

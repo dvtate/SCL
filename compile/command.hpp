@@ -42,6 +42,8 @@ public:
 			// arg: int16, builtin operator id
 		KW_VAL, 		// builtin keyword-literal (ie- print)
 			// arg: int16
+		CLEAR_STACK,	// semicolon operator
+
 
 		// begin fault table
 		ID_NAME,		// user-defined identifier name
@@ -62,6 +64,15 @@ public:
 	enum ArgType {
 		INT64, INT16, FLOAT, STRING, NO_ARG
 	};
+
+	Command(OPCode cmd, uint16_t argument):
+		instr(cmd), arg(argument) {}
+	Command(OPCode cmd, int64_t argument):
+		instr(cmd), arg(argument) {}
+	Command(OPCode cmd, double argument):
+		instr(cmd), arg(argument) {}
+	Command(OPCode cmd, std::string argument):
+		instr(cmd), arg(std::move(argument)) {}
 
 	// used for generating bytecode text format for debugging
 	inline std::string to_text() {
@@ -105,7 +116,7 @@ public:
 	}
 
 	// check if it goes in literal header
-	inline bool is_lit() const noexcept {
+	[[nodiscard]] inline bool is_lit() const noexcept {
 		return this->instr < OPCode::END_LIT_SECTION;
 	}
 
@@ -178,7 +189,6 @@ public:
 
 		return s;
 	}
-
 
 };
 

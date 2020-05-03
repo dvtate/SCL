@@ -8,6 +8,7 @@
 #include <algorithm>
 #include <iostream>
 #include <unordered_map>
+#include <variant>
 
 #include "lex.hpp"
 
@@ -18,11 +19,12 @@ public:
 
 		// operand types
 		OPERATION = 2, // parsed operator args put in this->members
-		EXPRESSION = 3,
+//		EXPRESSION = 3,
 		NUM_LITERAL = 4,
 		STR_LITERAL = 5,
-		ENUM_LITERAL = 6, // ie: true,false,null,empty
 		IDENTIFIER = 7,
+		MACRO_INVOKE,    // fn(arg)
+		MEMBER_REQUEST, // bracket operators
 		MACRO = 8,	// macro literal
 		OBJECT = 9,	// { ... }
 		LIST = 10, // [ ... ]
@@ -36,10 +38,6 @@ public:
 		// separators
 		KV_PAIR,
 		COMMA_SERIES,
-
-		// syntax sugar
-		MEMBER_REQUEST, // bracket operators
-		MACRO_INVOKE,
 
 		BRK_EXPR, // bracket operator
 		PAREN_EXPR, // temporary, used to add clarity to macro calls
@@ -60,11 +58,15 @@ public:
 	// -1 : known const/constexpr
 	signed char volatility : 4;
 
-	AST() = default;
+	AST():
+		type(INVALID), token(Token()), members(), volatility(0) {}
 	AST(const NodeType type, const Token token):
 			type(type), token(token), members(), volatility(0) {}
-	AST(const NodeType type, const Token token, std::vector<AST>&& children):
-			type(type), token(token), members(children), volatility(0) {}
+	AST(const NodeType type, const Token token, std::vector<AST> children):
+			type(type), token(token), members(std::move(children)), volatility(0) {}
+
+
+	// std::variant<std::string, int64_t, double> val;
 
 };
 

@@ -363,7 +363,7 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 			stack.pop_back();
 			for (unsigned short m = i + 1; m < stack.size(); m++)
 				stack[i].members.emplace_back(stack[m]);
-			while (stack.size() > i + 1)
+			while (stack.size() > i + 1U)
 				stack.pop_back();
 			stack.back().type = AST::NodeType::MACRO;
 
@@ -391,9 +391,13 @@ static inline bool reduce_invocations(std::vector<AST>& stack) {
 		const AST arg = stack.back();
 		if (isOperand(stack[stack.size() - 2])) {
 			stack.pop_back();
-			stack.back() = AST(AST::NodeType::MACRO_INVOKE, Token(Token::t::OPERATOR, "@"), {
-				stack.back(), arg
-			});
+			std::vector<AST> children { stack.back() };
+			if (!arg.members.empty())
+				children.emplace_back(arg.members[0]);
+			if (arg.members.size() > 1)
+				throw std::vector<SyntaxError>{SyntaxError(arg.token, "Invalid parenthesised expression")};
+
+			stack.back() = AST(AST::NodeType::MACRO_INVOKE, Token(Token::t::OPERATOR, "@"), children);
 		}
 	}
 

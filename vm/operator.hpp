@@ -8,7 +8,10 @@
 #include <string>
 
 class Operator {
+public:
 	std::string name;
+	signed char stack_input;
+	bool to_arr;
 };
 
 

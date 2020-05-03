@@ -23,19 +23,11 @@ public:
 		EMPTY
 	} type;
 
-	Value();
-	Value(double);
-	Value(int64_t);
-	Value(Handle<Value>);
-	Value(RTMacro);
-
-	inline bool isEmpty() const noexcept {
-		return type == VType::EMPTY;
-	}
-	inline bool isInt() const noexcept {
-		return type == VType::EMPTY;
-	}
-
+	Value(): type(VType::EMPTY) {}
+	Value(double in): type(VType::FLOAT), v(in) {}
+	Value(int64_t in): type(VType::INT64), v(in) {}
+	Value(Handle<Value> in): type(VType::REF), v(in) {}
+	Value(RTMacro in);
 
 };
 
