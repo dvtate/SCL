@@ -73,11 +73,14 @@ public:
 		return ret;
 	}
 
+	// translating different branch types into bytecode and populating internal structures
 	void read_tree(AST&);
 	void read_statements(AST&);
 	void read_num_lit(AST&);
 	void read_string_lit(AST&);
+	void read_decl(AST&);
 
+	uint64_t find_id(const std::string& name);
 };
 
 class ParsedLiteral {
@@ -89,8 +92,10 @@ public:
 
 	ParsedLiteral(LitType type, ParsedMacro macro):
 		v(std::move(macro)), type(type) {}
+	explicit ParsedLiteral(ParsedMacro macro):
+		v(std::move(macro)), type(LitType::MACRO) {}
 	ParsedLiteral(LitType type, std::string s):
-			v(std::move(s)), type(type) {}
+		v(std::move(s)), type(type) {}
 
 	bool operator==(const ParsedLiteral& other) {
 		if (this->type != other.type)
@@ -112,7 +117,7 @@ public:
 
 	// these are used for making the fault table
 	std::vector<MutilatedSymbol> identifiers;
-	std::unordered_map<std::string, std::vector<std::pair<unsigned long long, unsigned long long>>> translated_positions;
+	std::unordered_map<std::string, std::vector<std::pair<std::size_t, unsigned long long>>> translated_positions;
 
 
 	Program(std::string fname);
@@ -121,7 +126,9 @@ public:
 
 	// emplace a parsed literal into literals header
 	// return literal index
-	std::size_t add_lit(ParsedLiteral&& lit);
+	std::size_t empl_lit(ParsedLiteral&& lit);
+
+	void load_macro(ParsedMacro& macro);
 };
 
 // std::vector<Command> translate_tree(AST& t);

@@ -10,11 +10,6 @@
 
 
 
-inline AST get_ast(std::string fname) {
-	std::ifstream file = std::ifstream(fname);
-	return parse(tokenize_stream(file));
-}
-
 
 // maybe later want first 10 symbol ids to be reserved
 uint64_t MutilatedSymbol::_uid = 10;
@@ -63,13 +58,18 @@ void ParsedMacro::read_string_lit(AST& tree) {
 	std::string v = tree.token.token;
 
 	// put string into literals header
-	const size_t lit_num = this->compiler->literals.size();
-	this->compiler->literals.emplace_back(v);
-
+	const int64_t lit_num = this->compiler->empl_lit(
+			ParsedLiteral(ParsedLiteral::LitType::STRING, v));
 	const size_t new_pos = this->body.size();
-	this->body.emplace_back(Command(Command::OPCode::USE_LIT, 0))
+	this->body.emplace_back(Command(Command::OPCode::USE_LIT, lit_num));
+	this->relocation.emplace_back(
+			std::pair<std::size_t, unsigned long long>{
+				new_pos, tree.token.pos });
 }
 
+void ParsedMacro::read_decl(AST& tree) {
+	// assuming it starts with let...
+}
 
 void ParsedMacro::read_statements(AST& tree) {
 	for (AST& statement : tree.members) {
@@ -90,6 +90,9 @@ void ParsedMacro::read_tree(AST& tree) {
 			return;
 		case AST::NodeType::NUM_LITERAL:
 			read_num_lit(tree);
+			return;
+		case AST::NodeType::DECLARATION:
+			read_decl(tree);
 
 	}
 
@@ -105,18 +108,74 @@ ParsedMacro::ParsedMacro(AST &tree, std::string file_name, std::vector<ParsedMac
 
 }
 
+uint64_t ParsedMacro::find_id(const std::string& name) {
+	auto it = this->decl_id.find(name);
+	if (it != this->decl_id.end())
+		return it->second.id;
+
+	// check previous scopes
+	for (ParsedMacro* parent : parents) {
+		it = parent->decl_id.find(name);
+		if (it != parent->decl_id.end())
+			return it->second.id;
+	}
+
+	// not found
+	return 0;
+}
+
+void Program::load_macro(ParsedMacro& macro) {
+
+	// copy identifiers
+	for (const auto& p : macro.decl_id)
+		this->identifiers.emplace_back(p.second);
+
+	// copy translated positions to go in fault table
+	auto it = this->translated_positions.find(macro.file_name);
+	if (it == this->translated_positions.end())
+		this->translated_positions[macro.file_name] = macro.relocation;
+	else
+		this->translated_positions[macro.file_name].insert(
+			this->translated_positions[macro.file_name].end(),
+			macro.relocation.begin(), macro.relocation.end());
+
+	this->empl_lit(ParsedLiteral(macro));
+}
 
 //
 Program::Program(std::string fname) {
-	AST main = get_ast(fname);
+	// parse main file
+	std::ifstream file = std::ifstream(fname);
+	AST main = parse(tokenize_stream(file));
+
+	// semantic analysis
 	std::vector<SemanticError> errs = process_tree(main, fname);
-	ParsedMacro(main, fname, std::vector<ParsedMacro*>{}, this);
+
+	// implicit main macro
+	ParsedMacro entry(main, fname, std::vector<ParsedMacro*>{}, this);
+
+	// dfs children of entry
+	std::vector<ParsedMacro> macros_processed; // these are going into literals header
+	std::vector<ParsedMacro> macros_to_proc { entry.children }; // these are going to be processed
+
+	do {
+		this->load_macro(macros_to_proc.back());
+		macros_processed.emplace_back(macros_to_proc.back());
+		macros_to_proc.pop_back();
+		macros_to_proc.insert(macros_to_proc.end(),
+				macros_processed.back().children.begin(),
+				macros_processed.back().children.end());
+
+	} while (!macros_to_proc.empty());
+
+	// literals.back() == main()
+	this->load_macro(entry);
 }
 
 // emplace a parsed literal into literals header
 // return index of parsed literal
 // if its already in header send index
-std::size_t Program::add_lit(ParsedLiteral&& lit) {
+std::size_t Program::empl_lit(ParsedLiteral&& lit) {
 	auto it = std::find(
 			this->literals.begin(),
 			this->literals.end(),
@@ -126,8 +185,8 @@ std::size_t Program::add_lit(ParsedLiteral&& lit) {
 		std::size_t ret = this->literals.size();
 		this->literals.emplace_back(lit);
 		return ret;
+
 	} else {
 		return std::distance(this->literals.begin(), it);
 	}
-
 }
