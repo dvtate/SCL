@@ -80,7 +80,7 @@ public:
 	}
 
 	// translating different branch types into bytecode and populating internal structures
-	void read_tree(AST&);
+	void read_tree(AST&); // main entry
 	void read_statements(AST&);
 	void read_num_lit(AST&);
 	void read_string_lit(AST&);

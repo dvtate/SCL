@@ -15,10 +15,10 @@
 // maybe later want first 10 symbol ids to be reserved
 int64_t MutilatedSymbol::_uid = 10;
 
-// read_* : recursively convert the AST of the macro into a list of commands and populate structures
+// ParsedMacro::read_* : recursively convert the AST of the macro into a list of commands and populate structures
 
 void ParsedMacro::read_num_lit(AST& tree) {
-
+//	std::cout <<"read_num_lit\n";
 	try { // try to parse int first
 		// sigh...
 		int64_t v;
@@ -54,6 +54,7 @@ void ParsedMacro::read_num_lit(AST& tree) {
 }
 
 void ParsedMacro::read_string_lit(AST& tree) {
+//	std::cout<<"read_string_lit\n";
 
 	// get string text
 	std::string v = tree.token.token;
@@ -71,6 +72,7 @@ void ParsedMacro::read_string_lit(AST& tree) {
 }
 
 void ParsedMacro::read_decl(AST& tree) {
+//	std::cout <<"read_decl\n";
 	if (tree.members.empty()) {
 		this->errors.emplace_back(SemanticError(
 				"empty declaration", tree.token.pos, this->file_name));
@@ -103,6 +105,8 @@ void ParsedMacro::read_decl(AST& tree) {
 }
 
 void ParsedMacro::read_id(AST& tree) {
+//	std::cout <<"read_id\n";
+
 	const uint64_t id = this->find_id(tree.token.token);
 	if (!id) {
 		this->errors.emplace_back(SemanticError(
@@ -121,7 +125,7 @@ void ParsedMacro::read_id(AST& tree) {
 }
 
 void ParsedMacro::read_operation(AST& t){
-
+//	std::cout <<"read_operation\n";
 	// TODO: replace with actual operator ID's from VM
 	std::unordered_map<std::string, uint16_t> op_ids {
 		{ "!",	10 },
@@ -161,6 +165,8 @@ void ParsedMacro::read_operation(AST& t){
 }
 
 void ParsedMacro::read_macro_invoke(AST& t) {
+//	std::cout <<"read_macro_invoke";
+
 	if (t.members.size() < 2) {
 		this->errors.emplace_back(SemanticError(
 				"Invalid macro call", t.token.pos, this->file_name));
@@ -197,6 +203,7 @@ void ParsedMacro::read_statements(AST& tree) {
 }
 
 void ParsedMacro::read_tree(AST& tree) {
+//	std::cout <<"read_tree: " <<tree.type_name() <<std::endl;
 	switch (tree.type) {
 //		case AST::NodeType::OPERATOR:
 //
@@ -220,6 +227,9 @@ void ParsedMacro::read_tree(AST& tree) {
 			read_operation(tree);
 			return;
 
+		case AST::NodeType::MACRO_INVOKE:
+			read_macro_invoke(tree);
+			return;
 		default:
 			this->errors.emplace_back(SemanticError(
 					"Unsupported feature: " + tree.type_name(),
@@ -295,6 +305,7 @@ void Program::load_file(const std::string& fname) {
 		{ "print", MutilatedSymbol("print") },
 		{ "input", MutilatedSymbol("input") }
 	});
+	entry.read_tree(main);
 
 	// dfs children of entry
 	// there has to be a better solution than this,,,,

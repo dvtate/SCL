@@ -262,7 +262,9 @@ std::vector<Token> tokenize_stream(std::istream& in) {
 		} else if (t.type == Token::t::ERROR) {
 			return std::vector<Token>({ t });
 		} else {
-//			std::cout <<"new tok: " <<t.type <<':' <<t.token <<':' <<t.pos << '/' <<i <<std::endl;
+#ifdef DLANG_DEBUG
+			std::cout <<"new tok: " <<t.type <<':' <<t.token <<':' <<t.pos << '/' <<i <<std::endl;
+#endif
 			ret.emplace_back(t);
 		}
 	}

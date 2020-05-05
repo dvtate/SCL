@@ -90,13 +90,11 @@ static inline AST next_node(const std::vector<Token>& tokens, size_t& i, std::ve
 			t.token = combined;
 			const AST ret = AST(AST::NodeType::MACRO_OPEN, t);
 			i += 2;
-			std::cout <<"parse:shift:macro open\n";
 			return ret;
 
 		} else if (std::find(mc_ops.begin(), mc_ops.end(), combined) != mc_ops.end()) {
 			t.token = combined;
 			i += 2;
-			std::cout <<"parse:shift:multichar op: " <<combined <<std::endl;
 			return AST(AST::NodeType::OPERATOR, t );
 		}
 	}
@@ -444,23 +442,26 @@ AST parse(const std::vector<Token>& tokens) {
 
 	while (i < tokens.size()) {
 		AST tok = next_node(tokens, i, stack);
+#ifdef DLANG_DEBUG
 		std::cout <<"Lookahead: " << debug_AST(tok) <<std::endl;
 		do {
 			std::cout <<"Stack: ";
 			for (const AST& n : stack)
 				std::cout <<debug_AST(n) << "   ";
 			std::cout <<std::endl;
-		} while (reduce(tokens, i, stack, tok));
+		}
+#endif
+		while (reduce(tokens, i, stack, tok));
 
 		if (can_shift(tok))
 			stack.emplace_back(tok);
 	}
-
+#ifdef DLANG_DEBUG
 	std::cout <<"\nStack: ";
 	for (const AST& n : stack)
 		std::cout <<debug_AST(n) << "   ";
 	std::cout <<std::endl;
-
+#endif
 	return stack.back();
 
 	// if multi-char operator sequence try to reduce

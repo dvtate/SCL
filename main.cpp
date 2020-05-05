@@ -3,6 +3,8 @@
 #include <getopt.h>
 #include <iostream>
 
+#define DLANG_DEBUG
+
 #include "parse/lex.hpp"
 #include "parse/parse.hpp"
 #include "compile/compile.hpp"
@@ -76,6 +78,7 @@ int main(int argc, char** argv) {
 			std::cout <<"Compiler Error: " <<e.msg <<std::endl
 				<<util::show_line_pos(fname, e.pos) <<std::endl;
 		}
+		return 1;
 	}
 
 	if (out_bc)

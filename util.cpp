@@ -37,5 +37,8 @@ namespace util {
 				i += line.length();
 			}
 		}
+
+		return ret;
 	}
+
 }
