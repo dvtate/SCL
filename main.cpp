@@ -73,10 +73,9 @@ int main(int argc, char** argv) {
 	std::vector<SemanticError> errs = p.compile(bytecode);
 
 	if (!errs.empty()) {
-		for (auto& e : errs) {
+		for (auto& e : errs)
 			std::cout <<"Compiler Error: " <<e.msg <<std::endl
 				<<util::show_line_pos(fname, e.pos) <<std::endl;
-		}
 		return 1;
 	}
 
