@@ -67,17 +67,8 @@ public:
 			std::unordered_map<std::string, MutilatedSymbol> locals = {});
 	ParsedMacro(const ParsedMacro& other) = default;
 
-	uint64_t find_id(const std::string& name);
-	inline uint64_t declare_id(const std::string& id_name) {
-		auto occ = this->declarations.find(id_name);
-		if (occ == this->declarations.end()) {
-			MutilatedSymbol&& ms = MutilatedSymbol(id_name);
-			const uint64_t ret = ms.id;
-			declarations[id_name] = ms;
-			return ret;
-		}
-		return 0;
-	}
+	int64_t find_id(const std::string& name);
+	int64_t declare_id(const std::string& id_name);
 
 	// translating different branch types into bytecode and populating internal structures
 	void read_tree(AST&); // main entry

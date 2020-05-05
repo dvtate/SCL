@@ -3,7 +3,6 @@
 #include <getopt.h>
 #include <iostream>
 
-#define DLANG_DEBUG
 
 #include "parse/lex.hpp"
 #include "parse/parse.hpp"

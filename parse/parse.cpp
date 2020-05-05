@@ -11,7 +11,7 @@ std::string debug_AST(const AST& tree) {
 	std::string ret = "(";
 	ret += tree.token.token;
 	ret += "<";
-	ret += std::to_string((int)tree.type);
+	ret += tree.short_type_name();
 	ret += ">";
 	for (const AST& m : tree.members)
 		ret += " " + debug_AST(m);
@@ -143,6 +143,7 @@ static inline AST next_node(const std::vector<Token>& tokens, size_t& i, std::ve
 			return AST(AST::NodeType::INVALID, t);
 		}
 
+
 		return AST(AST::NodeType::OPERATOR, t);
 	}
 
@@ -157,9 +158,30 @@ static inline bool has_multi_prefix_kw(std::vector<AST>& stack) {
 	return false;
 }
 
-static inline int prev_operator(std::vector<AST>& stack) {
+static inline int prev_matching_container_index(std::vector<AST>& stack, const AST& nn) {
+	if (nn.type != AST::NodeType::CONT_CLOSE)
+		return -1;
+	int ret = stack.size() - 1;
+	while (ret >= 0) {
+		if (nn.token.token == ")")
+			if (stack[ret].type == AST::NodeType::MACRO_OPEN ||
+				stack[ret].type == AST::NodeType::PAREN_OPEN)
+				return ret;
+		if (nn.token.token == "]")
+			if (stack[ret].type == AST::NodeType::LIST_OPEN)
+				return ret;
+		ret--;
+	}
+	return 0;
+}
+static inline int prev_operator(std::vector<AST>& stack, const AST& n) {
+	int min_i = 0;
+	// only reduce operators within current container
+	if (n.type == AST::NodeType::CONT_CLOSE) {
+		min_i = prev_matching_container_index(stack, n);
+	}
 	ssize_t ret = stack.size();
-	while (--ret >= 0)
+	while (--ret >= min_i)
 		if (stack[ret].type == AST::NodeType::OPERATOR)
 			return ret;
 
@@ -188,9 +210,14 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 		return nullptr;
 	}
 
-	if (op == ";"){
-
-	}
+	// postfix semicolon at end
+//	if (op == ";" && i == stack.size() - 1) {
+//		stack.pop_back();
+//		n.members.insert(n.members.end(), stack.begin() + i + 1, stack.end());
+//		while (stack.size() > i + 1)
+//			stack.pop_back();
+//		return nullptr;
+//	}
 
 	// unary
 	if (op == "neg" || op == "!") {
@@ -217,8 +244,7 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 
 	if (op == ";") {
 		// not an infix operator
-		if (stack.size() - i < 1)
-			return "unexpected semicolon";
+
 		stack.pop_back();
 		if (stack.empty())
 			return nullptr;
@@ -241,8 +267,10 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 	}
 
 	// generic infix operation
-	if (stack.size() - i != 2 || stack.size() < 3)
+	if (stack.size() - i != 2 || stack.size() < 3) {
+		//throw std::vector<SyntaxError>{SyntaxError(n.token, "Invalid infix operator...")};
 		return "invalid infix operator";
+	}
 
 	const AST r = stack.back();
 	stack.pop_back(); // pop r
@@ -276,7 +304,7 @@ static inline bool reduce_operators(std::vector<struct AST>& stack, const AST& n
 
 	if (!isOperand(n)) {
 		// if lookahead is an operator
-		const int i = prev_operator(stack);
+		const int i = prev_operator(stack, n);
 		if (i < 0)
 			return false;
 		const auto prec_p = op_prec.at(stack[i].token.token);
@@ -293,7 +321,7 @@ static inline bool reduce_operators(std::vector<struct AST>& stack, const AST& n
 	// assumed/given end of expr, reduce it before adding more
 	if ((n.type != AST::NodeType::LIST_OPEN && n.type != AST::PAREN_OPEN && isOperand(stack.back()))
 		|| (stack.back().token.token == ";" && stack.back().type != AST::NodeType::STATEMENTS)) {
-		auto p_op_i = prev_operator(stack);
+		auto p_op_i = prev_operator(stack, n);
 		if (p_op_i < 0)
 			return false;
 
@@ -305,14 +333,17 @@ static inline bool reduce_operators(std::vector<struct AST>& stack, const AST& n
 }
 
 static inline bool reduce_containers(std::vector<AST>& stack) {
-	if (stack.back().type == AST::NodeType::CONT_CLOSE) {
+
+	if (!stack.empty() && stack.back().type == AST::NodeType::CONT_CLOSE) {
 		// find nearest opener
 		int i = (int) stack.size() - 1;
-		while (--i > 0)
+		while (i > 0) {
 			if (stack[i].type == AST::NodeType::LIST_OPEN ||
 				stack[i].type == AST::NodeType::MACRO_OPEN ||
 				stack[i].type == AST::NodeType::PAREN_OPEN)
 				break;
+			i--;
+		}
 
 		// handle lists
 		if (stack[i].type == AST::NodeType::LIST_OPEN) {
@@ -347,11 +378,21 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 			if (stack.size() - i > 3)
 				throw std::vector<SyntaxError>{SyntaxError(stack[i].token, "invalid expression in parens")};
 
+			// pop closer
 			stack.pop_back();
-			const AST e = stack.back();
-			stack.pop_back();
-			stack.back().type = AST::NodeType::PAREN_EXPR;
-			stack.back().members.emplace_back(e);
+
+			if (stack.size() - 2 == i) {
+				// has expression to capture
+				const AST e = stack.back();
+				stack.pop_back();
+				stack.back().type = AST::NodeType::PAREN_EXPR;
+				stack.back().members.emplace_back(e);
+			} else {
+				// () empty parenexpr
+				stack.back().type = AST::NodeType::PAREN_EXPR;
+			}
+
+
 			return true;
 		}
 

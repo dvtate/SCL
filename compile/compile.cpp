@@ -10,7 +10,19 @@
 #include "../parse/parse.hpp"
 
 
+#ifdef DLANG_DEBUG
+	#define DLANG_DEBUG_MSG(m) std::cout <<m;
+#else
+	#define DLANG_DEBUG_MSG(m)
+#endif
 
+const static std::unordered_map<std::string, Command> keyword_values = {
+		{ "empty", Command(Command::OPCode::KW_VAL, (uint16_t) 0) },
+		{ "true",  Command(Command::OPCode::KW_VAL, (uint16_t) 1) },
+		{ "false", Command(Command::OPCode::KW_VAL, (uint16_t) 2) },
+		{ "print", Command(Command::OPCode::KW_VAL, (uint16_t) 3) },
+		{ "input", Command(Command::OPCode::KW_VAL, (uint16_t) 4) },
+};
 
 // maybe later want first 10 symbol ids to be reserved
 int64_t MutilatedSymbol::_uid = 10;
@@ -18,7 +30,7 @@ int64_t MutilatedSymbol::_uid = 10;
 // ParsedMacro::read_* : recursively convert the AST of the macro into a list of commands and populate structures
 
 void ParsedMacro::read_num_lit(AST& tree) {
-//	std::cout <<"read_num_lit\n";
+	DLANG_DEBUG_MSG("read_num_lit\n");
 	try { // try to parse int first
 		// sigh...
 		int64_t v;
@@ -54,7 +66,7 @@ void ParsedMacro::read_num_lit(AST& tree) {
 }
 
 void ParsedMacro::read_string_lit(AST& tree) {
-//	std::cout<<"read_string_lit\n";
+	DLANG_DEBUG_MSG("read_string_lit\n");
 
 	// get string text
 	std::string v = tree.token.token;
@@ -72,7 +84,7 @@ void ParsedMacro::read_string_lit(AST& tree) {
 }
 
 void ParsedMacro::read_decl(AST& tree) {
-//	std::cout <<"read_decl\n";
+	DLANG_DEBUG_MSG("read_decl\n");
 	if (tree.members.empty()) {
 		this->errors.emplace_back(SemanticError(
 				"empty declaration", tree.token.pos, this->file_name));
@@ -80,16 +92,31 @@ void ParsedMacro::read_decl(AST& tree) {
 	}
 
 	// support multiple declarations separated by commas
-	if (tree.members[0].type == AST::NodeType::OPERATOR && tree.token.token == ",")
+	if (tree.members[0].type == AST::NodeType::OPERATION && tree.members[0].token.token == ",")
 		tree.members = tree.members[0].members;
 
 	for (auto& d : tree.members) {
+		DLANG_DEBUG_MSG("read_decl:" <<debug_AST(d) <<std::endl);
 		if (d.type == AST::NodeType::IDENTIFIER) {
+			if (keyword_values.find(d.token.token) != keyword_values.end()) {
+				this->errors.emplace_back(SemanticError(
+					"Redefinition of global keyword "+ d.token.token,
+					d.token.pos, this->file_name
+				));
+			}
 			this->declare_id(d.token.token);
-		} else if (d.type == AST::NodeType::OPERATOR && d.token.token == "=") {
+		} else if (d.type == AST::NodeType::OPERATION && d.token.token == "=") {
 			if (!d.members.empty() && d.members[0].type == AST::NodeType::IDENTIFIER) {
-				this->declare_id(d.members[0].token.token);
+				if (keyword_values.find(d.members[0].token.token) != keyword_values.end()) {
+					this->errors.emplace_back(SemanticError(
+							"Redefinition of global keyword "+ d.members[0].token.token,
+							d.members[0].token.pos, this->file_name
+					));
+				}
+				auto idid = this->declare_id(d.members[0].token.token);
+				this->body.emplace_back(Command(Command::OPCode::DECL_ID, idid));
 				this->read_tree(d);
+				DLANG_DEBUG_MSG("read_decl: "<<d.members[0].token.token <<" = " <<idid <<std::endl);
 			} else {
 				this->errors.emplace_back(SemanticError(
 						"invalid assignment, expected identifier, got: " + (
@@ -105,7 +132,7 @@ void ParsedMacro::read_decl(AST& tree) {
 }
 
 void ParsedMacro::read_id(AST& tree) {
-//	std::cout <<"read_id\n";
+	DLANG_DEBUG_MSG("read_id\n");
 
 	const uint64_t id = this->find_id(tree.token.token);
 	if (!id) {
@@ -115,7 +142,6 @@ void ParsedMacro::read_id(AST& tree) {
 				this->file_name));
 		return;
 	}
-
 	const size_t n_pos = this->body.size();
 	this->body.emplace_back(Command(Command::OPCode::USE_ID, (int64_t) id));
 	this->relocation.emplace_back(
@@ -125,7 +151,7 @@ void ParsedMacro::read_id(AST& tree) {
 }
 
 void ParsedMacro::read_operation(AST& t){
-//	std::cout <<"read_operation\n";
+	DLANG_DEBUG_MSG("read_operation\n");
 	// TODO: replace with actual operator ID's from VM
 	std::unordered_map<std::string, uint16_t> op_ids {
 		{ "!",	10 },
@@ -139,6 +165,7 @@ void ParsedMacro::read_operation(AST& t){
 		{ "<",	18 },
 		{ ">",	19 },
 		{ "==",	20 },
+		{ "=",	21 },
 	};
 
 	// check if it forms an expression or just lexical
@@ -148,6 +175,7 @@ void ParsedMacro::read_operation(AST& t){
 	} catch (...) {
 		op = 0;
 	}
+
 	if (!op) {
 		this->errors.emplace_back(SemanticError(
 				"Unexpected lexical operator: " + t.token.token,
@@ -165,23 +193,24 @@ void ParsedMacro::read_operation(AST& t){
 }
 
 void ParsedMacro::read_macro_invoke(AST& t) {
-//	std::cout <<"read_macro_invoke";
+	DLANG_DEBUG_MSG("read_macro_invoke\n");
 
-	if (t.members.size() < 2) {
+	if (t.members.size() < 1) {
 		this->errors.emplace_back(SemanticError(
 				"Invalid macro call", t.token.pos, this->file_name));
 		return;
 	}
-	const auto id = find_id(t.members[0].token.token);
-	if (!id) {
-		this->errors.emplace_back(SemanticError(
-				"macro call on undeclared identifier, " + t.members[0].token.token,
-				t.token.pos,this->file_name));
-		return;
-	}
 
-	for (auto m : t.members)
-		this->read_tree(m);
+	// load arg
+	if (t.members.size() == 2)
+		read_tree(t.members.back());
+	else // no arg
+		this->body.emplace_back(Command(Command::OPCode::VAL_EMPTY));
+
+	// load macro
+	read_tree(t.members[0]);
+
+	// TODO: typecheck
 
 	this->body.emplace_back(Command(Command::OPCode::MACRO_INVOKE));
 
@@ -196,6 +225,7 @@ void ParsedMacro::read_macro_lit(AST& tree) {
 
 
 void ParsedMacro::read_statements(AST& tree) {
+	DLANG_DEBUG_MSG("read_statements\n");
 	for (AST& statement : tree.members) {
 		read_tree(statement);
 		this->body.emplace_back(Command(Command::OPCode::CLEAR_STACK));
@@ -203,7 +233,7 @@ void ParsedMacro::read_statements(AST& tree) {
 }
 
 void ParsedMacro::read_tree(AST& tree) {
-//	std::cout <<"read_tree: " <<tree.type_name() <<std::endl;
+	DLANG_DEBUG_MSG("read_tree: " <<tree.type_name());
 	switch (tree.type) {
 //		case AST::NodeType::OPERATOR:
 //
@@ -248,7 +278,7 @@ ParsedMacro::ParsedMacro(AST &tree, std::string file_name, std::vector<ParsedMac
 	declarations["i"] = MutilatedSymbol("i");
 }
 
-uint64_t ParsedMacro::find_id(const std::string& name) {
+int64_t ParsedMacro::find_id(const std::string& name) {
 	auto it = this->declarations.find(name);
 	if (it != this->declarations.end())
 		return it->second.id;
@@ -263,6 +293,22 @@ uint64_t ParsedMacro::find_id(const std::string& name) {
 	// not found
 	return 0;
 }
+
+int64_t ParsedMacro::declare_id(const std::string& id_name) {
+	auto occ = this->declarations.find(id_name);
+	if (occ == this->declarations.end()) {
+		MutilatedSymbol&& ms = MutilatedSymbol(id_name);
+		const int64_t ret = ms.id;
+		declarations[id_name] = ms;
+		return ret;
+	}
+	return 0;
+}
+
+
+
+
+
 
 void Program::load_macro(ParsedMacro& macro) {
 
@@ -377,6 +423,9 @@ std::vector<SemanticError> Program::compile(std::vector<Command>& ret) {
 				for (auto &p : macro.relocation)
 					tp.emplace_back(std::pair{p.first + start_pos, p.second});
 
+				// recombine errors
+				errs.insert(errs.end(), macro.errors.begin(), macro.errors.end());
+
 				break; // switch
 			}
 		}
@@ -397,7 +446,7 @@ std::vector<SemanticError> Program::compile(std::vector<Command>& ret) {
 		ret.emplace_back(Command(Command::OPCode::FILE_NAME, f.first));
 		for (auto& p : f.second) {
 			ret.emplace_back(Command(Command::OPCode::DEST_POS, (int64_t) p.first));
-			ret.emplace_back(Command(Command::OPCode::SRC_POS, (int64_t) p.second));
+			ret.emplace_back(Command(Command::OPCode::SRC_POS,  (int64_t) p.second));
 		}
 	}
 

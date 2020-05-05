@@ -15,7 +15,7 @@
 class AST {
 public:
 	enum NodeType {
-		STATEMENTS, // semicolon delineated
+		STATEMENTS=0, // semicolon delineated
 
 		// operand types
 		OPERATION, // parsed operator args put in this->members
@@ -68,7 +68,7 @@ public:
 
 	// std::variant<std::string, int64_t, double> val;
 
-	[[nodiscard]] const std::string type_name() const noexcept {
+	std::string type_name() const noexcept {
 		switch (this->type) {
 			case NodeType::STATEMENTS:		return "Statement sequence";
 			case NodeType::OPERATION:		return "Operator Expression";
@@ -85,13 +85,40 @@ public:
 			case NodeType::CONT_CLOSE:		return "Container closing";
 			case NodeType::KV_PAIR:			return "Key-Value pair";
 			case NodeType::COMMA_SERIES:	return "Comma Series";
+			case NodeType::PAREN_EXPR:		return "Parenthesized Expression";
 			case NodeType::BRK_EXPR:		return "Bracketed Expression";
 			case NodeType::DECLARATION:		return "Declaration";
+			case NodeType::OPERATOR:		return "Operator";
 			case NodeType::INVALID:			return "Invalid item";
-			default:						return "unknown";
+			default:						return std::string("unknown") + std::to_string(this->type);
 		}
 	}
+	std::string short_type_name() const noexcept {
+		switch (this->type) {
+			case NodeType::STATEMENTS:		return "SEMIS";
+			case NodeType::OPERATION:		return "OP_EXPR";
+			case NodeType::NUM_LITERAL:		return "NUM_LIT";
+			case NodeType::STR_LITERAL:		return "STR_LIT";
+			case NodeType::IDENTIFIER:		return "ID";
+			case NodeType::MACRO_INVOKE:	return "INVOKE";
+			case NodeType::MACRO:			return "MACRO_LIT";
+			case NodeType::OBJECT:			return "OBJ_LIT";
+			case NodeType::LIST:			return "LIST_LIT";
+			case NodeType::MACRO_OPEN:		return "M_OPEN";
+			case NodeType::LIST_OPEN:		return "L_OPEN";
+			case NodeType::PAREN_OPEN:		return "P_OPEN";
+			case NodeType::CONT_CLOSE:		return "C_CLOSE";
+			case NodeType::KV_PAIR:			return "KV_PAIR";
+			case NodeType::COMMA_SERIES:	return "CSRS";
+			case NodeType::PAREN_EXPR:		return "P_EXPR";
+			case NodeType::BRK_EXPR:		return "B_EXPR";
+			case NodeType::DECLARATION:		return "DECL";
+			case NodeType::OPERATOR:		return "OP";
+			case NodeType::INVALID:			return "INVALID";
+			default:						return "?:" + std::to_string(this->type);
 
+		}
+	}
 };
 
 

@@ -8,6 +8,7 @@
 #include <string>
 #include <vector>
 
+//#define DLANG_DEBUG 1
 
 class Token {
 public:

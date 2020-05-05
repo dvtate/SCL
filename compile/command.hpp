@@ -45,8 +45,13 @@ public:
 			// arg: int16
 		CLEAR_STACK,	// semicolon operator
 			// no arg
+		VAL_EMPTY,
+		VAL_TRUE,
+		VAL_FALSE,
+
 		MACRO_INVOKE,
 			// no arg
+
 
 		// begin fault table
 		ID_NAME,		// user-defined identifier name
@@ -115,7 +120,12 @@ public:
 				return "\tClear stack\n";
 			case OPCode::MACRO_INVOKE:
 				return "\tCall Macro\n";
-
+			case OPCode::VAL_EMPTY:
+				return "\tempty";
+			case OPCode::VAL_FALSE:
+				return "\tfalse";
+			case OPCode::VAL_TRUE:
+				return "\ttrue";
 
 				// fault table
 
