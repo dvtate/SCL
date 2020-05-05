@@ -5,6 +5,7 @@
 #ifndef DLANG_FRAME_HPP
 #define DLANG_FRAME_HPP
 
+#include <vector>
 #include <cstdint>
 
 // Execution frame

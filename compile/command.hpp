@@ -43,7 +43,9 @@ public:
 		KW_VAL, 		// builtin keyword-literal (ie- print)
 			// arg: int16
 		CLEAR_STACK,	// semicolon operator
-
+			// no arg
+		MACRO_INVOKE,
+			// no arg
 
 		// begin fault table
 		ID_NAME,		// user-defined identifier name
@@ -73,6 +75,7 @@ public:
 		instr(cmd), arg(argument) {}
 	Command(OPCode cmd, std::string argument):
 		instr(cmd), arg(std::move(argument)) {}
+	explicit Command(OPCode cmd): instr(cmd) {}
 
 	// used for generating bytecode text format for debugging
 	inline std::string to_text() {
@@ -88,28 +91,46 @@ public:
 			case OPCode::END_LIT_MACRO:
 				return ")\n";
 			case OPCode::END_LIT_SECTION:
-				return "#### End Literal Section ####\n";
+				return "#### Begin Fault Table ####\n";
 
 				// indented bc must be within macro body
 			case OPCode::I64_LIT:
-				return "\tint64 " + std::to_string(std::get<int64_t>(this->arg));
+				return "\tint64 " + std::to_string(std::get<int64_t>(this->arg)) + "\n";
 			case OPCode::F64_LIT:
-				return "\tdouble " + std::to_string(std::get<double>(this->arg));
+				return "\tdouble " + std::to_string(std::get<double>(this->arg))  + "\n";
 			case OPCode::DECL_ID:
-				return "\tlet " + std::to_string((uint64_t) std::get<int64_t>(this->arg));
+				return "\tlet " + std::to_string((uint64_t) std::get<int64_t>(this->arg)) + "\n";
 			case OPCode::USE_ID:
-				return "\tid $" + std::to_string((uint64_t) std::get<int64_t>(this->arg));
+				return "\tid $" + std::to_string((uint64_t) std::get<int64_t>(this->arg)) + "\n";
 			case OPCode::USE_LIT:
-				return "\tliteral #" + std::to_string((uint64_t) std::get<int64_t>(this->arg));
+				return "\tliteral #" + std::to_string((uint64_t) std::get<int64_t>(this->arg)) + "\n";
 			case OPCode::BUILTIN_OP:
 				// switch (std::get<int16_t>(this->arg)) { ... }
-				return "\tOP #" + std::to_string(std::get<uint16_t>(this->arg));
+				return "\tOP #" + std::to_string(std::get<uint16_t>(this->arg)) + "\n";
 			case OPCode::KW_VAL:
 				// switch (std::get<int16_t>(this->arg)) { ... }
-				return "\tKW_LIT #" + std::to_string(std::get<uint16_t>(this->arg));
+				return "\tKW_LIT #" + std::to_string(std::get<uint16_t>(this->arg)) + "\n";
+			case OPCode::CLEAR_STACK:
+				return "\tClear stack\n";
+			case OPCode::MACRO_INVOKE:
+				return "\tCall Macro\n";
 
 
-				// dont care about fault table yet
+				// fault table
+
+				// identifier translations
+			case OPCode::ID_NAME:
+				return "ID_NAME " + std::get<std::string>(this->arg) + " : ";
+			case OPCode::ID_ID:
+				return "ID_ID " + std::to_string(std::get<int64_t>(this->arg)) + "\n";
+
+			case OPCode::FILE_NAME:
+				return "In file: " + std::get<std::string>(this->arg) + "\n";
+
+			case OPCode::DEST_POS:
+				return "Compiled Line#" + std::to_string(std::get<int64_t>(this->arg)) + " came from ";
+			case OPCode::SRC_POS:
+				return "Source Pos#" + std::to_string(std::get<int64_t>(this->arg)) + "\n";
 			default:
 				return "";
 		}

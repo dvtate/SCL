@@ -18,16 +18,16 @@ public:
 		STATEMENTS, // semicolon delineated
 
 		// operand types
-		OPERATION = 2, // parsed operator args put in this->members
-//		EXPRESSION = 3,
-		NUM_LITERAL = 4,
-		STR_LITERAL = 5,
-		IDENTIFIER = 7,
+		OPERATION, // parsed operator args put in this->members
+//		EXPRESSION,
+		NUM_LITERAL,
+		STR_LITERAL,
+		IDENTIFIER,
 		MACRO_INVOKE,    // fn(arg)
 		MEMBER_REQUEST, // bracket operators
-		MACRO = 8,	// macro literal
-		OBJECT = 9,	// { ... }
-		LIST = 10, // [ ... ]
+		MACRO,	// macro literal
+		OBJECT,	// { ... }
+		LIST, // [ ... ]
 
 		// containers
 		MACRO_OPEN,
@@ -68,6 +68,30 @@ public:
 
 	// std::variant<std::string, int64_t, double> val;
 
+	[[nodiscard]] const std::string type_name() const noexcept {
+		switch (this->type) {
+			case NodeType::STATEMENTS:		return "Statement sequence";
+			case NodeType::OPERATION:		return "Operator Expression";
+			case NodeType::NUM_LITERAL:		return "Number Literal";
+			case NodeType::STR_LITERAL:		return "String Literal";
+			case NodeType::IDENTIFIER:		return "Identifier";
+			case NodeType::MACRO_INVOKE:	return "Macro Call";
+			case NodeType::MACRO:			return "Macro Literal";
+			case NodeType::OBJECT:			return "Object Literal";
+			case NodeType::LIST:			return "List";
+			case NodeType::MACRO_OPEN:		return "Macro opening";
+			case NodeType::LIST_OPEN:		return "List opening";
+			case NodeType::PAREN_OPEN:		return "Opening Parenthesis";
+			case NodeType::CONT_CLOSE:		return "Container closing";
+			case NodeType::KV_PAIR:			return "Key-Value pair";
+			case NodeType::COMMA_SERIES:	return "Comma Series";
+			case NodeType::BRK_EXPR:		return "Bracketed Expression";
+			case NodeType::DECLARATION:		return "Declaration";
+			case NodeType::INVALID:			return "Invalid item";
+			default:						return "unknown";
+		}
+	}
+
 };
 
 
@@ -85,6 +109,5 @@ AST parse(const std::vector<Token>& tokens);
 
 // Lisp representation
 std::string debug_AST(const AST& tree);
-
 
 #endif //DLANG_PARSE_HPP

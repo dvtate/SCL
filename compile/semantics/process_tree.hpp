@@ -45,8 +45,8 @@ public:
 	unsigned long long int pos;
 	std::string file;
 	bool is_warn;
-	SemanticError(std::string message, const unsigned long long position, std::string fname, bool is_warning = false):
-			msg(std::move(message)), pos(position), file(std::move(fname)), is_warn(is_warning) {}
+	SemanticError(const std::string& message, const unsigned long long position, const std::string& fname, bool is_warning = false):
+			msg(message), pos(position), file(fname), is_warn(is_warning) {}
 };
 
 

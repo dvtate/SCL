@@ -24,12 +24,12 @@ public:
 
 	// unique numeric identifier for user-defined symbol
 	// hash(int) is faster than hash(string)
-	static uint64_t _uid; // {0}
-	uint64_t id;
+	static int64_t _uid;
+	int64_t id;
 	std::string name;
 
 	MutilatedSymbol(): id(_uid++) {}
-	explicit MutilatedSymbol(const std::string uname): id(_uid++), name(std::move(uname)) {}
+	explicit MutilatedSymbol(std::string uname): id(_uid++), name(std::move(uname)) {}
 	MutilatedSymbol(const MutilatedSymbol& cpy) = default;
 
 };
@@ -37,11 +37,11 @@ public:
 class Program;
 
 // everything is a macro
-
+// bulk of compilation effort is done here as all user-level code is inside macros
 class ParsedMacro {
 public:
 	// identifiers declared in macro scope
-	std::unordered_map<std::string, MutilatedSymbol> decl_id;
+	std::unordered_map<std::string, MutilatedSymbol> declarations;
 
 	// TODO: input/output types
 
@@ -63,14 +63,20 @@ public:
 	Program* compiler;
 
 	ParsedMacro(AST& tree, std::string file_name,
-			std::vector<ParsedMacro*> parents, Program* prog);
+			std::vector<ParsedMacro*> parents, Program* prog,
+			std::unordered_map<std::string, MutilatedSymbol> locals = {});
 	ParsedMacro(const ParsedMacro& other) = default;
 
+	uint64_t find_id(const std::string& name);
 	inline uint64_t declare_id(const std::string& id_name) {
-		MutilatedSymbol&& ms = MutilatedSymbol(id_name);
-		const uint64_t ret = ms.id;
-		decl_id[id_name] = ms;
-		return ret;
+		auto occ = this->declarations.find(id_name);
+		if (occ == this->declarations.end()) {
+			MutilatedSymbol&& ms = MutilatedSymbol(id_name);
+			const uint64_t ret = ms.id;
+			declarations[id_name] = ms;
+			return ret;
+		}
+		return 0;
 	}
 
 	// translating different branch types into bytecode and populating internal structures
@@ -79,8 +85,11 @@ public:
 	void read_num_lit(AST&);
 	void read_string_lit(AST&);
 	void read_decl(AST&);
+	void read_id(AST&);
+	void read_operation(AST&);
+	void read_macro_lit(AST&);
+	void read_macro_invoke(AST&);
 
-	uint64_t find_id(const std::string& name);
 };
 
 class ParsedLiteral {
@@ -106,10 +115,14 @@ public:
 		// TODO: return true if macros are compatible... (reduce number of simple, context-free macros stored in literal header)
 		if (this->type == LitType::MACRO)
 			return false;
+
+		// make compiler stop complain
+		return false;
 	}
+
 };
 
-// handles compilation
+// combining different systems and converting different data to desired formats
 class Program {
 public:
 	// literals.back() == main entry point
@@ -120,17 +133,20 @@ public:
 	std::unordered_map<std::string, std::vector<std::pair<std::size_t, unsigned long long>>> translated_positions;
 
 
-	Program(std::string fname);
+	Program(std::string);
+	Program() = default;
 
-	std::vector<Command> compile();
+	std::vector<SemanticError> compile(std::vector<Command>& ret);
 
 	// emplace a parsed literal into literals header
 	// return literal index
 	std::size_t empl_lit(ParsedLiteral&& lit);
 
+	// used to populate internal structures
 	void load_macro(ParsedMacro& macro);
+	void load_file(const std::string& fname);
+
 };
 
-// std::vector<Command> translate_tree(AST& t);
 
 #endif //DLANG_COMPILE_HPP

@@ -437,22 +437,22 @@ AST parse(const std::vector<Token>& tokens) {
 
 	while (i < tokens.size()) {
 		AST tok = next_node(tokens, i, stack);
-		std::cout <<"Lookahead: " << debug_AST(tok) <<std::endl;
+//		std::cout <<"Lookahead: " << debug_AST(tok) <<std::endl;
 		do {
-			std::cout <<"Stack: ";
-			for (const AST& n : stack)
-				std::cout <<debug_AST(n) << "   ";
-			std::cout <<std::endl;
+//			std::cout <<"Stack: ";
+//			for (const AST& n : stack)
+//				std::cout <<debug_AST(n) << "   ";
+//			std::cout <<std::endl;
 		} while (reduce(tokens, i, stack, tok));
 
 		if (can_shift(tok))
 			stack.emplace_back(tok);
 	}
 
-	std::cout <<"\nStack: ";
-	for (const AST& n : stack)
-		std::cout <<debug_AST(n) << "   ";
-	std::cout <<std::endl;
+//	std::cout <<"\nStack: ";
+//	for (const AST& n : stack)
+//		std::cout <<debug_AST(n) << "   ";
+//	std::cout <<std::endl;
 
 	return stack.back();
 
