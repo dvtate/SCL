@@ -295,7 +295,11 @@ static inline bool reduce_operators(std::vector<struct AST>& stack, const AST& n
 	// assumed/given end of expr, reduce it before adding more
 	if ((n.type != AST::NodeType::LIST_OPEN && n.type != AST::PAREN_OPEN && isOperand(stack.back()))
 		|| (stack.back().token.token == ";" && stack.back().type != AST::NodeType::STATEMENTS)) {
-		reduce_operator(stack, prev_operator(stack));
+		auto p_op_i = prev_operator(stack);
+		if (p_op_i < 0)
+			return false;
+
+		reduce_operator(stack, p_op_i);
 		return true;
 	}
 
@@ -416,6 +420,9 @@ static inline bool reduce(const std::vector<Token>& tokens, size_t& i, std::vect
 	if (stack.empty())
 		return false;
 
+
+	// TODO: if <eof> or <;> try to reduce to single statements token (stack.insert(...))
+
 	return
 			reduce_invocations(stack)
 			||
@@ -437,22 +444,22 @@ AST parse(const std::vector<Token>& tokens) {
 
 	while (i < tokens.size()) {
 		AST tok = next_node(tokens, i, stack);
-//		std::cout <<"Lookahead: " << debug_AST(tok) <<std::endl;
+		std::cout <<"Lookahead: " << debug_AST(tok) <<std::endl;
 		do {
-//			std::cout <<"Stack: ";
-//			for (const AST& n : stack)
-//				std::cout <<debug_AST(n) << "   ";
-//			std::cout <<std::endl;
+			std::cout <<"Stack: ";
+			for (const AST& n : stack)
+				std::cout <<debug_AST(n) << "   ";
+			std::cout <<std::endl;
 		} while (reduce(tokens, i, stack, tok));
 
 		if (can_shift(tok))
 			stack.emplace_back(tok);
 	}
 
-//	std::cout <<"\nStack: ";
-//	for (const AST& n : stack)
-//		std::cout <<debug_AST(n) << "   ";
-//	std::cout <<std::endl;
+	std::cout <<"\nStack: ";
+	for (const AST& n : stack)
+		std::cout <<debug_AST(n) << "   ";
+	std::cout <<std::endl;
 
 	return stack.back();
 

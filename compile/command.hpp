@@ -21,11 +21,12 @@ public:
 		START_LIT_STRING = 1,
 		START_LIT_MACRO,
 		START_LIT_JSON,
+
+		END_LIT_SECTION,
 		//END_LIT_STRING,		// just use '\0'...
 		END_LIT_MACRO,
 		//END_LIT_JSON,			// just use '\0'
 
-		END_LIT_SECTION,
 
 		// these can go in macro bodies
 		I64_LIT,		// push int literal onto stack (too small for header)

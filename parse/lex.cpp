@@ -243,8 +243,8 @@ std::vector<Token> tokenize_stream(std::istream& in) {
 	for (; ;) {
 		const size_t prev_i = i;
 		t = get_token(buff, i, read);
-		t.pos = prev_i;
-		pos += i - prev_i;
+		t.pos = pos;
+		pos += i > prev_i ? (i - prev_i) : 0;
 
 
 		if (t.type == Token::t::END) {
@@ -262,7 +262,7 @@ std::vector<Token> tokenize_stream(std::istream& in) {
 		} else if (t.type == Token::t::ERROR) {
 			return std::vector<Token>({ t });
 		} else {
-			//std::cout <<"new tok: " <<t.type <<':' <<t.token <<std::endl;
+//			std::cout <<"new tok: " <<t.type <<':' <<t.token <<':' <<t.pos << '/' <<i <<std::endl;
 			ret.emplace_back(t);
 		}
 	}
