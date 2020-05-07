@@ -93,7 +93,7 @@ public:
 			default:						return std::string("unknown") + std::to_string(this->type);
 		}
 	}
-	std::string short_type_name() const noexcept {
+	[[nodiscard]] std::string short_type_name() const noexcept {
 		switch (this->type) {
 			case NodeType::STATEMENTS:		return "SEMIS";
 			case NodeType::OPERATION:		return "OP_EXPR";
@@ -121,17 +121,16 @@ public:
 	}
 };
 
-
 class SyntaxError {
 public:
 	Token token;
 	std::string msg;
 
 	SyntaxError(Token _token, std::string _message):
-			token(std::move(_token)), msg(std::move(_message)) { }
+		token(std::move(_token)), msg(std::move(_message)) { }
 };
 
-
+//
 AST parse(const std::vector<Token>& tokens);
 
 // Lisp representation

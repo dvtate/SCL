@@ -72,11 +72,22 @@ int main(int argc, char** argv) {
 	std::vector<Command> bytecode;
 	std::vector<SemanticError> errs = p.compile(bytecode);
 
+	//
 	if (!errs.empty()) {
+		bool fatal = false;
+		auto fis = std::ifstream(fname); // reuse istream
 		for (auto& e : errs)
-			std::cout <<"Compiler Error: " <<e.msg <<std::endl
-				<<util::show_line_pos(fname, e.pos) <<std::endl;
-		return 1;
+			if (e.is_warn) {
+				std::cout <<"Compiler Warning: " <<e.msg <<std::endl
+						  << util::show_line_pos(fis, e.pos, fname);
+			} else {
+				std::cout <<"Compiler Error: " <<e.msg <<std::endl
+						<<util::show_line_pos(fis, e.pos, fname) <<std::endl;
+				fatal = true;
+			}
+		
+		if (fatal)
+			return 1;
 	}
 
 	if (out_bc)

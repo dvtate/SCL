@@ -19,10 +19,14 @@ Currently more focused on language stuff than main program, sorry this is ugly f
 - [ ] No args : run REPL
 
 # Basic Syntax
+Note these are
+- 1. Mostly not implemented yet: building things in phases starting with basic functionality
+- 2. Not set in stone: 
 
 ## Language Structure
 - Basic Syntax is largely inspired by JavaScript as it's the most popular language currently.
 - Statements end with semicolons (`;`)
+    - In many cases they are optional, but it's best to just 
 - Not whitespace dependent
 
 ## Comments
@@ -32,6 +36,13 @@ These get ignored
 
 ## Variables/References
 
+### Builtin Glboal Variables
+These are likely to change. All of these values are reassignable and can be referenced and called within other scopes. 
+- `print`: write values to terminal (ie: `print("Hello, world!")`)
+- `input`: read values from terminal
+- `i`: command line arguments (Note: only at global scope, see macros section)
+- `o`: leave current scope with return value provided as argument (ie: `o(-1)`)
+
 ### Declaration
 You can declare a variable using the let operator. 
 ```
@@ -39,6 +50,7 @@ let name = "John Smith";
 let age = 30, vehicle;
 vehicle = "Hot rod"; 
 ```
+
 ### Referencing
 It's important to note that all variables are actually references, (more on this later). To copy a variable by value instead of by reference use the `$` operator.
 ```
@@ -60,15 +72,37 @@ let c = $b;
 ```
 
 ## Values
-Supports JSON data. 
+Supports any valid JSON data. Note there are a number of functions 
 - [x] Strings `"hello"`
 - [x] Ints `10`
 - [x] Floats `1.2`
-- [ ] objects/dicts `{}`
-- [ ] lists/arrays `[]`
+- [ ] objects/dicts `{ "temp": 98.6, }`
+- [ ] lists/arrays `[1, 2.5, "cat" ]`
 
 ## Macros/Lambdas
 Macros/Lambdas are like first-class functions except they only have one input and one output.
-- WiP...
+
+### Making a Macro
+- Macro literals are enclosed in `(:` `)`
+- Variables can reference macros just like any other data, however code cannot modify their internals
+```
+let name = input();
+let say_hello = (:
+    print("hello, " + input);
+);
+say_hello(); // greets user
+```
+
+### Input and Output
+Input is accessible via the local variable i. Use the local variable o to return a value. Although you can use i and o themselves, declaring variables for them can improve clarity.
+```
+let greeting = (:
+    let name = i;
+    let return = o;
+    return("Hello, " + name);
+);
+print(greeting(input()))
+```
 
 ## More coming soon
+Some of these features already aren't in this rough draft of software, 
