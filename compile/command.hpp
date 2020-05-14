@@ -101,15 +101,15 @@ public:
 
 				// indented bc must be within macro body
 			case OPCode::I64_LIT:
-				return "\tint64 " + std::to_string(std::get<int64_t>(this->arg)) + "\n";
+				return "\tI64 " + std::to_string(std::get<int64_t>(this->arg)) + "\n";
 			case OPCode::F64_LIT:
-				return "\tdouble " + std::to_string(std::get<double>(this->arg))  + "\n";
+				return "\tF64 " + std::to_string(std::get<double>(this->arg))  + "\n";
 			case OPCode::DECL_ID:
-				return "\tlet " + std::to_string((uint64_t) std::get<int64_t>(this->arg)) + "\n";
+				return "\tLET_ID " + std::to_string((uint64_t) std::get<int64_t>(this->arg)) + "\n";
 			case OPCode::USE_ID:
-				return "\tid $" + std::to_string((uint64_t) std::get<int64_t>(this->arg)) + "\n";
+				return "\tUSE_ID " + std::to_string((uint64_t) std::get<int64_t>(this->arg)) + "\n";
 			case OPCode::USE_LIT:
-				return "\tliteral #" + std::to_string((uint64_t) std::get<int64_t>(this->arg)) + "\n";
+				return "\tUSE_LIT " + std::to_string((uint64_t) std::get<int64_t>(this->arg)) + "\n";
 			case OPCode::BUILTIN_OP:
 				// switch (std::get<int16_t>(this->arg)) { ... }
 				return "\tOP #" + std::to_string(std::get<uint16_t>(this->arg)) + "\n";
@@ -117,15 +117,15 @@ public:
 				// switch (std::get<int16_t>(this->arg)) { ... }
 				return "\tKW_LIT #" + std::to_string(std::get<uint16_t>(this->arg)) + "\n";
 			case OPCode::CLEAR_STACK:
-				return "\tClear stack\n";
+				return "\tCLEAR_STACK\n";
 			case OPCode::MACRO_INVOKE:
-				return "\tCall Macro\n";
+				return "\tINVOKE\n";
 			case OPCode::VAL_EMPTY:
-				return "\tempty";
+				return "\tC_EMPTY";
 			case OPCode::VAL_FALSE:
-				return "\tfalse";
+				return "\tC_FALSE";
 			case OPCode::VAL_TRUE:
-				return "\ttrue";
+				return "\tC_TRUE";
 
 				// fault table
 

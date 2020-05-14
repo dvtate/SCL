@@ -3,3 +3,7 @@
 //
 
 #include "reference.hpp"
+
+Handle::Handle(const T v) {
+	ptr = new T(v);
+}
