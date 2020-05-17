@@ -8,26 +8,29 @@
 #include <cinttypes>
 #include <variant>
 
-#include "rt_macro.hpp"
-#include "reference.hpp"
-
+#include "handle.hpp"
+#include "closure.hpp"
 
 class Value {
 public:
-	std::variant<double, int64_t, Handle<Value>, RTMacro> v;
+	std::variant<double, int64_t, Handle<Value>, Closure> v;
 	enum VType {
 		FLOAT,
 		INT64,
 		REF,
-		MACRO,
+		LAM,
 		EMPTY
 	} type;
 
 	Value(): type(VType::EMPTY) {}
-	Value(double in): type(VType::FLOAT), v(in) {}
-	Value(int64_t in): type(VType::INT64), v(in) {}
-	Value(Handle<Value> in): type(VType::REF), v(in) {}
-	Value(RTMacro in);
+	explicit Value(double in):
+		type(VType::FLOAT),		v(in) {}
+	explicit Value(int64_t in):
+		type(VType::INT64), 	v(in) {}
+	explicit Value(Handle<Value> in):
+		type(VType::REF),		v(in) {}
+	explicit Value(Closure in):
+		type(VType::LAM),		v(in) {}
 
 };
 

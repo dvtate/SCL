@@ -5,3 +5,9 @@
 #include "frame.hpp"
 
 uint64_t Frame::_uid = 0;
+
+
+
+Frame::Frame() : id(_uid++) {
+
+}

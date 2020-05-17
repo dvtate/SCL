@@ -8,17 +8,20 @@
 #include <vector>
 #include <cstdint>
 
+#include "closure.hpp"
+
 // Execution frame
 class Frame {
 public:
 	static uint64_t _uid;
+	uint64_t id;
+
+	std::vector<Closure> call_stack;
+	std::vector<std::vector<Value>> eval_stack;
+	explicit Frame();
 
 
-	std::vector<char> bytecode;
-
-
-
-
+	// load lit
 
 };
 
