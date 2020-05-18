@@ -11,17 +11,30 @@
 #include <vector>
 
 #include "closure.hpp"
+#include "../compile/command.hpp"
 
-class ClosureTemplate {
+
+// macro definition
+class ClosureDef {
+public:
+	class Instr {
+	public:
+		using OPcode = Command::OPCode;
+		OPcode instr;
+		union {
+			int64_t i;
+			double v;
+		};
+	};
+
 	std::vector<int64_t> capture_ids;
 	std::vector<int64_t> decl_ids;
 	char* body;
 
-
 };
 
 class Literal {
-	std::variant<ClosureTemplate, std::string> v;
+	std::variant<ClosureDef, std::string> v;
 
 };
 

@@ -152,8 +152,8 @@ public:
 		return this->instr < OPCode::END_LIT_SECTION;
 	}
 
-	inline ArgType arg_type() {
-		switch (this->instr) {
+	static inline ArgType arg_type(const OPCode instr) {
+		switch (instr) {
 			case OPCode::F64_LIT:
 				return ArgType::FLOAT;
 			case OPCode::I64_LIT: case OPCode::DECL_ID: case OPCode::USE_ID: case OPCode::USE_LIT:
@@ -167,6 +167,10 @@ public:
 			default:
 				return ArgType::NO_ARG;
 		}
+	}
+
+	[[nodiscard]] inline ArgType arg_type() const {
+		return Command::arg_type(this->instr);
 	}
 
 	// copies compiled instruction into ret
