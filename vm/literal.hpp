@@ -13,10 +13,10 @@
 #include "closure.hpp"
 #include "../compile/command.hpp"
 
-
-// macro definition
 class ClosureDef {
 public:
+
+	// command that falls within a
 	class Instr {
 	public:
 		using OPcode = Command::OPCode;
@@ -27,15 +27,28 @@ public:
 		};
 	};
 
+	// all lexical ids used by this closure and it's nested members
 	std::vector<int64_t> capture_ids;
+
+	// identifiers declared in scope of this closure
 	std::vector<int64_t> decl_ids;
-	char* body;
+
+	// instruction code
+	std::vector<Instr> body;
 
 };
 
 class Literal {
-	std::variant<ClosureDef, std::string> v;
+public:
+	std::variant<ClosureDef, Value> v;
+	enum Ltype {
+		LAM, VAL
+	} type;
 
+	explicit Literal(ClosureDef c): v(c), type(Ltype::LAM) {}
+	Literal(Value v): v(v), type(Ltype::VAL) {}
+
+	Handle<Value> make_instance();
 };
 
 

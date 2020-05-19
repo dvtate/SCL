@@ -5,13 +5,16 @@
 #ifndef DLANG_HANDLE_HPP
 #define DLANG_HANDLE_HPP
 
+// TODO: link w/ gc... make this
 template <class T>
 class Handle {
 public:
-	T* _ptr;
+	T* ptr;
 
-	explicit Handle(): _ptr(nullptr) {};
-	explicit Handle(T* p): _ptr(p) {};
+	explicit Handle(): ptr(nullptr) {};
+	explicit Handle(T* p): ptr(p) {};
+	~Handle() = default;
+
 };
 
 #endif //DLANG_HANDLE_HPP

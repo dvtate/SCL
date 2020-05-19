@@ -185,6 +185,7 @@ public:
 				ret = (char *) realloc(ret, s);
 				strncpy(ret, (char *) &this->instr, 1);
 				strcpy(ret + 1, str.c_str()); // also copies the '\0'
+				ret[str.size() + 2] = OPCode::END_LIT_STRING; // hmm
 				break;
 			}
 			case ArgType::INT16: {

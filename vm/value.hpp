@@ -17,6 +17,7 @@ public:
 	enum VType {
 		FLOAT,
 		INT64,
+		STR,
 		REF,
 		LAM,
 		EMPTY
@@ -25,6 +26,8 @@ public:
 	Value(): type(VType::EMPTY) {}
 	explicit Value(double in):
 		type(VType::FLOAT),		v(in) {}
+	explicit Value(std::string in):
+		type(VType::STR),	v(in) {}
 	explicit Value(int64_t in):
 		type(VType::INT64), 	v(in) {}
 	explicit Value(Handle<Value> in):

@@ -12,8 +12,9 @@
 
 
 class VM {
-	std::vector<Frame> contexts;
-	std::unordered_map<
+	std::vector<Frame> active_contexts;
+	// todo: should be new Type Called Frozen Frame
+	std::unordered_map<int, Frame> idle_contexts;
 };
 
 
