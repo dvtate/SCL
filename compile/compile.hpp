@@ -30,8 +30,8 @@ public:
 
 	MutilatedSymbol(): id(_uid++) {}
 	explicit MutilatedSymbol(std::string uname): id(_uid++), name(std::move(uname)) {}
+	MutilatedSymbol(const std::string name, int64_t id): id(id), name(std::move(name)) {}
 	MutilatedSymbol(const MutilatedSymbol& cpy) = default;
-
 };
 
 class Program;

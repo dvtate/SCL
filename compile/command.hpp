@@ -35,7 +35,7 @@ public:
 			// arg: double
 		DECL_ID,		// declare identifier
 			// arg: int64, idid
-		USE_ID,			// reference identifier
+		USE_ID,			// get value at identifier
 			// arg: int64, idid
 		USE_LIT,		// push literal onto stack
 			// arg: int64, lit id

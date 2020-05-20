@@ -19,11 +19,10 @@ public:
 	std::vector<Closure> call_stack;
 	std::vector<std::vector<Value>> eval_stack;
 	explicit Frame();
-
+	explicit Frame(const Closure& c): call_stack({ c }) {}
 
 	// load lit
 
 };
-
 
 #endif //DLANG_FRAME_HPP

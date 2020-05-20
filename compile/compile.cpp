@@ -101,16 +101,17 @@ void ParsedMacro::read_decl(AST& tree) {
 			if (keyword_values.find(d.token.token) != keyword_values.end()) {
 				this->errors.emplace_back(SemanticError(
 					"Redefinition of global keyword "+ d.token.token,
-					d.token.pos, this->file_name
+					d.token.pos, this->file_name, true
 				));
 			}
 			this->declare_id(d.token.token);
+
 		} else if (d.type == AST::NodeType::OPERATION && d.token.token == "=") {
 			if (!d.members.empty() && d.members[0].type == AST::NodeType::IDENTIFIER) {
 				if (keyword_values.find(d.members[0].token.token) != keyword_values.end()) {
 					this->errors.emplace_back(SemanticError(
 							"Redefinition of global keyword "+ d.members[0].token.token,
-							d.members[0].token.pos, this->file_name
+							d.members[0].token.pos, this->file_name, true
 					));
 				}
 				auto idid = this->declare_id(d.members[0].token.token);
@@ -274,8 +275,12 @@ ParsedMacro::ParsedMacro(AST &tree, std::string file_name, std::vector<ParsedMac
 	file_name(std::move(file_name)), parents(std::move(parents)), compiler(prog)
 {
 	declarations = std::move(locals);
-	declarations["o"] = MutilatedSymbol("o");
-	declarations["i"] = MutilatedSymbol("i");
+	MutilatedSymbol i("i"), o("o");
+	declarations["o"] = o;
+	declarations["i"] = i;
+	this->body.emplace_back(Command(Command::OPCode::DECL_ID, i.id));
+	this->body.emplace_back(Command(Command::OPCode::DECL_ID, o.id));
+
 }
 
 int64_t ParsedMacro::find_id(const std::string& name) {
@@ -347,9 +352,10 @@ void Program::load_file(const std::string& fname) {
 	// implicit main macro
 	ParsedMacro entry(main, fname,
 			std::vector<ParsedMacro*>{}, this,
+			// NOTE: these are technically global... just a hack
 			std::unordered_map<std::string, MutilatedSymbol>{
-		{ "print", MutilatedSymbol("print") },
-		{ "input", MutilatedSymbol("input") }
+		{ "print", MutilatedSymbol("print", 0) },
+		{ "input", MutilatedSymbol("input", 1) }
 	});
 	entry.read_tree(main);
 

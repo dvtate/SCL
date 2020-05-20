@@ -10,31 +10,22 @@
 #include <string>
 #include <vector>
 
-#include "closure.hpp"
 #include "../compile/command.hpp"
+#include "value.hpp"
+
+class BCInstr;
 
 class ClosureDef {
 public:
 
-	// command that falls within a
-	class Instr {
-	public:
-		using OPcode = Command::OPCode;
-		OPcode instr;
-		union {
-			int64_t i;
-			double v;
-		};
-	};
-
-	// all lexical ids used by this closure and it's nested members
+	// all outside, lexical ids used by this closure and it's nested members
 	std::vector<int64_t> capture_ids;
 
 	// identifiers declared in scope of this closure
 	std::vector<int64_t> decl_ids;
 
 	// instruction code
-	std::vector<Instr> body;
+	std::vector<BCInstr> body;
 
 };
 

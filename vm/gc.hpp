@@ -21,8 +21,6 @@
 //		GREY = 2
 //	} mark;
 //
-//	// reference count
-//	std::atomic<unsigned long> rc = 1;
 //};
 //
 //void* gc_malloc(VM& vm, std::size_t size);

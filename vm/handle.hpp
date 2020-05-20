@@ -5,7 +5,7 @@
 #ifndef DLANG_HANDLE_HPP
 #define DLANG_HANDLE_HPP
 
-// TODO: link w/ gc... make this
+// TODO: link w/ gc... make this less meme
 template <class T>
 class Handle {
 public:
@@ -13,6 +13,7 @@ public:
 
 	explicit Handle(): ptr(nullptr) {};
 	explicit Handle(T* p): ptr(p) {};
+	Handle(Handle& other) = default;
 	~Handle() = default;
 
 };
