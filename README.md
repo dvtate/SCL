@@ -21,7 +21,7 @@ Currently more focused on language stuff than main program, sorry this is ugly f
 # Basic Syntax
 Note these are
 - 1. Mostly not implemented yet: building things in phases starting with basic functionality
-- 2. Not set in stone: 
+- 2. Not set in stone: if you have an opinion, send a PR and we can make a better language together.
 
 ## Language Structure
 - Basic Syntax is largely inspired by JavaScript as it's the most popular language currently.
