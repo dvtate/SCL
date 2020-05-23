@@ -9,6 +9,9 @@
 #include "compile/compile.hpp"
 #include "compile/bytecode.hpp"
 #include "util.hpp"
+#include "vm/vm.hpp"
+
+
 // dlang <cmd> <in> options
 
 void print_help_msg(){
@@ -42,10 +45,10 @@ int main(int argc, char** argv) {
 			run = true;
 			break;
 		case 'o':
-			out_bc = true;
+			out_bct = true;
 			break;
 		case 'O':
-			out_bct = true;
+			out_bc = true;
 			break;
 		case 'f':
 			fname = optarg;
@@ -59,7 +62,13 @@ int main(int argc, char** argv) {
 
 	// they want a shell
 	if (fname == nullptr || !(run || out_bc || out_bct)) {
+		print_help_msg();
+	}
 
+
+	if (run) {
+		VM interpreter();
+		return 0;
 	}
 	Program p;
 	try {

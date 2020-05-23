@@ -9,24 +9,40 @@
 #include <variant>
 #include <string>
 #include <vector>
+#include <unordered_set>
 
 #include "../compile/command.hpp"
 #include "value.hpp"
 
-class BCInstr;
+// command that falls within a
+class BCInstr {
+public:
+	using OPCode = Command::OPCode;
+	OPCode instr;
+	union {
+		int64_t i;
+		double v;
+	};
+};
 
 class ClosureDef {
 public:
 
+	// io ids
+	int64_t i_id;
+	int64_t o_id;
+
 	// all outside, lexical ids used by this closure and it's nested members
-	std::vector<int64_t> capture_ids;
+	std::unordered_set<int64_t> capture_ids;
 
 	// identifiers declared in scope of this closure
-	std::vector<int64_t> decl_ids;
+	std::unordered_set<int64_t> decl_ids;
 
 	// instruction code
 	std::vector<BCInstr> body;
 
+	ClosureDef(const std::unordered_set<int64_t>& capture_ids, const std::unordered_set<int64_t>& decl_ids, const std::vector<BCInstr>& body):
+		capture_ids(capture_ids), decl_ids(decl_ids), body(body) {};
 };
 
 class Literal {

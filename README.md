@@ -21,7 +21,7 @@ Currently more focused on language stuff than main program, sorry this is ugly f
 # Basic Syntax
 Note these are
 - 1. Mostly not implemented yet: building things in phases starting with basic functionality
-- 2. Not set in stone: 
+- 2. Not set in stone: if you have an opinion, send a PR and we can make a better language together.
 
 ## Language Structure
 - Basic Syntax is largely inspired by JavaScript as it's the most popular language currently.
@@ -102,6 +102,46 @@ let greeting = (:
     return("Hello, " + name);
 );
 print(greeting(input()))
+```
+
+## Control Flow
+These are currently defined as builtin globals, but in the future they will likely be converted to proper operators. 
+
+### Conditionals
+Traditional If-else style conditionals. Note: the else argument is optional (also note comma separated arguments converted to a list)
+
+```
+let gpa = Number(input());
+
+if (gpa > 4 || gpa < 0, (:
+    print("seems rigged");
+), (:
+    if (gpa >= 2, (:
+        print("PASS");
+    ), (:
+        print("FAIL");
+    ));
+));
+```
+
+### Looping
+#### While Loops
+Pretty standard apart from it not being an operator.
+```
+let n = 0;
+while ((: n < 5 ), (: 
+    n += 1;
+    print(n);
+);
+```
+
+#### Range Based For
+Given increased user tools for control flow (no confusion with return/await/etc. being operators), I don't think this language needs a C-Style For loop. As an alternative Collections have their own implementations of for_each, map, filter, etc. as members.
+
+```
+range(0, 5).for_each((:
+    print(i); // 012345
+));
 ```
 
 ## More coming soon

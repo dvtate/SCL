@@ -13,18 +13,6 @@
 #include "literal.hpp"
 #include "value.hpp"
 
-
-// command that falls within a
-class BCInstr {
-public:
-	using OPcode = Command::OPCode;
-	OPcode instr;
-	union {
-		int64_t i;
-		double v;
-	};
-};
-
 class Frame;
 class Value;
 
@@ -35,9 +23,9 @@ public:
 
 	// captured identifiers
 	std::unordered_map<int64_t, Handle<Value>> vars;
-	std::vector<BCInstr> impl;
 
-	std::variant<std::vector<BCInstr>> impl;
+	// body points to implementation defined in relevant closureDef
+	std::vector<BCInstr>* body;
 	enum ImplType { NATIVE, USER } type;
 
 	Closure(ClosureDef c, Closure parent);

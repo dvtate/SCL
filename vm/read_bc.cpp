@@ -8,7 +8,7 @@
 #include "../compile/command.hpp"
 
 //
-static inline void ignore_until(std::istream& is, Command::OPCode instr) {
+static inline void ignore_until(std::istream& is, BCInstr::OPCode instr) {
 	char c;
 	for (;;) {
 		is >>c;
@@ -17,6 +17,8 @@ static inline void ignore_until(std::istream& is, Command::OPCode instr) {
 		is.ignore(8);
 	}
 }
+
+
 // convert escaped characters into proper ascii codes
 static inline std::string parse_str(std::string in) {
 	// TODO: implement (can steal code from ys)
@@ -25,6 +27,48 @@ static inline std::string parse_str(std::string in) {
 
 
 
+static inline Literal capture_closure(std::istream& is, std::unordered_map<int64_t, std::vector<int64_t>>& nested_macros, std::vector<Literal>& ) {
+	std::vector <BCInstr> body;
+	std::unordered_set <int64_t> decl_ids;
+	std::unordered_set <int64_t> use_ids;
+
+	while (true) {
+		// TODO: capture I_ID, and O_ID
+
+		char c = is.get();
+
+		// the end
+		if (c == BCInstr::OPCode::END_LIT_MACRO) {
+
+			// don't need to capture variables declared within macro scope
+			std::erase_if(use_ids, [&decl_ids](int64_t id){
+				decl_ids.contains(id);
+			});
+
+			return Literal(ClosureDef(use_ids, decl_ids, body));
+		}
+
+		if (c == BCInstr::OPCode::DECL_ID) {
+			// declaring identifier : need to track declarations
+			int64_t idid;
+			is.read((char*) &idid, sizeof(idid));
+			decl_ids.emplace(idid);
+
+		} else if (c == BCInstr::OPCode::USE_ID) {
+			// using identifier : might need to capture from parent scope
+			int64_t idid;
+			is.read((char*) &idid, sizeof(idid));
+			use_ids.emplace(idid);
+
+		} else {
+			BCInstr i;
+			i.instr = (BCInstr::OPCode) c;
+			const Command::ArgType t = Command::arg_type((BCInstr::OPCode) c);
+			if ()
+		}
+	}
+}
+
 
 std::vector<Literal> read_lit_header(std::istream& is) {
 	std::vector<Literal> ret;
@@ -32,15 +76,16 @@ std::vector<Literal> read_lit_header(std::istream& is) {
 	char instr;
 	is >> instr;
 
+	// used to recursively generate capture ids
 	std::map<int64_t, std::vector<int64_t>> nested_closures;
 
-	while (instr != Command::OPCode::END_LIT_SECTION) {
+	while (instr != BCInstr::OPCode::END_LIT_SECTION) {
 
-		if (instr == Command::OPCode::START_LIT_STRING) {
+		if (instr == BCInstr::OPCode::START_LIT_STRING) {
 			char c;
 			std::string strlit;
 			do {
-				is >>c;
+				c = is.get();
 				if (c)
 					strlit += c;
 				else
@@ -48,7 +93,7 @@ std::vector<Literal> read_lit_header(std::istream& is) {
 			} while (c);
 
 			ret.emplace_back(Literal(Value(parse_str(strlit))));
-		} else if (instr == Command::OPCode::START_LIT_MACRO){
+		} else if (instr == BCInstr::OPCode::START_LIT_MACRO){
 
 		}
 

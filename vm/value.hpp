@@ -13,10 +13,13 @@
 
 class Value {
 public:
-	std::variant<double, int64_t, Handle<Value>, Closure> v;
+	using int_t = int64_t;
+	using float_t = double;
+
+	std::variant<float_t, int_t, Handle<Value>, Closure> v;
 	enum VType {
 		FLOAT,
-		INT64,
+		INT,
 		STR,
 		REF,
 		LAM,
@@ -24,17 +27,18 @@ public:
 	} type;
 
 	Value(): type(VType::EMPTY) {}
-	explicit Value(double in):
+	explicit Value(float_t in):
 		type(VType::FLOAT),		v(in) {}
 	explicit Value(std::string in):
 		type(VType::STR),	v(in) {}
-	explicit Value(int64_t in):
-		type(VType::INT64), 	v(in) {}
+	explicit Value(int_t in):
+		type(VType::INT), 	v(in) {}
 	explicit Value(Handle<Value> in):
 		type(VType::REF),		v(in) {}
 	explicit Value(Closure in):
 		type(VType::LAM),		v(in) {}
 
+	Value(const Value& other) = default;
 };
 
 
