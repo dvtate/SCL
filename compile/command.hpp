@@ -15,7 +15,7 @@ class Command {
 public:
 
 	// mnemonic instruction
-	enum OPCode : char {
+	enum OPCode : unsigned char {
 		END_LIT_STRING = 0,
 		// these go in lit header
 		START_LIT_STRING = 1,
@@ -183,7 +183,7 @@ public:
 				auto &str = std::get<std::string>(this->arg);
 				s += str.size() + 1;
 				ret = (char *) realloc(ret, s);
-				strncpy(ret, (char *) &this->instr, 1);
+				ret[0] = this->instr;
 				strcpy(ret + 1, str.c_str()); // also copies the '\0'
 				ret[str.size() + 2] = OPCode::END_LIT_STRING; // hmm
 				break;
@@ -192,7 +192,7 @@ public:
 				s += sizeof(uint16_t);
 				ret = (char *) realloc(ret, s);
 				uint16_t n = std::get<uint16_t>(this->arg);
-				strncpy(ret, (char *) &this->instr, 1);
+				ret[0] = this->instr;
 				strncpy(ret + 1, (char *) &n, sizeof(uint16_t));
 				break;
 			}
@@ -200,7 +200,7 @@ public:
 				s += sizeof(int64_t);
 				ret = (char *) realloc(ret, s);
 				int64_t n = std::get<int64_t>(this->arg);
-				strncpy(ret, (char *) &this->instr, 1);
+				ret[0] = this->instr;
 				strncpy(ret + 1, (char *) &n, sizeof(int64_t));
 				break;
 			}
@@ -208,18 +208,18 @@ public:
 				s += sizeof(double);
 				ret = (char *) realloc(ret, s);
 				double n = std::get<double>(this->arg);
-				strncpy(ret, (char *) &this->instr, 1);
+				ret[0] = this->instr;
 				strncpy(ret + 1, (char *) &n, sizeof(double));
 				break;
 			}
 			case ArgType::NO_ARG: {
 				ret = (char *) realloc(ret, s);
-				strncpy(ret, (char *) &this->instr, 1);
+				ret[0] = this->instr;
 				break;
 			}
 			default: {
 				ret = (char *) realloc(ret, s);
-				strncpy(ret, (char *) &this->instr, 1);
+				ret[0] = this->instr;
 				break;
 			}
 		}

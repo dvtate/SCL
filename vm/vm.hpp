@@ -49,12 +49,16 @@ public:
 	// values we're working with
 	std::vector<Value> eval_stack;
 
-	Frame(Runtime* rt, const Closure& body, unsigned int pos = 0, std::vector<Value> eval_stack = {}):
-			rt(rt), closure(body), pos(pos), eval_stack(std::move(eval_stack)) {}
+	Frame(Runtime* rt, Closure body, unsigned int pos = 0, std::vector<Value> eval_stack = {}):
+			rt(rt), closure(std::move(body)), pos(pos), eval_stack(std::move(eval_stack))
+		{}
 
 	// run a single bytecode instruction and return
-	inline void tick(){
+	inline bool tick(){
+		if (pos >= this->closure.body->size())
+			return true;
 		exec_bc_instr(*this, (*this->closure.body)[this->pos++]);
+		return false;
 	}
 };
 
@@ -71,26 +75,29 @@ public:
 	// thread safety as messages can come from different procs/ISR's
 	std::mutex msg_queue_mtx;
 
-	Runtime(VM* vm): vm(vm) { }
+	explicit Runtime(VM* vm): vm(vm) { }
 
 	// pushes msg onto msg queue
 	void recv_msg(RTMessage* msg) {
 		std::lock_guard<std::mutex> m(this->msg_queue_mtx);
-		this->_msg_queue.emplace(msg);
+		this->_msg_queue.emplace_back(msg);
 	}
 
 	// clears msg queue and returns old contents
 	// NOTE: expects caller to Free pointers
-	std::queue<RTMessage*> clear_msg_queue() {
-		std::queue<RTMessage*> cpy = {};
+	std::vector<RTMessage*> clear_msg_queue() {
+		std::vector<RTMessage*> cpy = {};
 		std::lock_guard<std::mutex> m(this->msg_queue_mtx);
 		std::swap(cpy, this->_msg_queue);
 		return cpy;
 	}
 
+	void run();
+
 private:
 	// mutex guards on r/w
-	std::queue<RTMessage*> _msg_queue;
+	// NOTE: treated as queue because all msgs read at once in FIFO order
+	std::vector<RTMessage*> _msg_queue;
 
 };
 
@@ -105,7 +112,7 @@ public:
 
 	VM(std::vector<Literal> lit_header, std::vector<std::string> argv);
 
-	void start();
+	void run();
 };
 
 /*

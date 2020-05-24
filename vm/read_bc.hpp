@@ -14,5 +14,6 @@
 std::vector<Literal> read_lit_header(std::istream& is);
 
 // TODO: read fault table...
+// TODO: metadata section
 
 #endif //DLANG_READ_BC_HPP

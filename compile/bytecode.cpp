@@ -28,7 +28,7 @@ std::vector<char> compile_bin(std::vector<Command> cmds)
 	int n;
 	for (Command& cmd : cmds) {
 		n = cmd.compile(buff);
-		for (unsigned short i = 0; i < n; i++)
+		for (int i = 0; i < n; i++)
 			ret.push_back(buff[i]);
 	}
 

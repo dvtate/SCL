@@ -12,6 +12,18 @@
 #include "closure.hpp"
 
 
+
+// hack to figure out what I put in std::variant
+template <typename> struct tag { }; // <== this one IS literal
+template <typename T, typename V>
+	struct get_index;
+template <typename T, typename... Ts>
+	struct get_index<T, std::variant<Ts...>>
+		: std::integral_constant<size_t, std::variant<tag<Ts>...>(tag<T>()).index()>
+{ };
+
+
+
 // Native functions acessable to user
 class Frame;
 class NativeFunction {
@@ -22,21 +34,27 @@ public:
 
 class Value {
 public:
+	using empty_t = std::monostate;
 	using int_t = int64_t;
 	using float_t = double;
-	using empty_t = char;
+	using str_t = std::string;
+	using ref_t = Handle<Value>;
+	using lam_t = Closure;
+	using n_fn_t = Handle<NativeFunction>;
+	using bool_t = char;
 
-
-	std::variant<std::monostate, float_t, int_t, std::string, Handle<Value>, Closure, Handle<NativeFunction>, empty_t> v;
+	std::variant<std::monostate, float_t, int_t, std::string, Handle<Value>, Closure, Handle<NativeFunction>> v;
 
 	enum VType {
-		FLOAT,		// float
-		INT,		// int
-		STR,		// string
-		REF,		// reference	Handle<>
-		LAM,		//	lambda		Closure
-		EMPTY,		// empty		no v
-		N_FN,		// native function
+		ERR = -1,
+		UNDEF = 0,
+		FLOAT = 1,		// float
+		INT = 2,		// int
+		STR = 3,		// string
+		REF = 4,		// reference	Handle<>
+		LAM = 5,		//	lambda		Closure
+		N_FN = 6,		// native function
+		EMPTY = 7,		// empty		no v
 	};
 
 	static VType type(int v) {
@@ -45,7 +63,7 @@ public:
 			return VType::EMPTY;
 
 		const static VType t[] {
-			VType::EMPTY,
+			VType::ERR,
 			VType::EMPTY,
 			VType::FLOAT,
 			VType::INT,

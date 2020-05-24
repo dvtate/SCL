@@ -61,6 +61,7 @@ public:
 		return Literal::type(v.index());
 	}
 
+	Literal() {}
 	explicit Literal(const ClosureDef& c): v(c) {}
 	explicit Literal(const std::string& str, bool is_json = false);
 

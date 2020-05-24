@@ -16,6 +16,17 @@ public:
 	Handle(const Handle& other): ptr(other.ptr) {}
 	~Handle() = default;
 
+	T* get_ptr(){
+		// return (T*)((char*) this->ptr + 1);
+		return this->ptr;
+	}
 };
+
+template <class T>
+class StaticHandle : public Handle<T> {
+
+	// TODO: change constructor so that ptr isn't managed by gc
+};
+
 
 #endif //DLANG_HANDLE_HPP

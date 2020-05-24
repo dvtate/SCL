@@ -3,6 +3,7 @@
 #include <getopt.h>
 #include <iostream>
 
+#define DLANG_DEBUG
 
 #include "parse/lex.hpp"
 #include "parse/parse.hpp"
@@ -68,9 +69,18 @@ int main(int argc, char** argv) {
 
 	if (run) {
 		std::ifstream bc_src = std::ifstream(fname);
-		// TODO: capture argv...
-		VM interpreter{read_lit_header(bc_src), { "argv not implemented" }};
+#ifdef DLANG_DEBUG
+		std::cout <<"reading lit header... ";
+#endif
+		std::vector<Literal>&& lits = read_lit_header(bc_src);
 
+#ifdef DLANG_DEBUG
+		std::cout <<"done\n";
+#endif
+		// TODO: capture argv...
+
+		VM interpreter{lits, { "argv not implemented" }};
+		interpreter.run();
 		return 0; // never gets called... (hopefully)
 	}
 	Program p;

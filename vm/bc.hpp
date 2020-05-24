@@ -22,5 +22,4 @@ public:
 
 };
 
-
 #endif //DLANG_BC_HPP

@@ -24,6 +24,10 @@ const static std::unordered_map<std::string, Command> keyword_values = {
 		{ "input", Command(Command::OPCode::KW_VAL, (uint16_t) 4) },
 };
 
+const static std::unordered_map<std::string, int64_t> global_ids {
+	{ "print", 1 },
+};
+
 // maybe later want first 10 symbol ids to be reserved
 int64_t MutilatedSymbol::_uid = 10;
 
@@ -284,6 +288,10 @@ ParsedMacro::ParsedMacro(AST &tree, std::string file_name, std::vector<ParsedMac
 }
 
 int64_t ParsedMacro::find_id(const std::string& name) {
+	// TODO: handle others
+	// global id
+	if (name == "print")
+		return 1;
 	auto it = this->declarations.find(name);
 	if (it != this->declarations.end())
 		return it->second.id;

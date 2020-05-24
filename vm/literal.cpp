@@ -2,12 +2,14 @@
 // Created by tate on 17-05-20.
 //
 
-
+#include <iostream>
 #include "literal.hpp"
 #include "value.hpp"
 
 
 Literal::Literal(const std::string& str, bool is_json) {
 	// TODO: is_json determines how to parse...
-	this->v = std::variant<ClosureDef, Value>(Value(str));
+
+//	std::cout <<std::boolalpha <<std::holds_alternative<Value::str_t>(Value(str).v) <<std::endl;
+	this->v = Value(str);
 }
