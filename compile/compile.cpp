@@ -213,7 +213,7 @@ void ParsedMacro::read_macro_invoke(AST& t) {
 
 	// TODO: typecheck
 
-	this->body.emplace_back(Command(Command::OPCode::MACRO_INVOKE));
+	this->body.emplace_back(Command(Command::OPCode::INVOKE));
 
 
 }

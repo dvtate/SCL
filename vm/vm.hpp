@@ -29,14 +29,14 @@ using SyncCallStack = std::vector<std::shared_ptr<Frame>>;
 class RTMessage {
 public:
 	virtual ~RTMessage(){};
-	virtual int operator()(Runtime&) = 0;
+	virtual void action(Runtime&) = 0;
 };
 
 
 class Frame {
 public:
 
-	std::weak_ptr<Runtime> rt;
+	Runtime* rt;
 
 	// closure we're running
 	Closure closure;
@@ -47,8 +47,8 @@ public:
 	// values we're working with
 	std::vector<Value> eval_stack;
 
-	Frame(const Closure& body, unsigned int pos = 0, std::vector<Value> eval_stack = {}):
-			closure(body), pos(pos), eval_stack(std::move(eval_stack)) {}
+	Frame(Runtime* rt, const Closure& body, unsigned int pos = 0, std::vector<Value> eval_stack = {}):
+			rt(rt), closure(body), pos(pos), eval_stack(std::move(eval_stack)) {}
 
 	// run a single bytecode instruction and return
 	void tick();
@@ -57,7 +57,7 @@ public:
 // different threads running on same process
 class Runtime {
 public:
-	std::weak_ptr<VM> vm;
+	VM* vm;
 	// currently running thread
 	std::shared_ptr<SyncCallStack> running;
 
@@ -67,11 +67,11 @@ public:
 	// mutex guards on write
 	std::queue<RTMessage> _msg_queue;
 
-	// thread safety as messages can come from different threads/ISR's
+	// thread safety as messages can come from different procs/ISR's
 	std::mutex msg_queue_mtx;
 
-	Runtime(std::weak_ptr<VM> vm, std::shared_ptr<SyncCallStack> run):
-		vm(vm), running(run) { }
+	Runtime(VM* vm, std::shared_ptr<SyncCallStack> run):
+		vm(vm), running(std::move(run)) { }
 
 	// pushes msg onto msg queue
 	void recv_msg(const RTMessage& msg) {
@@ -95,7 +95,7 @@ public:
 
 	std::vector<Literal> literals;
 
-	Runtime main_thread;
+	std::shared_ptr<Runtime> main_thread;
 	std::list<std::shared_ptr<Runtime>> worker_threads;
 
 	VM(std::vector<Literal> lit_header);

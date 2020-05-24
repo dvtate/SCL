@@ -18,18 +18,20 @@ class Value;
 
 class Closure {
 public:
+
 	static uint64_t _uid;
 	uint64_t id;
+
+	// arg + ret ids
+	int64_t i_id, o_id;
 
 	// captured identifiers
 	std::unordered_map<int64_t, Handle<Value>> vars;
 
-	// body points to implementation defined in relevant closureDef
+	// body points to implementation defined by relevant closureDef
 	std::vector<BCInstr>* body;
-	enum ImplType { NATIVE, USER } type;
 
-	Closure(ClosureDef c, Closure parent);
-	Closure(ClosureDef c, std::vector<std::string> argv)
+
 };
 
 #endif //DLANG_CLOSURE_HPP

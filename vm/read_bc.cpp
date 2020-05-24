@@ -3,6 +3,9 @@
 //
 
 #include <map>
+#include <set>
+#include <algorithm>
+#include <iostream>
 #include "read_bc.hpp"
 #include "literal.hpp"
 #include "../compile/command.hpp"
@@ -26,45 +29,88 @@ static inline std::string parse_str(std::string in) {
 }
 
 
-
-static inline Literal capture_closure(std::istream& is, std::unordered_map<int64_t, std::vector<int64_t>>& nested_macros, std::vector<Literal>& ) {
+static inline Literal capture_closure(std::istream& is,
+		std::unordered_map<int64_t, std::vector<int64_t>>& nested_macros) {
 	std::vector <BCInstr> body;
-	std::unordered_set <int64_t> decl_ids;
-	std::unordered_set <int64_t> use_ids;
+	std::vector <int64_t> decl_ids;
+	std::set <int64_t> use_ids;
+
+	int64_t i_id = 0, o_id = 0;
+
+	char c;
+
+	// read i
+	c = is.get();
+	if (c != BCInstr::OPCode::DECL_ID) {
+		std::cout <<"expected i_id at start of macro lit\n";
+		is.unget();
+	} else {
+		is.read((char*) &i_id, sizeof(i_id));
+	}
+
+	// read o
+	c = is.get();
+	if (c != BCInstr::OPCode::DECL_ID) {
+		std::cout <<"expected o_id at start of macro lit\n";
+		is.unget();
+	} else {
+		is.read((char*) &o_id, sizeof(o_id));
+	}
 
 	while (true) {
-		// TODO: capture I_ID, and O_ID
 
-		char c = is.get();
+		c = is.get();
 
-		// the end
+		// break condition
 		if (c == BCInstr::OPCode::END_LIT_MACRO) {
 
 			// don't need to capture variables declared within macro scope
-			std::erase_if(use_ids, [&decl_ids](int64_t id){
-				decl_ids.contains(id);
-			});
+//			std::erase_if(use_ids, [&decl_ids](int64_t id){
+//				decl_ids.contains(id);
+//			});
+			std::vector<int64_t> capture_ids;
+			std::set_difference(use_ids.begin(), use_ids.end(),
+					decl_ids.begin(), decl_ids.end(),
+					std::inserter(capture_ids, capture_ids.begin()));
 
-			return Literal(ClosureDef(use_ids, decl_ids, body));
+			return Literal(ClosureDef(capture_ids, decl_ids, body, i_id, o_id));
 		}
 
 		if (c == BCInstr::OPCode::DECL_ID) {
 			// declaring identifier : need to track declarations
 			int64_t idid;
 			is.read((char*) &idid, sizeof(idid));
-			decl_ids.emplace(idid);
+			decl_ids.emplace_back(idid);
 
 		} else if (c == BCInstr::OPCode::USE_ID) {
 			// using identifier : might need to capture from parent scope
 			int64_t idid;
 			is.read((char*) &idid, sizeof(idid));
 			use_ids.emplace(idid);
-
+			BCInstr cmd{};
+			cmd.instr = (BCInstr::OPCode) c;
+			cmd.i = idid;
+			body.emplace_back(cmd);
 		} else {
-			BCInstr i;
-			i.instr = (BCInstr::OPCode) c;
+			// generic instruction
+			BCInstr cmd{};
+			cmd.instr = (BCInstr::OPCode) c;
 			const Command::ArgType t = Command::arg_type((BCInstr::OPCode) c);
-			if ()
+			if (t == Command::ArgType::INT64) {
+				int64_t iv;
+				is.read((char*)&iv, sizeof(iv));
+				cmd.i = iv;
+			} else if (t == Command::ArgType::FLOAT) {
+				double arg;
+				is.read((char*)&arg, sizeof(arg));
+				cmd.v = arg;
+			} else if (t == Command::ArgType::INT16) {
+				int16_t arg;
+				is.read((char*)&arg, sizeof(arg));
+				cmd.i = arg;
+			}
+
+			body.emplace_back(cmd);
 		}
 	}
 }

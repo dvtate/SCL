@@ -49,7 +49,7 @@ public:
 		VAL_TRUE,
 		VAL_FALSE,
 
-		MACRO_INVOKE,
+		INVOKE,
 			// no arg
 
 
@@ -118,7 +118,7 @@ public:
 				return "\tKW_LIT #" + std::to_string(std::get<uint16_t>(this->arg)) + "\n";
 			case OPCode::CLEAR_STACK:
 				return "\tCLEAR_STACK\n";
-			case OPCode::MACRO_INVOKE:
+			case OPCode::INVOKE:
 				return "\tINVOKE\n";
 			case OPCode::VAL_EMPTY:
 				return "\tC_EMPTY";

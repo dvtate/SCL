@@ -23,6 +23,10 @@ public:
 		int64_t i;
 		double v;
 	};
+	BCInstr() = default;
+	BCInstr(OPCode cmd, int64_t i): instr(cmd), i(i) {}
+	BCInstr(OPCode cmd, int64_t f): instr(cmd), v(f) {}
+
 };
 
 class ClosureDef {
@@ -33,16 +37,21 @@ public:
 	int64_t o_id;
 
 	// all outside, lexical ids used by this closure and it's nested members
-	std::unordered_set<int64_t> capture_ids;
+	std::vector<int64_t> capture_ids;
 
 	// identifiers declared in scope of this closure
-	std::unordered_set<int64_t> decl_ids;
+	std::vector<int64_t> decl_ids;
 
 	// instruction code
 	std::vector<BCInstr> body;
 
-	ClosureDef(const std::unordered_set<int64_t>& capture_ids, const std::unordered_set<int64_t>& decl_ids, const std::vector<BCInstr>& body):
-		capture_ids(capture_ids), decl_ids(decl_ids), body(body) {};
+	ClosureDef(
+			const std::vector<int64_t>& capture_ids,
+			const std::vector<int64_t>& decl_ids,
+			const std::vector<BCInstr>& body,
+			const int64_t i_id, const int64_t o_id):
+		capture_ids(capture_ids), decl_ids(decl_ids), body(body), i_id(i_id), o_id(o_id)
+		{}
 };
 
 class Literal {
@@ -55,7 +64,6 @@ public:
 	explicit Literal(ClosureDef c): v(c), type(Ltype::LAM) {}
 	Literal(Value v): v(v), type(Ltype::VAL) {}
 
-	Handle<Value> make_instance();
 };
 
 
