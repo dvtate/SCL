@@ -14,22 +14,22 @@ static void add_act(Frame& f) {
 
 
 		// defer references
-		if (rhs.getType() == Value::VType::REF) {
+		if (rhs.type() == Value::VType::REF) {
 			Value* p = std::get<Handle<Value>>(rhs.v).ptr;
 			if (p == nullptr)
 				return; // TODO: type-error
 			rhs = *p;
 		}
 
-		if (lhs.getType() == Value::VType::REF) {
+		if (lhs.type() == Value::VType::REF) {
 			Value* p = std::get<Handle<Value>>(lhs.v).ptr;
 			if (p == nullptr)
 				return; // TODO: type-error
 			lhs = *p;
 		}
 
-		auto rhs_type = rhs.getType();
-		auto lhs_type = lhs.getType();
+		auto rhs_type = rhs.type();
+		auto lhs_type = lhs.type();
 		// perform relevant operation
 		if (rhs_type == Value::VType::INT) {
 			Value::int_t& i = std::get<Value::int_t>(rhs.v);

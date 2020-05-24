@@ -24,19 +24,18 @@ Note these are
 - 2. Not set in stone: if you have an opinion, send a PR and we can make a better language together.
 
 ## Language Structure
-- Basic Syntax is largely inspired by JavaScript as it's the most popular language currently.
 - Statements end with semicolons (`;`)
-    - In many cases they are optional, but it's best to just 
+    - ASI exists but untrustworthy
 - Not whitespace dependent
 
 ## Comments
-These get ignored 
+These get ignored (maybe switch to `#` ?)
 - `//` line comments
 - `/* ... */` multi-line comments
 
 ## Variables/References
 
-### Builtin Glboal Variables
+### Builtin Global Variables
 These are likely to change. All of these values are reassignable and can be referenced and called within other scopes. 
 - `print`: write values to terminal (ie: `print("Hello, world!")`)
 - `input`: read values from terminal

@@ -10,7 +10,7 @@
 static void invoke(Frame& f) {
 	Value v = f.eval_stack.back();
 	f.eval_stack.pop_back();
-	auto t = v.getType();
+	auto t = v.type();
 	if (t == Value::VType::REF) {
 		Value* p = std::get<Handle<Value>>(v.v).ptr;
 		if (!p) {

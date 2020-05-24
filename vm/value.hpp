@@ -38,7 +38,7 @@ public:
 		N_FN,		// native function
 	};
 
-	static VType getType(int v) {
+	static VType type(int v) {
 		// empty on error
 		if (v == std::variant_npos)
 			return VType::EMPTY;
@@ -55,8 +55,8 @@ public:
 
 		return t[v];
 	}
-	VType getType() const {
-		return Value::getType(v.index());
+	VType type() const {
+		return Value::type(v.index());
 	}
 
 	Value(): v((empty_t)0) {}

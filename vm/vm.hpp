@@ -15,7 +15,7 @@
 #include <list>
 
 #include "closure.hpp"
-
+#include "exec_bc_instr.hpp"
 
 
 
@@ -51,7 +51,9 @@ public:
 			rt(rt), closure(body), pos(pos), eval_stack(std::move(eval_stack)) {}
 
 	// run a single bytecode instruction and return
-	void tick();
+	inline void tick(){
+		exec_bc_instr(*this, (*this->closure.body)[this->pos++]);
+	}
 };
 
 // different threads running on same process
@@ -61,31 +63,32 @@ public:
 	// currently running thread
 	std::shared_ptr<SyncCallStack> running;
 
-	// threads to execute
+	// threads to execute [stack]
 	std::vector<std::shared_ptr<SyncCallStack>> active;
-
-	// mutex guards on write
-	std::queue<RTMessage> _msg_queue;
 
 	// thread safety as messages can come from different procs/ISR's
 	std::mutex msg_queue_mtx;
 
-	Runtime(VM* vm, std::shared_ptr<SyncCallStack> run):
-		vm(vm), running(std::move(run)) { }
+	Runtime(VM* vm): vm(vm) { }
 
 	// pushes msg onto msg queue
-	void recv_msg(const RTMessage& msg) {
+	void recv_msg(const RTMessage* msg) {
 		std::lock_guard<std::mutex> m(this->msg_queue_mtx);
 		this->_msg_queue.emplace(msg);
 	}
 
 	// clears msg queue and returns old contents
-	std::queue<RTMessage> clear_msg_queue() {
-		std::queue<RTMessage> cpy = {};
+	// NOTE: expects caller to Free pointers
+	std::queue<RTMessage*> clear_msg_queue() {
+		std::queue<RTMessage*> cpy = {};
 		std::lock_guard<std::mutex> m(this->msg_queue_mtx);
 		std::swap(cpy, this->_msg_queue);
 		return cpy;
 	}
+
+private:
+	// mutex guards on r/w
+	std::queue<RTMessage*> _msg_queue;
 
 };
 
@@ -98,7 +101,7 @@ public:
 	std::shared_ptr<Runtime> main_thread;
 	std::list<std::shared_ptr<Runtime>> worker_threads;
 
-	VM(std::vector<Literal> lit_header);
+	VM(std::vector<Literal> lit_header, std::vector<std::string> argv);
 
 };
 
@@ -108,7 +111,7 @@ public:
 	- on async call, new thread is created and pushed to top of active stack
 	- on parallel call, new Runtime is pushed onto worker_threads()
 
-	Sync Operation:
+	Sync Detailed Operation:
 	- on sync call: new Frame is pushed onto Runtime.running
     - if we reach end of a function:
     	- set Runtime.running = Runtime.active.back() and then pop Runtime.active.pop_back()
@@ -130,7 +133,7 @@ public:
  	Async Operation:
  	- on async call:
  		- new thread created in Runtime and pushed to top of Runtime.active stack
- 		- pushes something onto Frame.eval_stack that can be used to access return value (future/promise)
+ 		- pushes something onto Frame.eval_stack that can be used to access return value (future/promise/cbcb)
  		- running thread unchanged and continues execution immediately after call
 	- when o() called:
  		- callback that powers return value called with argument provided

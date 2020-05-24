@@ -3,7 +3,5 @@
 //
 
 #include "closure.hpp"
-#include "frame.hpp"
 
-
-uint64_t Closure::_uid = 0;
+//uint64_t Closure::_uid = 0;

@@ -67,7 +67,7 @@ int main(int argc, char** argv) {
 
 
 	if (run) {
-		VM interpreter();
+		VM interpreter{};
 		return 0;
 	}
 	Program p;

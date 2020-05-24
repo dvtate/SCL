@@ -58,11 +58,22 @@ class Literal {
 public:
 	std::variant<ClosureDef, Value> v;
 	enum Ltype {
-		LAM, VAL
-	} type;
+		LAM, VAL, ERR
+	};
 
-	explicit Literal(ClosureDef c): v(c), type(Ltype::LAM) {}
-	Literal(Value v): v(v), type(Ltype::VAL) {}
+	static inline Ltype type(int i) const {
+		if (i == std::variant_npos)
+			return Ltype::ERR;
+		return i ? Ltype::VAL : Ltype::LAM;
+	}
+
+	inline Ltype type(int i) const {
+		return Literal::type(v.index());
+	}
+
+
+	explicit Literal(ClosureDef c): v(c) {}
+	Literal(Value v): v(v) {}
 
 };
 

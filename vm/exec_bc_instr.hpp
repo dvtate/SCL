@@ -9,6 +9,6 @@
 
 class Frame;
 
-void exec_bc_instr(Frame& f);
+void exec_bc_instr(Frame& f, BCInstr cmd);
 
 #endif //DLANG_EXEC_BC_INSTR_HPP

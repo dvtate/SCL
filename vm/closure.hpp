@@ -19,18 +19,14 @@ class Value;
 class Closure {
 public:
 
-	static uint64_t _uid;
-	uint64_t id;
-
-	// arg + ret ids
-	int64_t i_id, o_id;
+//	static uint64_t _uid;
+//	uint64_t id;
 
 	// captured identifiers
 	std::unordered_map<int64_t, Handle<Value>> vars;
 
 	// body points to implementation defined by relevant closureDef
 	std::vector<BCInstr>* body;
-
 
 };
 
