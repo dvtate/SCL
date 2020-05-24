@@ -30,19 +30,25 @@ public:
 	std::shared_ptr<Frame> frame_target;
 	std::shared_ptr<SyncCallStack> stack_target;
 	Value ret;
+	LambdaReturnMsg():
+		frame_target(nullptr), stack_target(nullptr), ret() {}
 
 	LambdaReturnMsg(
-			std::shared_ptr<Frame>& frame_target,
-			std::shared_ptr<SyncCallStack>& stack_target,
-			const Value& return_value):
-		frame_target(frame_target), stack_target(stack_target), ret(return_value)
+			std::shared_ptr<Frame> frame_target,
+			std::shared_ptr<SyncCallStack> stack_target,
+			Value& return_value):
+		frame_target(std::move(frame_target)), stack_target(std::move(stack_target)), ret(return_value)
 		{}
 
 	void action(Runtime& rt) override {
+		if (!this->stack_target || !this->frame_target) {
+			std::cout <<"invalid lambda return msg call ";
+		}
+
 		// if stack target not in active stacks
 		if (rt.running != this->stack_target &&
 			std::find(rt.active.begin(), rt.active.end(), this->stack_target) == rt.active.end())
-			rt.active.emplace_back(this->frame_target);
+			rt.active.emplace_back(this->stack_target);
 
 		// find frame on stack
 		size_t i;
@@ -69,8 +75,14 @@ class LambdaReturnNativeFn : public virtual NativeFunction {
 	std::shared_ptr<Runtime> rt;
 	LambdaReturnMsg msg;
 
+	LambdaReturnNativeFn(): rt(nullptr), msg() {}
+	explicit LambdaReturnNativeFn(Frame& f) {
+		this->rt = f.rt->vm->main_thread; // TODO: detect thread/convert rt to weak_ptr
+		this->msg = LambdaReturnMsg(f.rt->running->back(), f.rt->running, f.eval_stack.back());
+	}
+
 	void operator()(Frame& f) override {
-		this->rt->recv_msg(this->msg);
+		this->rt->recv_msg(new LambdaReturnMsg(this->msg));
 	}
 };
 

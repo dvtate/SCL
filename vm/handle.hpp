@@ -11,9 +11,9 @@ class Handle {
 public:
 	T* ptr;
 
-	explicit Handle(): ptr(nullptr) {};
-	explicit Handle(T* p): ptr(p) {};
-	Handle(Handle& other) = default;
+	explicit Handle(): ptr(nullptr) {}
+	explicit Handle(T* p): ptr(p) {}
+	Handle(const Handle& other): ptr(other.ptr) {}
 	~Handle() = default;
 
 };

@@ -9,7 +9,7 @@
 #include <cstdlib>
 #include <variant>
 #include <cstring>
-
+#include <string>
 
 class Command {
 public:

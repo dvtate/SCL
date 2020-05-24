@@ -8,10 +8,11 @@
 #include <cinttypes>
 #include <unordered_map>
 #include <memory>
+#include <vector>
 
 #include "handle.hpp"
-#include "literal.hpp"
-#include "value.hpp"
+#include "bc.hpp"
+
 
 class Frame;
 class Value;

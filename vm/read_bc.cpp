@@ -28,7 +28,6 @@ static inline std::string parse_str(std::string in) {
 	return in;
 }
 
-
 static inline Literal capture_closure(std::istream& is,
 		std::unordered_map<int64_t, std::vector<int64_t>>& nested_macros) {
 	std::vector <BCInstr> body;
@@ -91,6 +90,9 @@ static inline Literal capture_closure(std::istream& is,
 			cmd.instr = (BCInstr::OPCode) c;
 			cmd.i = idid;
 			body.emplace_back(cmd);
+		} else if (c == BCInstr::OPCode::USE_LIT) {
+
+
 		} else {
 			// generic instruction
 			BCInstr cmd{};
@@ -138,7 +140,7 @@ std::vector<Literal> read_lit_header(std::istream& is) {
 					break;
 			} while (c);
 
-			ret.emplace_back(Literal(Value(parse_str(strlit))));
+			ret.emplace_back(Literal(parse_str(strlit)));
 		} else if (instr == BCInstr::OPCode::START_LIT_MACRO){
 
 		}
@@ -147,4 +149,5 @@ std::vector<Literal> read_lit_header(std::istream& is) {
 		is >> instr;
 	}
 
+	return ret;
 }

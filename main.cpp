@@ -10,6 +10,7 @@
 #include "compile/bytecode.hpp"
 #include "util.hpp"
 #include "vm/vm.hpp"
+#include "vm/read_bc.hpp"
 
 
 // dlang <cmd> <in> options
@@ -65,10 +66,12 @@ int main(int argc, char** argv) {
 		print_help_msg();
 	}
 
-
 	if (run) {
-		VM interpreter{};
-		return 0;
+		std::ifstream bc_src = std::ifstream(fname);
+		// TODO: capture argv...
+		VM interpreter{read_lit_header(bc_src), { "argv not implemented" }};
+
+		return 0; // never gets called... (hopefully)
 	}
 	Program p;
 	try {

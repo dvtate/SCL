@@ -5,8 +5,7 @@
 #ifndef DLANG_EXEC_BC_INSTR_HPP
 #define DLANG_EXEC_BC_INSTR_HPP
 
-#include "literal.hpp"
-
+#include "bc.hpp"
 class Frame;
 
 void exec_bc_instr(Frame& f, BCInstr cmd);

@@ -10,6 +10,7 @@
 
 #include "literal.hpp"
 
+
 std::vector<Literal> read_lit_header(std::istream& is);
 
 // TODO: read fault table...

@@ -12,22 +12,9 @@
 #include <unordered_set>
 
 #include "../compile/command.hpp"
+
+#include "bc.hpp"
 #include "value.hpp"
-
-// command that falls within a
-class BCInstr {
-public:
-	using OPCode = Command::OPCode;
-	OPCode instr;
-	union {
-		int64_t i;
-		double v;
-	};
-	BCInstr() = default;
-	BCInstr(OPCode cmd, int64_t i): instr(cmd), i(i) {}
-	BCInstr(OPCode cmd, int64_t f): instr(cmd), v(f) {}
-
-};
 
 class ClosureDef {
 public:
@@ -52,28 +39,30 @@ public:
 			const int64_t i_id, const int64_t o_id):
 		capture_ids(capture_ids), decl_ids(decl_ids), body(body), i_id(i_id), o_id(o_id)
 		{}
+	ClosureDef() = default;
 };
 
 class Literal {
 public:
 	std::variant<ClosureDef, Value> v;
 	enum Ltype {
-		LAM, VAL, ERR
+		ERR = -1,
+		LAM = 0,
+		VAL = 1
 	};
 
-	static inline Ltype type(int i) const {
+	static inline Ltype type(int i) {
 		if (i == std::variant_npos)
 			return Ltype::ERR;
 		return i ? Ltype::VAL : Ltype::LAM;
 	}
 
-	inline Ltype type(int i) const {
+	inline Ltype type() const {
 		return Literal::type(v.index());
 	}
 
-
-	explicit Literal(ClosureDef c): v(c) {}
-	Literal(Value v): v(v) {}
+	explicit Literal(const ClosureDef& c): v(c) {}
+	explicit Literal(const std::string& str, bool is_json = false);
 
 };
 

@@ -50,22 +50,21 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 
 
 		case BCInstr::OPCode::USE_LIT:
-			const Literal& lit = f.rt->vm->literals[cmd.i];
-			if (lit.type == Literal::Ltype::VAL) {
+			Literal& lit = f.rt->vm->literals[cmd.i];
+			if (lit.v.index() == Literal::Ltype::VAL) {
 				f.eval_stack.emplace_back(std::get<Value>(lit.v));
 			} else {
-				const auto& cd = std::get<ClosureDef>(lit.v);
+				ClosureDef& cd = std::get<ClosureDef>(lit.v);
 
-				const Closure nc();
-				std::unordered_map<int64_t
+				Closure nc{};
+
 				// capture lexical vars
 				// TODO: this is prolly expensive
-				for (auto & cid : cd.capture_ids)
-					this->vars[cid] = f.closure->vars[cid];
+				for (int64_t cid : cd.capture_ids)
+					nc.vars[cid] = f.closure.vars[cid];
 
-				this->body = &cd.body;
+				nc.body = &cd.body;
 
-				this->id = _uid++;
 
 			}
 	}

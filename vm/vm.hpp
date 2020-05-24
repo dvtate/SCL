@@ -16,12 +16,14 @@
 
 #include "closure.hpp"
 #include "exec_bc_instr.hpp"
-
+#include "literal.hpp"
+#include "value.hpp"
 
 
 class Frame;
 class Runtime;
 class VM;
+class Value;
 
 using SyncCallStack = std::vector<std::shared_ptr<Frame>>;
 
@@ -72,7 +74,7 @@ public:
 	Runtime(VM* vm): vm(vm) { }
 
 	// pushes msg onto msg queue
-	void recv_msg(const RTMessage* msg) {
+	void recv_msg(RTMessage* msg) {
 		std::lock_guard<std::mutex> m(this->msg_queue_mtx);
 		this->_msg_queue.emplace(msg);
 	}
@@ -103,6 +105,7 @@ public:
 
 	VM(std::vector<Literal> lit_header, std::vector<std::string> argv);
 
+	void start();
 };
 
 /*
