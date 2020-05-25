@@ -10,10 +10,11 @@
 #include "global_ids.hpp"
 
 
-class ExitProgramReturn : public NativeFunction {
+class ExitProgramReturn : public virtual NativeFunction {
 public:
 
-	void operator()(Frame& f) {
+	void operator()(Frame& f) override {
+		// TODO: convert stack.back() to int and return it
 		// f.eval_stack.back();
 		exit(-1);
 	}
@@ -40,7 +41,7 @@ VM::VM(std::vector<Literal> lit_header, std::vector<std::string> argv)
 	main.vars[entry.o_id] = Handle<Value>(new Value(exit_fn));
 	main.vars[entry.i_id] = arg;
 
-	// capture global varaibles
+	// capture global variables
 	for (int64_t id : entry.capture_ids) {
 		std::cout <<"capture id: " <<id <<std::endl;
 		main.vars[id] = get_global_id(id);

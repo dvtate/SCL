@@ -14,9 +14,41 @@ Currently more focused on language stuff than main program, sorry this is ugly f
 - [x] `-f` : required input file
 - [x] `-O` : compile and output bytecode text
 - [x] `-o` : compile and output compressed bytecode
-- [ ] `-r` : run compressed bytecode
-- [ ] `-h` : print help msg
+- [x] `-r` : run compressed bytecode
+- [x] `-h` : print help msg
 - [ ] No args : run REPL
+
+### Compile
+#### Bytecode Text
+Useful for debugging compiler. Also prints compile errors.
+```
+[build] $ echo 'print("Hi")' > test.s && ./dlang -ftest.s -o
+# Literal 0:
+String: "Hi"
+# Literal 1:
+Macro: (:
+        LET_ID 10
+        LET_ID 11
+        USE_LIT 0
+        USE_ID 1
+        INVOKE
+)
+#### Begin Fault Table ####
+ID_NAME o : ID_ID 11
+ID_NAME print : ID_ID 0
+ID_NAME i : ID_ID 10
+ID_NAME input : ID_ID 1
+In file: test.s
+Compiled Line#3 came from Source Pos#6
+Compiled Line#4 came from Source Pos#0
+```
+
+#### Bytecode bin
+The following command will compile  `print("Hi")` in test.s into binary test.bin. Run until it doesn't give syntax errors before sending output to test.bin
+```
+[build] $ echo 'print("Hi")' > test.s && ./dlang -ftest.s -o > test.bin
+```
+
 
 # Basic Syntax
 Note these are

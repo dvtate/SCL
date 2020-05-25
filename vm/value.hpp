@@ -57,28 +57,6 @@ public:
 		EMPTY = 7,		// empty		no v
 	};
 
-	static VType type(int v) {
-		// empty on error
-		if (v == std::variant_npos)
-			return VType::EMPTY;
-
-		const static VType t[] {
-			VType::ERR,
-			VType::EMPTY,
-			VType::FLOAT,
-			VType::INT,
-			VType::STR,
-			VType::REF,
-			VType::LAM,
-			VType::N_FN,
-			VType::EMPTY,
-		};
-
-		return t[v-1];
-	}
-	VType type() const {
-		return Value::type(v.index());
-	}
 
 	Value(){};
 	explicit Value(float_t in): 			v(in) {}

@@ -29,6 +29,8 @@ public:
 	// body points to implementation defined by relevant closureDef
 	std::vector<BCInstr>* body;
 
+
+	void declare_empty_locals(const std::vector<int64_t>& ids);
 };
 
 #endif //DLANG_CLOSURE_HPP

@@ -4,4 +4,9 @@
 
 #include "closure.hpp"
 
-//uint64_t Closure::_uid = 0;
+
+void declare_empty_locals(const std::vector<int64_t>& ids) {
+	for (const int64_t id : ids) {
+//		this->vars[id] =
+	}
+}
