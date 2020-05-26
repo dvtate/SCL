@@ -159,18 +159,20 @@ void ParsedMacro::read_operation(AST& t){
 	DLANG_DEBUG_MSG("read_operation\n");
 	// TODO: replace with actual operator ID's from VM
 	std::unordered_map<std::string, uint16_t> op_ids {
-		{ "!",	10 },
-		{ "neg",	11 },
-		{ "**",	12 },
-		{ "*",	13 },
-		{ "/",	14 },
-		{ "%",	15 },
-		{ "+", 	16 },
-		{ "-",	17 },
-		{ "<",	18 },
-		{ ">",	19 },
-		{ "==",	20 },
-		{ "=",	21 },
+
+		{ "+", 	1 },
+		{ "-",	2 },
+		{ "neg",	3 },
+		{ "*",	4 },
+		{ "/",	5 },
+		{ "%",	6 },
+		{ "**",	7 },
+		{ "!",	8 },
+		{ "<",	9 },
+		{ ">",	10 },
+		{ "==",	11 },
+		{ "=",	12 },
+		{ ":=",	13 },
 	};
 
 	// check if it forms an expression or just lexical
@@ -188,12 +190,17 @@ void ParsedMacro::read_operation(AST& t){
 		return;
 	}
 
+	const std::string& op_sym = t.token.token;
+
+	const Command op_cmd = Command(Command::OPCode::BUILTIN_OP, op);
+
+
 	// compile arguments
 	for (auto& arg : t.members)
 		read_tree(arg);
 
 	std::size_t lpos = this->body.size();
-	this->body.emplace_back(Command(Command::OPCode::BUILTIN_OP, op));
+	this->body.emplace_back(op_cmd);
 	this->relocation.emplace_back(std::pair { lpos, t.token.pos });
 }
 
@@ -356,6 +363,7 @@ void Program::load_file(const std::string& fname) {
 
 	// semantic analysis
 	std::vector<SemanticError> errs = process_tree(main, fname);
+	std::cout <<debug_AST(main);
 
 	// implicit main macro
 	ParsedMacro entry(main, fname,

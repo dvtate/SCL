@@ -29,10 +29,6 @@ std::unordered_map<std::string, Associativity> op_assoc{
 		{ "@", Associativity::NONE },
 		{ "=", Associativity::RTL },
 		{ "**", Associativity::RTL },
-		{ "+", Associativity::LTR },
-		{ "-", Associativity::LTR },
-		{ "*", Associativity::LTR },
-		{ "/", Associativity::LTR },
 };
 
 static inline AST convert_leaf(AST& t, std::string f, std::vector<SemanticError>& errs)
@@ -48,7 +44,8 @@ static inline AST convert_leaf(AST& t, std::string f, std::vector<SemanticError>
 }
 
 
-static inline AST convert_branch(AST& t, std::string f, std::vector<SemanticError>& errs)
+
+static inline AST convert_branch(AST& t, const std::string& f, std::vector<SemanticError>& errs)
 {
 	if (t.type != AST::NodeType::PAREN_EXPR && t.members.empty())
 		return convert_leaf(t, f, errs);
@@ -59,19 +56,65 @@ static inline AST convert_branch(AST& t, std::string f, std::vector<SemanticErro
 			errs.emplace_back(SemanticError("Invalid parenthesized expression", t.token.pos, f));
 			return t;
 		}
-		return t.members[0];
+		return convert_branch(t.members[0], f, errs);
 	}
 
-	// Convert CSV's
-	// if (t.type == AST::NodeType::OPERATOR && t.token.token == ",") { }
-
-		return t;
-
+	// associativity... ideally would have been handled by parser :(
+//	if (t.type == AST::NodeType::OPERATION) {
+//		const std::string& op_sym = t.token.token;
+//
+//		if (op_sym == ":=" || op_sym == "=" || op_sym == "**") {
+//			// right associative operators (a = (b = 5))
+//			AST mem = t;
+//			mem.members.clear();
+//			mem.members.emplace_back(t.members.back());
+//			t.members.pop_back();
+//			for (unsigned i = t.members.size(); i > 0; i--) {
+//				mem.members.emplace_back(t.members[i]);
+//				AST tmp = (mem);
+//				mem = t;
+//				mem.members.clear();
+//				mem.members.emplace_back(tmp);
+//			}
+//			mem.members.emplace_back(t.members[0]);
+//			t = mem;
+//
+//		} else if (op_sym == "@" || op_sym == ",") {
+//			// non-associative operators (1,2,3,4,5)
+//			// no action
+//		} else {
+//			// left-associative ((1+2)+3)
+//
+//			AST mem = t;
+//			mem.members.clear();
+//			mem.members.emplace_back(t.members[0]);
+//			t.members.pop_back();
+//			for (unsigned i = 1; i < t.members.size(); i++) {
+//				mem.members.emplace_back(t.members[i]);
+//				AST tmp = (mem);
+//				mem = t;
+//				mem.members.clear();
+//				mem.members.emplace_back(tmp);
+//			}
+//			mem.members.emplace_back(t.members.back());
+//			t = mem;
+//		}
 //	}
+
+	if (t.members.empty())
+		return convert_leaf(t, f, errs);
+
+	// map members
+	AST ret = t;
+	for (unsigned int i = 0; i < t.members.size(); i++) {
+		ret.members[i] = convert_branch(t.members[i], f, errs);
+	}
+	return ret;
+
 }
 
 
-void sem_convert_syntax(AST& t, std::string f, std::vector<SemanticError>& errs)
+void sem_convert_syntax(AST& t, const std::string& f, std::vector<SemanticError>& errs)
 {
 
 	t = convert_branch(t, f, errs);

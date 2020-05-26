@@ -40,6 +40,8 @@ VM::VM(std::vector<Literal> lit_header, std::vector<std::string> argv)
 	Handle<NativeFunction> exit_fn(new ExitProgramReturn());
 	main.vars[entry.o_id] = Handle<Value>(new Value(exit_fn));
 	main.vars[entry.i_id] = arg;
+	// declare locals
+	main.declare_empty_locals(entry.decl_ids);
 
 	// capture global variables
 	for (int64_t id : entry.capture_ids) {

@@ -25,13 +25,19 @@ class Runtime;
 class VM;
 class Value;
 
-using SyncCallStack = std::vector<std::shared_ptr<Frame>>;
+//using SyncCallStack = std::vector<std::shared_ptr<Frame>>;
 
 // abstract type used for handling return values and such
 class RTMessage {
 public:
 	virtual ~RTMessage(){};
 	virtual void action(Runtime&) = 0;
+};
+
+
+class SyncCallStack : public std::vector<std::shared_ptr<Frame>> {
+public:
+	std::shared_ptr<SyncCallStack> creator;
 };
 
 

@@ -8,9 +8,7 @@
 #include "process_tree.hpp"
 
 
-
-
-void sem_convert_syntax(AST& t, std::string f, std::vector<SemanticError>& errs);
+void sem_convert_syntax(AST& t, const std::string& f, std::vector<SemanticError>& errs);
 
 
 #endif //DLANG_SYNTAX_HPP
