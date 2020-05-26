@@ -12,7 +12,7 @@ static void invoke(Frame& f) {
 	Value v = f.eval_stack.back();
 	f.eval_stack.pop_back();
 	if (std::holds_alternative<Value::ref_t>(v.v)) {
-		Value *p = std::get<Handle<Value>>(v.v).ptr;
+		Value* p = std::get<Value::ref_t>(v.v).get_ptr()->get_ptr();
 		if (!p) {
 			std::cout << "Cant invoke null reference...\n";
 			return; // TODO: type-error, null-pointer, etc.
@@ -20,12 +20,13 @@ static void invoke(Frame& f) {
 		v = Value(*p);
 	}
 
-
 	if (std::holds_alternative<Value::n_fn_t>(v.v)) {
-//		std::cout <<"invoke native..\n";
+		// std::cout <<"invoke native..\n";
 		(*std::get<Handle<NativeFunction>>(v.v).ptr)(f);
+	} else if (std::holds_alternative<Value::lam_t>(v.v)) {
+		Closure c = std::get<Value::lam_t>(v.v);
+//		Frame sync_scope(f.rt, );
 	} else {
-		std::cout <<v.v.index() <<std::endl;
 //		std::cout <<"invoke unknown type...\n";
 		// TODO: type-error
 	}
@@ -41,8 +42,8 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 		// push id ref onto stack
 		case BCInstr::OPCode::USE_ID:
 			std::cout <<"USE_ID\n";
-			f.eval_stack.emplace_back(
-					f.closure.vars[cmd.i]);
+			f.eval_stack.emplace_back(Value(
+					f.closure.vars[cmd.i]));
 			return;
 
 		// builtin operator

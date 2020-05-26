@@ -27,12 +27,13 @@ public:
 
 };
 
-static StaticHandle<Value> global_ids[] {
-	Handle<Value>(new Value()), // empty
-	Handle<Value>(new Value(Handle<NativeFunction>(new PrintFn()))) // print
+static Handle<Handle<Value>> global_ids[] {
+	Handle( new Handle(new Value())), // empty
+	Handle(new Handle(new Value(Handle<NativeFunction>(new PrintFn())))), // print
+
 };
 
 
-Handle<Value> get_global_id(int64_t id) {
+Handle<Handle<Value>> get_global_id(int64_t id) {
 	return global_ids[id];
 }

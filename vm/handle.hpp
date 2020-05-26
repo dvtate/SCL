@@ -5,7 +5,7 @@
 #ifndef DLANG_HANDLE_HPP
 #define DLANG_HANDLE_HPP
 
-// TODO: link w/ gc... make this less meme
+// TODO: link w/ gc...
 template <class T>
 class Handle {
 public:
@@ -19,6 +19,15 @@ public:
 	T* get_ptr(){
 		// return (T*)((char*) this->ptr + 1);
 		return this->ptr;
+	}
+
+	// Note: expects ptr to be GC-allocated pointer
+	void set_ptr(T* ptr) {
+		this->ptr = ptr;
+	}
+
+	void set_value(const T& v) {
+		*this->get_ptr() = v;
 	}
 };
 

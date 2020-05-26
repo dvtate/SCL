@@ -39,13 +39,17 @@ public:
 		KV_PAIR,
 		COMMA_SERIES,
 
+		// temporary
 		BRK_EXPR, // bracket operator
 		PAREN_EXPR, // temporary, used to add clarity to macro calls
 		OPERATOR,  // un-parsed operator
 
+		// result of a let expr ?
 		DECLARATION,
 
 		INVALID,
+
+
 	} type;
 
 	Token token;
@@ -68,7 +72,7 @@ public:
 
 	// std::variant<std::string, int64_t, double> val;
 
-	std::string type_name() const noexcept {
+	[[nodiscard]] std::string type_name() const {
 		switch (this->type) {
 			case NodeType::STATEMENTS:		return "Statement sequence";
 			case NodeType::OPERATION:		return "Operator Expression";
@@ -78,7 +82,7 @@ public:
 			case NodeType::MACRO_INVOKE:	return "Macro Call";
 			case NodeType::MACRO:			return "Macro Literal";
 			case NodeType::OBJECT:			return "Object Literal";
-			case NodeType::LIST:			return "List";
+			case NodeType::LIST:			return "List Literal";
 			case NodeType::MACRO_OPEN:		return "Macro opening";
 			case NodeType::LIST_OPEN:		return "List opening";
 			case NodeType::PAREN_OPEN:		return "Opening Parenthesis";
@@ -90,7 +94,8 @@ public:
 			case NodeType::DECLARATION:		return "Declaration";
 			case NodeType::OPERATOR:		return "Operator";
 			case NodeType::INVALID:			return "Invalid item";
-			default:						return std::string("unknown") + std::to_string(this->type);
+			default:						return std::string("unknown")
+												+ std::to_string(this->type);
 		}
 	}
 	[[nodiscard]] std::string short_type_name() const noexcept {

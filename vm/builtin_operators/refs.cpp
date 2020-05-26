@@ -1,14 +1,22 @@
 //
 // Created by tate on 25-05-20.
 //
+#include <iostream>
+
 
 #include "refs.hpp"
 
 #include "../value.hpp"
+#include "../vm.hpp"
 
 
 static void change_value(Frame& f) {
-//	Value ref =
+	Value r = f.eval_stack.back();
+	f.eval_stack.pop_back();
+	Value l = f.eval_stack.back();
+
+
+
 }
 
 static void change_ref(Frame& f) {

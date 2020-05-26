@@ -245,7 +245,7 @@ void ParsedMacro::read_statements(AST& tree) {
 }
 
 void ParsedMacro::read_tree(AST& tree) {
-	DLANG_DEBUG_MSG("read_tree: " <<tree.type_name());
+	DLANG_DEBUG_MSG("read_tree: " <<tree.type_name() <<std::endl);
 	switch (tree.type) {
 //		case AST::NodeType::OPERATOR:
 //

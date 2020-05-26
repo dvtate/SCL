@@ -9,6 +9,6 @@
 #include "handle.hpp"
 
 class Value;
-Handle<Value> get_global_id(int64_t id);
+Handle<Handle<Value>> get_global_id(int64_t id);
 
 #endif //DLANG_GLOBAL_IDS_HPP

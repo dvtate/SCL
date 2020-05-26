@@ -34,16 +34,16 @@ public:
 
 class Value {
 public:
-	using empty_t = std::monostate;
-	using int_t = int64_t;
-	using float_t = double;
-	using str_t = std::string;
-	using ref_t = Handle<Value>;
-	using lam_t = Closure;
-	using n_fn_t = Handle<NativeFunction>;
-	using bool_t = char;
+	using empty_t	= std::monostate;
+	using int_t 	= int64_t;
+	using float_t 	= double;
+	using str_t 	= std::string;
+	using ref_t 	= Handle<Handle<Value>>;
+	using lam_t 	= Closure;
+	using n_fn_t 	= Handle<NativeFunction>;
+	using bool_t 	= char;
 
-	std::variant<std::monostate, float_t, int_t, std::string, Handle<Value>, Closure, Handle<NativeFunction>> v;
+	std::variant<std::monostate, float_t, int_t, std::string, Handle<Handle<Value>>, Closure, Handle<NativeFunction>> v;
 
 	enum VType {
 		ERR = -1,
@@ -60,12 +60,13 @@ public:
 
 	Value(){};
 	explicit Value(float_t in): 			v(in) {}
-	explicit Value(const std::string& in): 		v(in) {}
+	explicit Value(const str_t& in): 		v(in) {}
 	explicit Value(int_t in): 				v(in) {}
-	explicit Value(const Handle<Value>& in): 		v(in) {}
-	explicit Value(const Closure& in): 			v(in) {}
-	explicit Value(const Handle<NativeFunction>& in):		v(in) {}
+	explicit Value(const ref_t& in): 		v(in) {}
+	explicit Value(const lam_t& in): 			v(in) {}
+	explicit Value(const n_fn_t& in):		v(in) {}
 	Value(const Value& other):				v(other.v) {}
+
 };
 
 

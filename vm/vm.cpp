@@ -24,9 +24,6 @@ public:
 VM::VM(std::vector<Literal> lit_header, std::vector<std::string> argv)
 {
 	this->literals = std::move(lit_header);
-	// TODO: capture command-line args
-	std::string replace_with_argv = std::string("cmd args coming soon");
-	auto arg = Handle<Value>(new Value(replace_with_argv));
 
 	this->main_thread = std::make_shared<Runtime>(this);
 	this->main_thread->running = std::make_shared<SyncCallStack>();
@@ -36,10 +33,13 @@ VM::VM(std::vector<Literal> lit_header, std::vector<std::string> argv)
 
 	auto& entry = std::get<ClosureDef>(this->literals.back().v);
 	main.body = &entry.body;
-	main.vars[entry.i_id] = arg;
+
 	Handle<NativeFunction> exit_fn(new ExitProgramReturn());
-	main.vars[entry.o_id] = Handle<Value>(new Value(exit_fn));
-	main.vars[entry.i_id] = arg;
+	main.vars[entry.o_id] = Handle(new Handle(new Value(exit_fn)));
+
+	// TODO: capture command-line args
+	std::string argv_list = std::string("cmd args coming soon");
+	main.vars[entry.i_id] = Handle(new Handle(new Value(argv_list)));
 	// declare locals
 	main.declare_empty_locals(entry.decl_ids);
 

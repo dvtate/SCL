@@ -62,14 +62,8 @@ std::unordered_map<std::string, signed char> op_prec = {
 };
 
 
-
-std::vector<std::string> kw_literals = {
-		"null", "empty", "true", "false",
-};
-
-
 static inline bool isOperand(const AST& n) {
-	return n.type > AST::NodeType::OPERATION && n.type < AST::NodeType::LIST;
+	return n.type >= AST::NodeType::OPERATION && n.type <= AST::NodeType::LIST;
 }
 
 static inline AST next_node(const std::vector<Token>& tokens, size_t& i, std::vector<AST> stack) {
@@ -148,14 +142,6 @@ static inline AST next_node(const std::vector<Token>& tokens, size_t& i, std::ve
 	}
 
 	throw SyntaxError(t, "Unknown token");
-}
-
-static inline bool has_multi_prefix_kw(std::vector<AST>& stack) {
-	for (const AST& n : stack)
-		if (n.token.type == Token::t::IDENTIFIER)
-			if (n.token.token == "if" || n.token.token == "while")
-				return true;
-	return false;
 }
 
 static inline int prev_matching_container_index(std::vector<AST>& stack, const AST& nn) {
@@ -254,14 +240,15 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 
 		AST b = stack.back();
 		stack.pop_back();
-		if (stack.empty()) {
-			stack.emplace_back(AST(AST::NodeType::STATEMENTS, Token(Token::t::OPERATOR, ";", b.token.pos), { b }));
+		if (stack.empty() || stack.back().type != AST::NodeType::STATEMENTS) {
+			stack.emplace_back(AST(
+					AST::NodeType::STATEMENTS,
+					Token(Token::t::OPERATOR, ";", b.token.pos),
+					{ b }));
 			return nullptr;
 		}
-		if (stack.back().type != AST::NodeType::STATEMENTS)
-			throw std::vector<SyntaxError>{SyntaxError(stack.back().token, "invalid statement")};
-
-		stack.back().members.emplace_back(b);
+		if (stack.back().type == AST::NodeType::STATEMENTS)
+			stack.back().members.emplace_back(b);
 		return nullptr;
 
 	}
@@ -270,6 +257,11 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 	if (stack.size() - i != 2 || stack.size() < 3) {
 		//throw std::vector<SyntaxError>{SyntaxError(n.token, "Invalid infix operator...")};
 		return "invalid infix operator";
+	}
+
+	if (!isOperand(stack.back())) {
+		std::cout <<"\nnot an op: `" <<stack.back().token.token <<"` n=`" <<n.token.token <<"`\n";
+		return "invalid operand";
 	}
 
 	const AST r = stack.back();
@@ -503,6 +495,22 @@ AST parse(const std::vector<Token>& tokens) {
 		std::cout <<debug_AST(n) << "   ";
 	std::cout <<std::endl;
 #endif
+
+	if (stack.size() > 1) {
+		std::cout <<"\nStack: ";
+		for (const AST& n : stack)
+			std::cout <<debug_AST(n) << "   ";
+		std::cout <<std::endl;
+
+		std::vector<SyntaxError> errs;
+		for (auto& t : stack)
+			errs.emplace_back(SyntaxError(t.token,
+					"Unable to parse to single item (maybe bad syntax here?)"));
+
+		throw errs;
+	}
+
+
 	return stack.back();
 
 	// if multi-char operator sequence try to reduce
