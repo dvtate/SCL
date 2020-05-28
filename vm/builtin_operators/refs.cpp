@@ -15,24 +15,41 @@ static void change_value(Frame& f) {
 	f.eval_stack.pop_back();
 	Value l = f.eval_stack.back();
 
+	if (!std::holds_alternative<Value::ref_t>(l.v)) {
+		std::cout <<"lhs eq not a ref?\n";
+		return; // todo typeError
+	}
 
+	// defer value
+	if (std::holds_alternative<Value::ref_t>(r.v))
+		std::get<Value::ref_t>(l.v).set_ptr(
+				std::get<Value::ref_t>(r.v).get_ptr());
+
+
+	if (std::holds_alternative<Value::ref_t>(l.v)) {
+		Value* ref = std::get<Value::ref_t>(l.v).get_ptr()->get_ptr();
+		*ref = r;
+	}
 
 }
 
-static void change_ref(Frame& f) {
-
-}
 
 static void check_equality(Frame& f) {
+	Value r = f.eval_stack.back();
+	f.eval_stack.pop_back();
+	Value l = f.eval_stack.back();
+
+	if (std::holds_alternative<Value::ref_t>(r.v))
+		r = *std::get<Value::ref_t>(r.v).get_ptr()->get_ptr();
+	if (std::holds_alternative<Value::ref_t>(l.v))
+		l = *std::get<Value::ref_t>(l.v).get_ptr()->get_ptr();
 
 }
+
 
 namespace VM_ops {
 	// change value
 	VMOperator single_equals{"change value operator (=)", change_value};
-
-	// change reference
-	VMOperator colon_equals{"change reference operator (:=)", change_ref};
 
 	// check equality
 	VMOperator dobule_equals{"compare equality operator (==)", check_equality};

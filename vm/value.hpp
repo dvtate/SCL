@@ -14,7 +14,8 @@
 
 
 // hack to figure out what I put in std::variant
-template <typename> struct tag { }; // <== this one IS literal
+template <typename>
+	struct tag { }; // <== this one IS literal
 template <typename T, typename V>
 	struct get_index;
 template <typename T, typename... Ts>
@@ -41,22 +42,21 @@ public:
 	using ref_t 	= Handle<Handle<Value>>;
 	using lam_t 	= Closure;
 	using n_fn_t 	= Handle<NativeFunction>;
-	using bool_t 	= char;
+	using bool_t 	= bool;
+	using list_t	= std::vector<Value>;
 
-	std::variant<std::monostate, float_t, int_t, std::string, Handle<Handle<Value>>, Closure, Handle<NativeFunction>> v;
+	using variant_t = std::variant<empty_t, float_t, int_t, str_t, ref_t, lam_t, n_fn_t>;
+	variant_t v;
 
 	enum VType {
-		ERR = -1,
-		UNDEF = 0,
-		FLOAT = 1,		// float
-		INT = 2,		// int
-		STR = 3,		// string
-		REF = 4,		// reference	Handle<>
-		LAM = 5,		//	lambda		Closure
-		N_FN = 6,		// native function
-		EMPTY = 7,		// empty		no v
+		EMPTY = 0,
+		FLOAT = 1,
+		INT = 2,
+		STR = 3,
+		REF = 4,
+		LAM = 5,
+		N_FN = 6
 	};
-
 
 	Value(){};
 	explicit Value(float_t in): 			v(in) {}

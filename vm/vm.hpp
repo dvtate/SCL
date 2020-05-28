@@ -66,6 +66,8 @@ public:
 		exec_bc_instr(*this, (*this->closure.body)[this->pos++]);
 		return false;
 	}
+
+//	void freeze_frame()
 };
 
 // different threads running on same process
@@ -77,6 +79,8 @@ public:
 
 	// threads to execute [stack]
 	std::vector<std::shared_ptr<SyncCallStack>> active;
+
+//	std::list<std::shared_ptr<SyncCallStack>>
 
 	// thread safety as messages can come from different procs/ISR's
 	std::mutex msg_queue_mtx;

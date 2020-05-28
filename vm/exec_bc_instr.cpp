@@ -20,9 +20,12 @@ static void invoke(Frame& f) {
 		v = Value(*p);
 	}
 
+	// call native function
 	if (std::holds_alternative<Value::n_fn_t>(v.v)) {
 		// std::cout <<"invoke native..\n";
 		(*std::get<Handle<NativeFunction>>(v.v).ptr)(f);
+
+	// call lambda sync
 	} else if (std::holds_alternative<Value::lam_t>(v.v)) {
 		Closure c = std::get<Value::lam_t>(v.v);
 //		Frame sync_scope(f.rt, );

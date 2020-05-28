@@ -1,4 +1,3 @@
-
 #include <unistd.h>
 #include <getopt.h>
 #include <iostream>
@@ -13,7 +12,6 @@
 #include "vm/vm.hpp"
 #include "vm/read_bc.hpp"
 
-
 // dlang <cmd> <in> options
 
 void print_help_msg(){
@@ -24,6 +22,8 @@ void print_help_msg(){
 	   " -O : output compressed bytecode\n"
 	   " -f : required input file\n";
 }
+
+
 
 int main(int argc, char** argv) {
 	bool run, out_bc, out_bct;
@@ -107,7 +107,7 @@ int main(int argc, char** argv) {
 						<<util::show_line_pos(fis, e.pos, fname) <<std::endl;
 				fatal = true;
 			}
-		
+
 		if (fatal)
 			return 1;
 	}
@@ -117,5 +117,31 @@ int main(int argc, char** argv) {
 			std::cout <<c;
 	if (out_bct)
 		std::cout <<compile_text(bytecode) <<std::endl;
+
+//	std::cout <<"empty:\t"	<<get_index<Value::empty_t, Value::variant_t>() <<std::endl;
+//	std::cout <<"float:\t"	<<get_index<Value::float_t, Value::variant_t>() <<std::endl;
+//	std::cout <<"int: \t"	<<get_index<Value::int_t, Value::variant_t>() <<std::endl;
+//	std::cout <<"str: \t"	<<get_index<Value::str_t, Value::variant_t>() <<std::endl;
+//	std::cout <<"ref: \t"	<<get_index<Value::ref_t, Value::variant_t>() <<std::endl;
+//	std::cout <<"lam: \t"	<<get_index<Value::lam_t, Value::variant_t>() <<std::endl;
+//	std::cout <<"nfn: \t"	<<get_index<Value::n_fn_t, Value::variant_t>() <<std::endl;
+//
+//	class ff : public virtual NativeFunction {
+//		void operator()(Frame& f) override { }
+//	} nfn;
+//
+//	Value::variant_t v0, v1(1.1), v2(1000L), v3("fff"),
+//		v4(Handle(new Handle(new Value()))), v5(Closure{}), v6(Handle<NativeFunction>{& nfn});
+//
+//
+//	std::cout
+//		<<v0.index()
+//		<<v1.index()
+//		<<v2.index()
+//		<<v3.index()
+//		<<v4.index()
+//		<<v5.index()
+//		<<v6.index();
+
 
 }

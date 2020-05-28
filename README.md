@@ -83,22 +83,28 @@ vehicle = "Hot rod";
 ```
 
 ### Referencing
-It's important to note that all variables are actually references, (more on this later). To copy a variable by value instead of by reference use the `$`/`copy` operator.
+It's important to note that all variables are actually references, (more on this later). To copy a variable by value instead of by reference use the `$`/`copy`. To change variable reference use `ref`.
 ```
 // make a reference the value 5
-let a := 5;
+let a = 5;
 // make b reference the value that a references
-let b := a;
+let b = a;
 
 // change the value referenced by a to 6
 a = 6;
 print(b); // 6
 
-// make b reference a copy of the value referenced by a
-c =: copy(a);
+// make a reference the value 8
+a = ref(8);
+print(b); // 8
+
+// make c reference a copy of the value referenced by a
+let c = copy(a);
+
 // change value referenced by a to 99
-a = 99; 
-print(c); // 6
+a = 99;
+
+print(c); // 8
 ```
 
 ## Values
