@@ -472,6 +472,7 @@ AST parse(const std::vector<Token>& tokens) {
 
 	size_t i = 0;
 
+	size_t cycles;
 
 	while (i < tokens.size()) {
 		AST tok = next_node(tokens, i, stack);
@@ -488,6 +489,7 @@ AST parse(const std::vector<Token>& tokens) {
 
 		if (can_shift(tok))
 			stack.emplace_back(tok);
+
 	}
 #ifdef DLANG_DEBUG
 	std::cout <<"\nStack: ";

@@ -119,6 +119,31 @@ static inline Literal capture_closure(std::istream& is,
 }
 
 
+static std::vector<int64_t> generate_capture_ids(int64_t entry, std::unordered_map<int64_t, std::vector<int64_t>>& nested_closures, std::vector<Literal>& lits) {
+
+	if (!std::holds_alternative<ClosureDef>(lits[entry].v))
+		return {};
+	auto& cd = std::get<ClosureDef>(lits[entry].v);
+
+	std::vector<int64_t>& ret = cd.capture_ids;
+
+	// Note: these are sorted
+	std::vector<int64_t>& decl_ids = cd.decl_ids;
+
+	for (int64_t lid : nested_closures[entry]) {
+		auto r = generate_capture_ids(lid, nested_closures, lits);
+		std::copy_if(r.begin(), r.end(), std::back_inserter(ret), [&](int64_t e){
+			return std::binary_search(decl_ids.begin(), decl_ids.end(), e);
+		});
+	}
+
+	auto last = std::unique(ret.begin(), ret.end());
+	ret.erase(last, ret.end());
+
+	return ret;
+}
+
+
 std::vector<Literal> read_lit_header(std::istream& is) {
 	std::vector<Literal> ret;
 
@@ -132,13 +157,8 @@ std::vector<Literal> read_lit_header(std::istream& is) {
 		if (instr == BCInstr::OPCode::START_LIT_STRING) {
 			char c;
 			std::string strlit;
-			do {
-				c = is.get();
-				if (c)
-					strlit += c;
-				else
-					break;
-			} while (c);
+			while ((c = is.get()))
+				strlit += c;
 
 			ret.emplace_back(Literal(parse_str(strlit)));
 		} else if (instr == BCInstr::OPCode::START_LIT_MACRO){
@@ -151,6 +171,9 @@ std::vector<Literal> read_lit_header(std::istream& is) {
 		// fetch next instruction
 		instr = is.get();
 	}
+
+	// recursively deduce closure capture Id's
+	generate_capture_ids(ret.size() - 1, nested_closures, ret);
 
 	return ret;
 }

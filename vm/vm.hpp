@@ -67,7 +67,6 @@ public:
 		return false;
 	}
 
-//	void freeze_frame()
 };
 
 // different threads running on same process
@@ -80,7 +79,8 @@ public:
 	// threads to execute [stack]
 	std::vector<std::shared_ptr<SyncCallStack>> active;
 
-//	std::list<std::shared_ptr<SyncCallStack>>
+	// threads that still have pending actions
+	std::vector<std::shared_ptr<SyncCallStack>> undead;
 
 	// thread safety as messages can come from different procs/ISR's
 	std::mutex msg_queue_mtx;
@@ -94,12 +94,43 @@ public:
 	}
 
 	// clears msg queue and returns old contents
-	// NOTE: expects caller to Free pointers
+	// NOTE: expects caller to free() pointers
 	std::vector<RTMessage*> clear_msg_queue() {
 		std::vector<RTMessage*> cpy = {};
 		std::lock_guard<std::mutex> m(this->msg_queue_mtx);
 		std::swap(cpy, this->_msg_queue);
 		return cpy;
+	}
+
+
+	//
+	void freeze_running() {
+		this->running = this->active.back();
+		this->active.pop_back();
+	}
+
+	//
+	void freeze_active(const std::shared_ptr<SyncCallStack>& cs) {
+		for (auto it = this->active.begin(); it < this->active.end(); it += 1)
+			if (*it == cs) {
+				this->active.erase(it);
+				return;
+			}
+	}
+
+	// removes call stack from undead tracker
+	void kill(const std::shared_ptr<SyncCallStack>& cs){
+		for (auto it = this->undead.begin(); it < this->undead.end(); it += 1)
+			if (*it == cs) {
+				this->undead.erase(it);
+				return;
+			}
+	}
+
+	void kill(){
+		auto cs = this->running;
+		this->freeze_running();
+		this->kill(cs);
 	}
 
 	void run();

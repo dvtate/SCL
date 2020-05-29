@@ -45,6 +45,8 @@ public:
 			// arg: int16
 		CLEAR_STACK,	// semicolon operator
 			// no arg
+
+
 		VAL_EMPTY,
 		VAL_TRUE,
 		VAL_FALSE,

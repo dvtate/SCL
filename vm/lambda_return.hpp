@@ -24,7 +24,10 @@
 			- push msg.return_value onto Frame.eval_stack
 			- process next RTMessage(s)
 			- go back to executing instructions
- */
+*/
+
+
+// executed by rt event loop
 class LambdaReturnMsg : public virtual RTMessage {
 public:
 	std::shared_ptr<Frame> frame_target;
@@ -45,32 +48,42 @@ public:
 			std::cout <<"invalid lambda return msg call ";
 		}
 
-		// if stack target not in active stacks
-		if (rt.running != this->stack_target &&
-			std::find(rt.active.begin(), rt.active.end(), this->stack_target) == rt.active.end())
-			rt.active.emplace_back(this->stack_target);
 
 		// find frame on stack
-		size_t i;
-		for (i = this->stack_target->size(); i > 0; i--) {
+		ssize_t i;
+		for (i = this->stack_target->size(); i >= 0; i--)
 			if ((*this->stack_target)[i] == this->frame_target)
 				break;
-		}
-		if (i == 0) {
+
+		if (i < 0) {
 			// no longer on stack wtf??
-			std::cout <<"Return called out of scope???";
+			std::cout << "o() called out of scope???";
+			// TODO: o() out of scope error
+		} else if (i == 0) {
+
+			this->frame_target->rt->freeze_active(this->stack_target);
+			this->frame_target->rt->kill(this->stack_target);
+
 		} else {
+
 			// pop stack
-			for (; i <= this->stack_target->size(); i++)
+			this->stack_target->erase(this->stack_target->begin() + i, this->stack_target->end());
+			for (; (unsigned long) i <= this->stack_target->size(); i++)
 				this->stack_target->pop_back();
 
 			// push return value onto top of stack
 			this->stack_target->back()->eval_stack.emplace_back(this->ret);
+
+			// if stack target not in active stacks, put there
+			if (rt.running != this->stack_target &&
+				std::find(rt.active.begin(), rt.active.end(), this->stack_target) == rt.active.end())
+				rt.active.emplace_back(this->stack_target);
 		}
 
 	}
 };
 
+// user-callable
 class LambdaReturnNativeFn : public virtual NativeFunction {
 	std::shared_ptr<Runtime> rt;
 	LambdaReturnMsg msg;
@@ -78,7 +91,10 @@ class LambdaReturnNativeFn : public virtual NativeFunction {
 	LambdaReturnNativeFn(): rt(nullptr), msg() {}
 	explicit LambdaReturnNativeFn(Frame& f) {
 		this->rt = f.rt->vm->main_thread; // TODO: detect thread/convert rt to weak_ptr
-		this->msg = LambdaReturnMsg(f.rt->running->back(), f.rt->running, f.eval_stack.back());
+		this->msg = LambdaReturnMsg(
+				f.rt->running->back(),
+				f.rt->running,
+				f.eval_stack.back());
 	}
 
 	void operator()(Frame& f) override {

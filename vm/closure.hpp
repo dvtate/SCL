@@ -24,6 +24,7 @@ public:
 //	uint64_t id;
 
 	int64_t i_id;
+	int64_t o_id;
 
 	// captured identifiers
 	std::unordered_map<int64_t, Handle<Handle<Value>>> vars;

@@ -40,12 +40,13 @@ VM::VM(std::vector<Literal> lit_header, std::vector<std::string> argv)
 	// TODO: capture command-line args
 	std::string argv_list = std::string("cmd args coming soon");
 	main.vars[entry.i_id] = Handle(new Handle(new Value(argv_list)));
+
 	// declare locals
 	main.declare_empty_locals(entry.decl_ids);
 
 	// capture global variables
 	for (int64_t id : entry.capture_ids) {
-		std::cout <<"capture id: " <<id <<std::endl;
+//		std::cout <<"capture id: " <<id <<std::endl;
 		main.vars[id] = get_global_id(id);
 	}
 }
@@ -54,6 +55,7 @@ void VM::run() {
 	main_thread->run();
 }
 
+// event loop
 void Runtime::run() {
 
 	while (true) {
@@ -72,9 +74,10 @@ void Runtime::run() {
 		// handle actions messages
 		if (this->_msg_queue.size()) {
 			std::vector<RTMessage*> msgs = this->clear_msg_queue();
-			for (RTMessage *m : msgs)
+			for (RTMessage *m : msgs) {
 				m->action(*this);
-
+				delete(m);
+			}
 		}
 
 	}

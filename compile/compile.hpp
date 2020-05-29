@@ -79,6 +79,7 @@ public:
 	void read_id(AST&);
 	void read_operation(AST&);
 	void read_macro_lit(AST&);
+	void read_list_lit(AST&);
 	void read_macro_invoke(AST&);
 
 };

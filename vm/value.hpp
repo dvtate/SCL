@@ -67,6 +67,10 @@ public:
 	explicit Value(const n_fn_t& in):		v(in) {}
 	Value(const Value& other):				v(other.v) {}
 
+	inline VType type(){
+		return (VType) this->v.index();
+	}
+
 };
 
 

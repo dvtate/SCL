@@ -234,7 +234,9 @@ void ParsedMacro::read_macro_lit(AST& tree) {
 
 }
 
+void ParsedMacro::read_list_lit(AST& tree) {
 
+}
 
 void ParsedMacro::read_statements(AST& tree) {
 	DLANG_DEBUG_MSG("read_statements\n");
@@ -359,7 +361,13 @@ Program::Program(std::string fname) {
 void Program::load_file(const std::string& fname) {
 	// parse main file
 	std::ifstream file = std::ifstream(fname);
-	AST main = parse(tokenize_stream(file));
+
+//	std::cout <<"tokenizing...";
+	const auto toks = tokenize_stream(file);
+//	std::cout <<"done\n";
+//	std::cout <<"parsing...";
+	AST main = parse(toks);
+//	std::cout <<"done\n";
 
 	// semantic analysis
 	std::vector<SemanticError> errs = process_tree(main, fname);
