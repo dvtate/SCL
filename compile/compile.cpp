@@ -5,16 +5,13 @@
 #include <istream>
 #include <fstream>
 
+
+#include "../debug.hpp"
 #include "compile.hpp"
 #include "bytecode.hpp"
 #include "../parse/parse.hpp"
 
 
-#ifdef DLANG_DEBUG
-	#define DLANG_DEBUG_MSG(m) std::cout <<m;
-#else
-	#define DLANG_DEBUG_MSG(m)
-#endif
 
 const static std::unordered_map<std::string, Command> keyword_values = {
 		{ "empty", Command(Command::OPCode::KW_VAL, (uint16_t) 0) },
@@ -230,12 +227,32 @@ void ParsedMacro::read_macro_invoke(AST& t) {
 }
 
 void ParsedMacro::read_macro_lit(AST& tree) {
-	// TODO: :/
+	DLANG_DEBUG_MSG("read_macro_lit\n");
+
+	// compile macro
+	std::vector<ParsedMacro*> pps = this->parents;
+	pps.emplace_back(this);
+	auto* mac = new ParsedMacro(
+			tree, this->file_name, pps, this->compiler,
+			this->declarations);
+	for (auto& m : tree.members)
+		mac->read_tree(m);
+
+	// put it in literals header
+	auto litnum = this->compiler->load_macro(*mac);
+
+	// reference it in bc
+	this->body.emplace_back(Command::OPCode::USE_LIT, litnum);
 
 }
 
 void ParsedMacro::read_list_lit(AST& tree) {
+	DLANG_DEBUG_MSG("read_list_lit\n");
+	// put elements onto stack
+	for (auto& m : tree.members)
+		read_tree(m);
 
+	this->body.emplace_back(Command::OPCode::MK_LIST, (int32_t) tree.members.size());
 }
 
 void ParsedMacro::read_statements(AST& tree) {
@@ -244,14 +261,14 @@ void ParsedMacro::read_statements(AST& tree) {
 		read_tree(statement);
 		this->body.emplace_back(Command(Command::OPCode::CLEAR_STACK));
 	}
+	if (!tree.members.size())
+		// don't pop last item
+		this->body.pop_back();
 }
 
 void ParsedMacro::read_tree(AST& tree) {
 	DLANG_DEBUG_MSG("read_tree: " <<tree.type_name() <<std::endl);
 	switch (tree.type) {
-//		case AST::NodeType::OPERATOR:
-//
-//			return;
 		case AST::NodeType::STATEMENTS:
 			read_statements(tree);
 			return;
@@ -270,6 +287,12 @@ void ParsedMacro::read_tree(AST& tree) {
 		case AST::NodeType::OPERATION:
 			read_operation(tree);
 			return;
+		case AST::NodeType::LIST:
+			read_list_lit(tree);
+			return;
+		case AST::NodeType::MACRO:
+			read_macro_lit(tree);
+			return;
 
 		case AST::NodeType::MACRO_INVOKE:
 			read_macro_invoke(tree);
@@ -281,6 +304,25 @@ void ParsedMacro::read_tree(AST& tree) {
 	}
 
 }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 //
 ParsedMacro::ParsedMacro(AST &tree, std::string file_name, std::vector<ParsedMacro *> parents,
@@ -328,34 +370,14 @@ int64_t ParsedMacro::declare_id(const std::string& id_name) {
 }
 
 
-
-
-
-
-void Program::load_macro(ParsedMacro& macro) {
+int64_t Program::load_macro(ParsedMacro& macro) {
 
 	// copy identifiers
 	for (auto& p : macro.declarations)
 		this->identifiers.emplace_back(p.second);
 
-	// copy translated positions to go in fault table
-	// FIXME: move this step to compilation as we don't know size of other literals
-//	auto it = this->translated_positions.find(macro.file_name);
-//	if (it == this->translated_positions.end())
-//		this->translated_positions[macro.file_name] = macro.relocation;
-//	else
-//		this->translated_positions[macro.file_name].insert(
-//			this->translated_positions[macro.file_name].end(),
-//			macro.relocation.begin(), macro.relocation.end());
-
-	this->empl_lit(ParsedLiteral(macro));
+	return this->empl_lit(ParsedLiteral(macro));
 }
-
-//
-Program::Program(std::string fname) {
-	load_file(fname);
-}
-
 
 
 void Program::load_file(const std::string& fname) {
@@ -371,32 +393,13 @@ void Program::load_file(const std::string& fname) {
 
 	// semantic analysis
 	std::vector<SemanticError> errs = process_tree(main, fname);
-	std::cout <<debug_AST(main);
+//	std::cout <<debug_AST(main);
 
 	// implicit main macro
 	ParsedMacro entry(main, fname,
-			std::vector<ParsedMacro*>{}, this,
-			// NOTE: these are technically global... just a hack
-			std::unordered_map<std::string, MutilatedSymbol>{
-		{ "print", MutilatedSymbol("print", 0) },
-		{ "input", MutilatedSymbol("input", 1) }
-	});
+			std::vector<ParsedMacro*>{}, this);
 	entry.read_tree(main);
 
-	// dfs children of entry
-	// there has to be a better solution than this,,,,
-	std::vector<ParsedMacro> macros_processed; // these are going into literals header
-	std::vector<ParsedMacro> macros_to_proc { entry.children }; // these are going to be processed
-
-	while (!macros_to_proc.empty()) {
-		this->load_macro(macros_to_proc.back());
-		macros_processed.emplace_back(macros_to_proc.back());
-		macros_to_proc.pop_back();
-		macros_to_proc.insert(macros_to_proc.end(),
-				macros_processed.back().children.begin(),
-				macros_processed.back().children.end());
-
-	};
 
 	// literals.back() == main()
 	this->load_macro(entry);
@@ -405,7 +408,7 @@ void Program::load_file(const std::string& fname) {
 // emplace a parsed literal into literals header
 // return index of parsed literal
 // if its already in header send index
-std::size_t Program::empl_lit(ParsedLiteral&& lit) {
+int64_t Program::empl_lit(ParsedLiteral&& lit) {
 	auto it = std::find(
 			this->literals.begin(),
 			this->literals.end(),

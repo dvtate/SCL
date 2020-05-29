@@ -2,8 +2,6 @@
 #include <getopt.h>
 #include <iostream>
 
-#define DLANG_DEBUG
-
 #include "parse/lex.hpp"
 #include "parse/parse.hpp"
 #include "compile/compile.hpp"
@@ -112,9 +110,12 @@ int main(int argc, char** argv) {
 			return 1;
 	}
 
-	if (out_bc)
-		for (const char c : compile_bin(bytecode))
-			std::cout <<c;
+	if (out_bc) {
+		std::ofstream out{"o.bin"};
+		for (const char c : compile_bin(bytecode)) {
+
+		}
+	}
 	if (out_bct)
 		std::cout <<compile_text(bytecode) <<std::endl;
 

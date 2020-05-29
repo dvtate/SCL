@@ -41,11 +41,12 @@ public:
 			// arg: int64, lit id
 		BUILTIN_OP,		// operate on stack
 			// arg: int16, builtin operator id
-		KW_VAL, 		// builtin keyword-literal (ie- print)
+		KW_VAL, 		// builtin keyword-literal (remove?)
 			// arg: int16
 		CLEAR_STACK,	// semicolon operator
 			// no arg
-
+		MK_LIST,		// constructs a list from values on stack
+			// arg: int32, number of items to pull from stack
 
 		VAL_EMPTY,
 		VAL_TRUE,
@@ -69,15 +70,17 @@ public:
 
 	} instr;
 
-	std::variant<uint16_t, int64_t, double, std::string> arg;
+	std::variant<uint16_t, int32_t, int64_t, double, std::string> arg;
 
 	enum ArgType {
-		INT64, INT16, FLOAT, STRING, NO_ARG
+		INT64, INT16, FLOAT, STRING, NO_ARG, INT32
 	};
 
 	Command(OPCode cmd, uint16_t argument):
 		instr(cmd), arg(argument) {}
 	Command(OPCode cmd, int64_t argument):
+		instr(cmd), arg(argument) {}
+	Command(OPCode cmd, int32_t argument):
 		instr(cmd), arg(argument) {}
 	Command(OPCode cmd, double argument):
 		instr(cmd), arg(argument) {}
@@ -128,8 +131,10 @@ public:
 				return "\tC_FALSE";
 			case OPCode::VAL_TRUE:
 				return "\tC_TRUE";
+			case OPCode::MK_LIST:
+				return "\tMAKE_LIST(" + std::to_string(std::get<int32_t>(this->arg)) + ")\n";
 
-				// fault table
+			// fault table
 
 				// identifier translations
 			case OPCode::ID_NAME:
@@ -166,6 +171,8 @@ public:
 			case OPCode::START_LIT_STRING: case OPCode::START_LIT_JSON: case OPCode::ID_NAME: case OPCode::FILE_NAME:
 				return ArgType::STRING;
 
+			case OPCode::MK_LIST:
+				return ArgType::INT32;
 			default:
 				return ArgType::NO_ARG;
 		}
@@ -196,6 +203,14 @@ public:
 				uint16_t n = std::get<uint16_t>(this->arg);
 				ret[0] = this->instr;
 				strncpy(ret + 1, (char *) &n, sizeof(uint16_t));
+				break;
+			}
+			case ArgType::INT32: {
+				s += sizeof(int32_t);
+				ret = (char*) realloc(ret, s);
+				int32_t n = std::get<int32_t >(this->arg);
+				ret[0] = this->instr;
+				strncpy(ret+1, (char*) &n, sizeof(n));
 				break;
 			}
 			case ArgType::INT64: {

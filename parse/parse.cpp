@@ -260,7 +260,9 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 	}
 
 	if (!isOperand(stack.back())) {
+#ifdef DLANG_DEBUG
 		std::cout <<"\nnot an op: `" <<stack.back().token.token <<"` n=`" <<n.token.token <<"`\n";
+#endif
 		return "invalid operand";
 	}
 

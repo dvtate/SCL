@@ -9,6 +9,8 @@
 #include <string>
 #include <unordered_map>
 #include <vector>
+#include <list>
+#include <forward_list>
 
 #include "semantics/process_tree.hpp"
 #include "command.hpp"
@@ -48,8 +50,7 @@ public:
 	// code in body
 	std::vector<Command> body;
 
-	//
-	std::vector<ParsedMacro> children;
+
 	std::vector<ParsedMacro*> parents;
 
 	// file name of definition
@@ -124,20 +125,18 @@ public:
 	std::vector<MutilatedSymbol> identifiers;
 	std::unordered_map<std::string, std::vector<std::pair<std::size_t, unsigned long long>>> translated_positions;
 
-
-	Program(std::string);
-	Program() = default;
-
 	std::vector<SemanticError> compile(std::vector<Command>& ret);
 
 	// emplace a parsed literal into literals header
 	// return literal index
-	std::size_t empl_lit(ParsedLiteral&& lit);
+	int64_t empl_lit(ParsedLiteral&& lit);
 
 	// used to populate internal structures
-	void load_macro(ParsedMacro& macro);
+	int64_t load_macro(ParsedMacro& macro);
 	void load_file(const std::string& fname);
 
+	inline explicit Program(const std::string& fname) { load_file(fname); }
+	Program() = default;
 };
 
 

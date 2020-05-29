@@ -4,8 +4,6 @@
 
 #include "syntax.hpp"
 
-
-
 /*
 * - Convert Builtin-identifiers/constants (ie - print)
 * - Handle operator associativity
@@ -17,9 +15,7 @@
 * - Convert function calls on CSV's to list
 */
 
-
-
-
+// TODO: implicit returns from functions that don't reference `o`
 
 
 // OPTIMIZE: this can be replaced with Preprocessor
