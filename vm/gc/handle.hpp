@@ -16,7 +16,7 @@ public:
 	Handle(const Handle& other): ptr(other.ptr) {}
 	~Handle() = default;
 
-	T* get_ptr(){
+	T* get_ptr() const {
 		// return (T*)((char*) this->ptr + 1);
 		return this->ptr;
 	}

@@ -14,6 +14,8 @@ namespace VM_ops {
 	// check equality
 	extern VMOperator dobule_equals;
 
+	// check identity
+	extern VMOperator triple_equals;
 
 }
 

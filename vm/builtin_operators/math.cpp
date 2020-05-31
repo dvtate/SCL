@@ -74,6 +74,5 @@ static void add_act(Frame& f) {
 }
 
 namespace VM_ops {
-
-	auto add = VMOperator("plus operator (+)", add_act);
+	VMOperator plus{"plus operator (+)", add_act};
 };

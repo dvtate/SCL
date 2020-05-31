@@ -45,7 +45,7 @@ public:
 	using bool_t 	= bool;
 	using list_t	= std::vector<Value>;
 
-	using variant_t = std::variant<empty_t, float_t, int_t, str_t, ref_t, lam_t, n_fn_t>;
+	using variant_t = std::variant<empty_t, float_t, int_t, str_t, ref_t, lam_t, n_fn_t, list_t>;
 	variant_t v;
 
 	enum VType {
@@ -55,7 +55,8 @@ public:
 		STR = 3,
 		REF = 4,
 		LAM = 5,
-		N_FN = 6
+		N_FN = 6,
+		LIST = 7
 	};
 
 	Value(){};
@@ -67,9 +68,12 @@ public:
 	explicit Value(const n_fn_t& in):		v(in) {}
 	Value(const Value& other):				v(other.v) {}
 
-	inline VType type(){
+	inline VType type() const {
 		return (VType) this->v.index();
 	}
+
+	bool eq_value(const Value& other);
+	bool eq_identity(const Value& other);
 
 };
 
