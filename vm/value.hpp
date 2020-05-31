@@ -8,7 +8,7 @@
 #include <cinttypes>
 #include <variant>
 
-#include "handle.hpp"
+#include "gc/handle.hpp"
 #include "closure.hpp"
 
 

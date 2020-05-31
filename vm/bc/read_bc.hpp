@@ -8,7 +8,7 @@
 
 #include <istream>
 
-#include "literal.hpp"
+#include "../literal.hpp"
 
 
 std::vector<Literal> read_lit_header(std::istream& is);

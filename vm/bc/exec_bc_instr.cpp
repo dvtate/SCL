@@ -4,8 +4,8 @@
 #include <iostream>
 
 #include "exec_bc_instr.hpp"
-#include "vm.hpp"
-#include "operators.hpp"
+#include "../vm.hpp"
+#include "../builtin_operators/operators.hpp"
 
 static void invoke(Frame& f) {
 

@@ -5,7 +5,7 @@
 #ifndef DLANG_BC_HPP
 #define DLANG_BC_HPP
 
-#include "../compile/command.hpp"
+#include "../../compile/command.hpp"
 
 // command that falls within a
 class BCInstr {

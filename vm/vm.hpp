@@ -15,7 +15,7 @@
 #include <list>
 
 #include "closure.hpp"
-#include "exec_bc_instr.hpp"
+#include "bc/exec_bc_instr.hpp"
 #include "literal.hpp"
 #include "value.hpp"
 

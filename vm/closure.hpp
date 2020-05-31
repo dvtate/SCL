@@ -10,8 +10,8 @@
 #include <memory>
 #include <vector>
 
-#include "handle.hpp"
-#include "bc.hpp"
+#include "gc/handle.hpp"
+#include "bc/bc.hpp"
 
 
 class Frame;

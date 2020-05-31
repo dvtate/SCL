@@ -6,7 +6,7 @@
 
 #include "vm.hpp"
 #include "value.hpp"
-#include "exec_bc_instr.hpp"
+#include "bc/exec_bc_instr.hpp"
 #include "global_ids.hpp"
 
 

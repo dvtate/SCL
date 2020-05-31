@@ -6,7 +6,7 @@
 #define DLANG_GLOBAL_IDS_HPP
 
 #include <cinttypes>
-#include "handle.hpp"
+#include "gc/handle.hpp"
 
 class Value;
 Handle<Handle<Value>> get_global_id(int64_t id);

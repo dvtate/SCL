@@ -35,15 +35,30 @@ static void change_value(Frame& f) {
 
 
 static void check_equality(Frame& f) {
+	// TODO: move to Value.equals()
 	Value r = f.eval_stack.back();
 	f.eval_stack.pop_back();
 	Value l = f.eval_stack.back();
 
+	// NOTE: user must use triple equals to check type+identity
 	if (std::holds_alternative<Value::ref_t>(r.v))
 		r = *std::get<Value::ref_t>(r.v).get_ptr()->get_ptr();
 	if (std::holds_alternative<Value::ref_t>(l.v))
 		l = *std::get<Value::ref_t>(l.v).get_ptr()->get_ptr();
 
+	// diff types
+	if (l.type() != r.type())
+		f.eval_stack.back() = Value((Value::int_t) 0);
+	else if (std::holds_alternative<Value::str_t>(l.v))
+		f.eval_stack.back() = Value((Value::int_t)
+			(std::get<Value::str_t>(l.v) == std::get<Value::str_t>(r.v)));
+	else if (std::holds_alternative<Value::int_t>(l.v))
+		f.eval_stack.back() = Value((Value::int_t)
+			(std::get<Value::int_t>(l.v) == std::get<Value::int_t>(r.v)));
+	else if (std::holds_alternative<Value::float_t>(l.v))
+		f.eval_stack.back() = Value((Value::int_t)
+			(std::get<Value::float_t>(l.v) == std::get<Value::float_t>(r.v)));
+	else if (std::holds_alternative<Value::lam_t>())
 }
 
 

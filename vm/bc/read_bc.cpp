@@ -7,8 +7,8 @@
 #include <algorithm>
 #include <iostream>
 #include "read_bc.hpp"
-#include "literal.hpp"
-#include "../compile/command.hpp"
+#include "../literal.hpp"
+#include "../../compile/command.hpp"
 
 //
 static inline void ignore_until(std::istream& is, BCInstr::OPCode instr) {

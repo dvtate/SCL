@@ -13,7 +13,7 @@
 
 #include "../compile/command.hpp"
 
-#include "bc.hpp"
+#include "bc/bc.hpp"
 #include "value.hpp"
 
 class ClosureDef {
