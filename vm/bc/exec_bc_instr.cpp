@@ -3,16 +3,19 @@
 //
 #include <iostream>
 
+#include "../../debug.hpp"
 #include "exec_bc_instr.hpp"
 #include "../vm.hpp"
-#include "../builtin_operators/operators.hpp"
+#include "../operators/operators.hpp"
+#include "../operators/math.hpp"
 
 static void invoke(Frame& f) {
 
 	Value v = f.eval_stack.back();
 	f.eval_stack.pop_back();
 	if (std::holds_alternative<Value::ref_t>(v.v)) {
-		Value* p = std::get<Value::ref_t>(v.v).get_ptr()->get_ptr();
+		auto& ref = std::get<Value::ref_t>(v.v);
+		Value* p = ref.get_ptr()->get_ptr();
 		if (!p) {
 			std::cout << "Cant invoke null reference...\n";
 			return; // TODO: type-error, null-pointer, etc.
@@ -38,41 +41,34 @@ static void invoke(Frame& f) {
 
 
 void exec_bc_instr(Frame& f, BCInstr cmd) {
-
-//	std::cout <<"exec: " <<(int) cmd.instr <<std::endl;
+	DLANG_DEBUG_MSG(cmd.repr() <<std::endl);
 
 	switch (cmd.instr) {
 		// push id ref onto stack
 		case BCInstr::OPCode::USE_ID:
-			std::cout <<"USE_ID\n";
 			f.eval_stack.emplace_back(Value(
 					f.closure.vars[cmd.i]));
 			return;
 
 		// builtin operator
-		case BCInstr::OPCode::BUILTIN_OP:
-			std::cout <<"B_OP\n";
-			builtin_operators[cmd.i].act(f);
+		case BCInstr::OPCode::BUILTIN_OP: {
+			builtin_operators[cmd.i]->act(f);
 			return;
-
+		}
 		// primitive numeric lits
 		case BCInstr::OPCode::I64_LIT:
-			std::cout <<"I_LIT\n";
 			f.eval_stack.emplace_back(cmd.i);
 			return;
 		case BCInstr::OPCode::F64_LIT:
-			std::cout <<"F_LIT\n";
 			f.eval_stack.emplace_back(cmd.v);
 			return;
 
 		case BCInstr::OPCode::INVOKE:
-			std::cout <<"INVOKE\n";
 			invoke(f);
 			return;
 
 
 		case BCInstr::OPCode::USE_LIT: {
-			std::cout << "USE_LIT\n";
 			Literal &lit = f.rt->vm->literals[cmd.i];
 			if (lit.v.index() == Literal::Ltype::VAL) {
 
@@ -94,6 +90,9 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			}
 			break;
 		}
+
+		case BCInstr::OPCode::VAL_EMPTY:
+			f.eval_stack.emplace_back(Value());
 		default:
 //			std::cout <<"unknown bc instr...\n";
 			break;

@@ -8,7 +8,7 @@
 
 
 // add_any_type
-static void add_act(Frame& f) {
+void add_act(Frame& f) {
 	Value rhs = f.eval_stack.back();
 	f.eval_stack.pop_back();
 	Value& lhs = f.eval_stack.back();

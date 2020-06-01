@@ -5,7 +5,7 @@
 #ifndef DLANG_OPERATORS_HPP
 #define DLANG_OPERATORS_HPP
 
-#include <array>
+#include <vector>
 #include <functional>
 
 class Frame;
@@ -15,10 +15,12 @@ public:
 	const char* name;
 	std::function<void(Frame&)> act;
 	VMOperator(const char* name, std::function<void(Frame&)> action):
-		name(name), act(std::move(action)) {}
+		name(name), act(action) {}
+	VMOperator(const char* name, void (*action)(Frame&)):
+		name(name), act(action) {}
 };
 
-extern VMOperator builtin_operators[];
+extern std::vector<VMOperator*> builtin_operators;
 
 
 #endif //DLANG_OPERATORS_HPP

@@ -36,7 +36,7 @@ public:
 	void declare_empty_locals(const std::vector<int64_t>& ids);
 
 	// rn this only shows if they came from same literal...
-	bool operator==(const Closure& other) {
+	bool operator==(const Closure& other) const {
 		return this->body == other.body;
 	}
 };

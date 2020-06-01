@@ -10,7 +10,7 @@
 #include "../vm.hpp"
 
 
-static void change_value(Frame& f) {
+void change_value(Frame& f) {
 	Value r = f.eval_stack.back();
 	f.eval_stack.pop_back();
 	Value l = f.eval_stack.back();
@@ -34,7 +34,7 @@ static void change_value(Frame& f) {
 }
 
 
-static void check_equality(Frame& f) {
+void check_equality(Frame& f) {
 	// TODO: move to Value.equals()
 	Value r = f.eval_stack.back();
 	f.eval_stack.pop_back();
@@ -43,7 +43,7 @@ static void check_equality(Frame& f) {
 	f.eval_stack.back() = Value((Value::int_t)	l.eq_value(r));
 }
 
-static void check_identity(Frame& f) {
+void check_identity(Frame& f) {
 	// TODO: move to Value.equals()
 	Value r = f.eval_stack.back();
 	f.eval_stack.pop_back();

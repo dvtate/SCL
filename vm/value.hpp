@@ -12,19 +12,6 @@
 #include "closure.hpp"
 
 
-
-// hack to figure out what I put in std::variant
-template <typename>
-	struct tag { }; // <== this one IS literal
-template <typename T, typename V>
-	struct get_index;
-template <typename T, typename... Ts>
-	struct get_index<T, std::variant<Ts...>>
-		: std::integral_constant<size_t, std::variant<tag<Ts>...>(tag<T>()).index()>
-{ };
-
-
-
 // Native functions acessable to user
 class Frame;
 class NativeFunction {
@@ -72,9 +59,9 @@ public:
 		return (VType) this->v.index();
 	}
 
-	bool eq_value(const Value& other);
-	bool eq_identity(const Value& other);
-
+	bool eq_value(const Value& other) const;
+	bool eq_identity(const Value& other) const;
+	bool truthy() const;
 };
 
 

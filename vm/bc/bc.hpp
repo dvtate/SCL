@@ -20,6 +20,18 @@ public:
 	BCInstr(OPCode cmd, int64_t i): instr(cmd), i(i) {}
 	BCInstr(OPCode cmd, double f): instr(cmd), v(f) {}
 
+	std::string repr(){
+		std::string ret = Command::cmd_name(this->instr);
+		auto at = Command::arg_type(this->instr);
+		if (at == Command::ArgType::NO_ARG)
+			return ret;
+		if (at == Command::ArgType::INT16 || at == Command::ArgType::INT32 || at == Command::ArgType::INT64)
+			return ret + " " + std::to_string(i);
+		else if (at == Command::ArgType::FLOAT)
+			return ret + " " + std::to_string(v);
+
+		return ret + "<missing/unk arg>";
+	}
 };
 
 #endif //DLANG_BC_HPP

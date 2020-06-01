@@ -7,6 +7,9 @@
 
 #include "operators.hpp"
 
+
+extern void add_act(Frame& f);
+
 namespace VM_ops {
 	extern VMOperator plus;
 }

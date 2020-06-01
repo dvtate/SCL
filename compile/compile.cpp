@@ -156,31 +156,34 @@ void ParsedMacro::read_operation(AST& t){
 	DLANG_DEBUG_MSG("read_operation\n");
 	// TODO: replace with actual operator ID's from VM
 	std::unordered_map<std::string, uint16_t> op_ids {
-
-		{ "+", 	1 },
-		{ "-",	2 },
-		{ "neg",	3 },
-		{ "*",	4 },
-		{ "/",	5 },
-		{ "%",	6 },
-		{ "**",	7 },
-		{ "!",	8 },
-		{ "<",	9 },
-		{ ">",	10 },
-		{ "==",	11 },
-		{ "=",	12 },
-		{ ":=",	13 },
+			{ "+", 0 },
+			{ "=", 1 },
+			{ "==", 2 },
+			{ "===", 3 },
+//		{ "+", 	1 },
+//		{ "-",	2 },
+//		{ "neg",	3 },
+//		{ "*",	4 },
+//		{ "/",	5 },
+//		{ "%",	6 },
+//		{ "**",	7 },
+//		{ "!",	8 },
+//		{ "<",	9 },
+//		{ ">",	10 },
+//		{ "==",	11 },
+//		{ "=",	12 },
+//		{ ":=",	13 },
 	};
 
 	// check if it forms an expression or just lexical
-	uint16_t op;
+	int32_t op;
 	try {
 		op = op_ids.at(t.token.token);
 	} catch (...) {
-		op = 0;
+		op = -1;
 	}
 
-	if (!op) {
+	if (op < 0) {
 		this->errors.emplace_back(SemanticError(
 				"Unexpected lexical operator: " + t.token.token,
 				t.token.pos, this->file_name));
@@ -189,7 +192,7 @@ void ParsedMacro::read_operation(AST& t){
 
 	const std::string& op_sym = t.token.token;
 
-	const Command op_cmd = Command(Command::OPCode::BUILTIN_OP, op);
+	const Command op_cmd = Command(Command::OPCode::BUILTIN_OP, (uint16_t)op);
 
 
 	// compile arguments
@@ -339,10 +342,17 @@ ParsedMacro::ParsedMacro(AST &tree, std::string file_name, std::vector<ParsedMac
 }
 
 int64_t ParsedMacro::find_id(const std::string& name) {
-	// TODO: handle others
-	// global id
+	// TODO: move to dict
+	// global ids
+	if (name == "empty")
+		return 0;
 	if (name == "print")
 		return 1;
+	if (name == "input")
+		return 2;
+	if (name == "if")
+		return 3;
+
 	auto it = this->declarations.find(name);
 	if (it != this->declarations.end())
 		return it->second.id;

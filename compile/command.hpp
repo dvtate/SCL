@@ -88,6 +88,36 @@ public:
 		instr(cmd), arg(std::move(argument)) {}
 	explicit Command(OPCode cmd): instr(cmd) {}
 
+
+	static inline const char* cmd_name(OPCode c) {
+		switch (c) {
+			case END_LIT_STRING:	return "END_LIT_STRING";
+			case START_LIT_STRING:	return "START_LIT_STRING";
+			case START_LIT_MACRO:	return "START_LIT_MACRO";
+			case START_LIT_JSON:	return "START_LIT_JSON";
+			case END_LIT_SECTION:	return "END_LIT_SECTION";
+			case END_LIT_MACRO:		return "END_LIT_MACRO";
+			case I64_LIT:	return "I64_LIT";
+			case F64_LIT:	return "F64_LIT";
+			case DECL_ID:	return "DECL_ID";
+			case USE_ID:	return "USE_ID";
+			case USE_LIT:	return "USE_LIT";
+			case BUILTIN_OP:return "BUILTIN_OP";
+			case KW_VAL:	return "KW_VAL";
+			case CLEAR_STACK:	return "CLEAR_STACK";
+			case MK_LIST: 	return "MK_LIST";
+			case VAL_EMPTY: return "VAL_EMPTY";
+			case VAL_TRUE:	return "VAL_TRUE";
+			case VAL_FALSE:	return "VAL_FALSE";
+			case INVOKE:	return "INVOKE";
+			case ID_NAME:	return "ID_NAME";
+			case ID_ID:		return "ID_ID";
+			case FILE_NAME:	return "FILE_NAME";
+			case DEST_POS:	return "DEST_POS";
+			case SRC_POS:	return "SRC_POS";
+		}
+	}
+
 	// used for generating bytecode text format for debugging
 	inline std::string to_text() {
 		switch (this->instr) {
@@ -126,11 +156,11 @@ public:
 			case OPCode::INVOKE:
 				return "\tINVOKE\n";
 			case OPCode::VAL_EMPTY:
-				return "\tC_EMPTY";
+				return "\tC_EMPTY\n";
 			case OPCode::VAL_FALSE:
-				return "\tC_FALSE";
+				return "\tC_FALSE\n";
 			case OPCode::VAL_TRUE:
-				return "\tC_TRUE";
+				return "\tC_TRUE\n";
 			case OPCode::MK_LIST:
 				return "\tMAKE_LIST(" + std::to_string(std::get<int32_t>(this->arg)) + ")\n";
 

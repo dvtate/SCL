@@ -7,6 +7,7 @@
 
 #include "operators.hpp"
 
+
 namespace VM_ops {
 	// change value
 	extern VMOperator single_equals;

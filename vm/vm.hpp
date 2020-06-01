@@ -5,6 +5,7 @@
 #ifndef DLANG_VM_HPP
 #define DLANG_VM_HPP
 
+#include <iostream>
 
 #include <thread>
 #include <mutex>
@@ -91,6 +92,7 @@ public:
 	void recv_msg(RTMessage* msg) {
 		std::lock_guard<std::mutex> m(this->msg_queue_mtx);
 		this->_msg_queue.emplace_back(msg);
+		std::cout <<"recv msg\n";
 	}
 
 	// clears msg queue and returns old contents
@@ -105,6 +107,10 @@ public:
 
 	//
 	void freeze_running() {
+		if (this->active.empty()) {
+			this->running = nullptr;
+			return;
+		}
 		this->running = this->active.back();
 		this->active.pop_back();
 	}
@@ -126,8 +132,7 @@ public:
 				return;
 			}
 	}
-
-	void kill(){
+	void kill_running(){
 		auto cs = this->running;
 		this->freeze_running();
 		this->kill(cs);
@@ -160,7 +165,7 @@ public:
 	Making calls:
 	- on sync call, new Frame is pushed onto running.call_stack()
 	- on async call, new thread is created and pushed to top of active stack
-	- on parallel call, new Runtime is pushed onto worker_threads()
+	- on parallel call, new Runtime is pushed onto VM.worker_threads()
 
 	Sync Detailed Operation:
 	- on sync call: new Frame is pushed onto Runtime.running
@@ -190,6 +195,8 @@ public:
  		- callback that powers return value called with argument provided
 
  	Parallel Operation:
+ 	- new runtime with parallel call in RT.running
+ 	-
 	- similar to async...
 
 

@@ -6,14 +6,14 @@
 
 
 // aka operator == or operator ?=
-bool Value::eq_value(const Value& other) {
+bool Value::eq_value(const Value& other) const {
 	Value* l, * r;
 
 	// de-ref
 	if (std::holds_alternative<Value::ref_t>(this->v))
 		l = std::get<Value::ref_t>(this->v).get_ptr()->get_ptr();
 	else
-		l = this;
+		l = (Value*) this;
 
 	if (std::holds_alternative<Value::ref_t>(other.v))
 		r = std::get<Value::ref_t>(other.v).get_ptr()->get_ptr();
@@ -54,12 +54,11 @@ bool Value::eq_value(const Value& other) {
 		return  std::get<Value::n_fn_t>(l->v).get_ptr() ==
 				std::get<Value::n_fn_t>(r->v).get_ptr();
 
-
-	return false;
+	// todo check unhandled type...
 }
 
 
-bool Value::eq_identity(const Value& other) {
+bool Value::eq_identity(const Value& other) const {
 	if (this->type() != other.type())
 		return false;
 	if (std::holds_alternative<Value::ref_t>(this->v))
@@ -77,8 +76,8 @@ bool Value::eq_identity(const Value& other) {
 	if (t == Value::VType::EMPTY)
 		return true;
 	if (t == Value::VType::LIST) {
-		Value::list_t& l = std::get<Value::list_t>(this->v);
-		const Value::list_t& r = std::get<Value::list_t>(other.v);
+		const auto& l = std::get<Value::list_t>(this->v);
+		const auto& r = std::get<Value::list_t>(other.v);
 		if (l.size() != r.size())
 			return false;
 		for (size_t i = 0; i < l.size(); i++)
@@ -91,5 +90,31 @@ bool Value::eq_identity(const Value& other) {
 	if (t == Value::VType::LAM)
 		return std::get<Value::lam_t>(this->v) == std::get<Value::lam_t>(other.v);
 
-	return false;
+	// todo check unhandled type
+}
+
+
+bool Value::truthy() const {
+
+	Value* val = (Value*) this;
+	if (std::holds_alternative<Value::ref_t>(this->v))
+		val = std::get<Value::ref_t>(this->v).get_ptr()->get_ptr();
+
+//	if (std::holds_alternative<Value::bool_t>(val->v))
+//		return std::get<Value::bool_t>(val->v);
+	if (std::holds_alternative<Value::int_t>(val->v))
+		return std::get<Value::int_t>(val->v);
+	if (std::holds_alternative<Value::float_t>(val->v))
+		return std::get<Value::float_t>(val->v);
+	if (std::holds_alternative<Value::str_t>(val->v))
+		return !std::get<Value::str_t>(val->v).empty();
+	if (std::holds_alternative<Value::list_t>(val->v))
+		return !std::get<Value::list_t>(val->v).empty();
+	if (std::holds_alternative<Value::n_fn_t>(val->v) || std::holds_alternative<Value::lam_t>(val->v))
+		return true;
+	if (std::holds_alternative<Value::empty_t>(val->v))
+		return false;
+
+	// todo: check unhandled type
+
 }
