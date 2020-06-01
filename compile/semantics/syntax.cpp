@@ -79,19 +79,19 @@ static inline AST convert_branch(AST& t, const std::string& f, std::vector<Seman
 			// non-associative operators (1,2,3,4,5)
 			// no action
 		} else {
+
 			// left-associative ((1+2)+3)
-			auto n = AST(AST::NodeType::OPERATION, t.token);
+			const auto nn = AST(AST::NodeType::OPERATION, t.token);
 			AST ret = t;
 			ret.members.clear();
 			AST* np = &ret;
-			AST* npp;
-			for (int i = t.members.size(); i > 0; i--) {
-				npp = np;
-				np->members.emplace_back(n);
-				np->members.emplace_back(t.members[i]);
+			for (auto i = t.members.size() - 1; i > 0; i--) {
+				np->members.push_back(nn);
+				np->members.push_back(t.members[i]);
 				np = &np->members[0];
 			}
-			*npp = t.members[0];
+			*np = t.members[0];
+			t = ret;
 
 		}
 	}

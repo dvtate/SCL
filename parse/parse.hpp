@@ -64,11 +64,11 @@ public:
 
 	AST():
 		type(INVALID), token(Token()), members(), volatility(0) {}
-	AST(const NodeType type, Token token):
-			type(type), token(std::move(token)), members(), volatility(0) {}
-	AST(const NodeType type, Token token, std::vector<AST> children):
-			type(type), token(std::move(token)), members(std::move(children)), volatility(0) {}
-
+	AST(const NodeType type, const Token& token):
+			type(type), token(token), members(), volatility(0) {}
+	AST(const NodeType type, const Token& token, std::vector<AST> children):
+			type(type), token(token), members(std::move(children)), volatility(0) {}
+	AST(const AST& other) = default;
 
 	// std::variant<std::string, int64_t, double> val;
 

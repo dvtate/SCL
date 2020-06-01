@@ -5,7 +5,7 @@
 #ifndef DLANG_DEBUG_HPP
 #define DLANG_DEBUG_HPP
 
-//#define DLANG_DEBUG_DEBUG_LOG 1
+#define DLANG_DEBUG_DEBUG_LOG 1
 
 #ifdef DLANG_DEBUG_DEBUG_LOG
 	#define DLANG_DEBUG_MSG(m) std::cout <<m;

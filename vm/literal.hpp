@@ -37,7 +37,8 @@ public:
 			const std::vector<int64_t>& decl_ids,
 			const std::vector<BCInstr>& body,
 			const int64_t i_id, const int64_t o_id):
-		capture_ids(capture_ids), decl_ids(decl_ids), body(body), i_id(i_id), o_id(o_id)
+		i_id(i_id), o_id(o_id),
+		capture_ids(capture_ids), decl_ids(decl_ids), body(body)
 		{}
 	ClosureDef() = default;
 };
@@ -51,7 +52,7 @@ public:
 		VAL = 1
 	};
 
-	static inline Ltype type(int i) {
+	static inline Ltype type(size_t i) {
 		if (i == std::variant_npos)
 			return Ltype::ERR;
 		return i ? Ltype::VAL : Ltype::LAM;

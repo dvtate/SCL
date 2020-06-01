@@ -190,8 +190,6 @@ void ParsedMacro::read_operation(AST& t){
 		return;
 	}
 
-	const std::string& op_sym = t.token.token;
-
 	const Command op_cmd = Command(Command::OPCode::BUILTIN_OP, (uint16_t)op);
 
 

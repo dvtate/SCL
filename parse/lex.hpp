@@ -31,8 +31,8 @@ public:
 			type(_type), token(_token), pos(0) {}
 	Token(const t _type, std::string&& _token, unsigned long long int _pos):
 			type(_type), token(_token), pos(_pos) {}
-	Token(const Token& other) = default;
 	Token() = default;
+	Token(const Token& other) = default;
 };
 typedef struct Token Token;
 

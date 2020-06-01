@@ -116,6 +116,7 @@ public:
 			case DEST_POS:	return "DEST_POS";
 			case SRC_POS:	return "SRC_POS";
 		}
+		return "UNKNOWN";
 	}
 
 	// used for generating bytecode text format for debugging
@@ -179,8 +180,7 @@ public:
 				return "Compiled Line#" + std::to_string(std::get<int64_t>(this->arg)) + " came from ";
 			case OPCode::SRC_POS:
 				return "Source Pos#" + std::to_string(std::get<int64_t>(this->arg)) + "\n";
-			default:
-				return "";
+			default: return "???\n";
 		}
 	}
 
@@ -240,7 +240,7 @@ public:
 				ret = (char*) realloc(ret, s);
 				int32_t n = std::get<int32_t >(this->arg);
 				ret[0] = this->instr;
-				strncpy(ret+1, (char*) &n, sizeof(n));
+				strncpy(ret+1, (char*) &n, sizeof(int32_t));
 				break;
 			}
 			case ArgType::INT64: {

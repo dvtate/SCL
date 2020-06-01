@@ -50,11 +50,10 @@ public:
 	// code in body
 	std::vector<Command> body;
 
-
-	std::vector<ParsedMacro*> parents;
-
 	// file name of definition
 	std::string file_name;
+
+	std::vector<ParsedMacro*> parents;
 
 	// where did different commands originate in source program
 	std::vector<std::pair<std::size_t, unsigned long long>> relocation;

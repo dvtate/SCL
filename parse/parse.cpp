@@ -375,7 +375,7 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 			// pop closer
 			stack.pop_back();
 
-			if (stack.size() - 2 == i) {
+			if ( (long int) stack.size() - 2 == i) {
 				// has expression to capture
 				const AST e = stack.back();
 				stack.pop_back();
@@ -473,8 +473,6 @@ AST parse(const std::vector<Token>& tokens) {
 	std::vector<AST> stack;
 
 	size_t i = 0;
-
-	size_t cycles;
 
 	while (i < tokens.size()) {
 		AST tok = next_node(tokens, i, stack);
