@@ -73,10 +73,18 @@ class IfFn : public virtual NativeFunction {
 
 		const bool cond = params[0].truthy();
 		unsigned char ind = cond ? 1 : 2;
-		const Value& v = params[ind];
-		if (v.type() == Value::VType::REF) {
+		if (ind >= params.size())
+			return;
 
+		Value v = params[ind];
+		if (v.type() == Value::VType::REF) {
+			Value* p = std::get<Value::ref_t>(v.v).get_ptr()->get_ptr();
+			if (p == nullptr)
+				f.eval_stack.emplace_back(v);
+			else
+				v = *p;
 		}
+
 	}
 };
 

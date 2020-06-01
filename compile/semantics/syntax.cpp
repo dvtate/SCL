@@ -56,46 +56,45 @@ static inline AST convert_branch(AST& t, const std::string& f, std::vector<Seman
 	}
 
 	// associativity... ideally would have been handled by parser :(
-//	if (t.type == AST::NodeType::OPERATION) {
-//		const std::string& op_sym = t.token.token;
-//
-//		if (op_sym == ":=" || op_sym == "=" || op_sym == "**") {
-//			// right associative operators (a = (b = 5))
-//			AST mem = t;
-//			mem.members.clear();
-//			mem.members.emplace_back(t.members.back());
-//			t.members.pop_back();
-//			for (unsigned i = t.members.size(); i > 0; i--) {
-//				mem.members.emplace_back(t.members[i]);
-//				AST tmp = (mem);
-//				mem = t;
-//				mem.members.clear();
-//				mem.members.emplace_back(tmp);
-//			}
-//			mem.members.emplace_back(t.members[0]);
-//			t = mem;
-//
-//		} else if (op_sym == "@" || op_sym == ",") {
-//			// non-associative operators (1,2,3,4,5)
-//			// no action
-//		} else {
-//			// left-associative ((1+2)+3)
-//
-//			AST mem = t;
-//			mem.members.clear();
-//			mem.members.emplace_back(t.members[0]);
-//			t.members.pop_back();
-//			for (unsigned i = 1; i < t.members.size(); i++) {
-//				mem.members.emplace_back(t.members[i]);
-//				AST tmp = (mem);
-//				mem = t;
-//				mem.members.clear();
-//				mem.members.emplace_back(tmp);
-//			}
-//			mem.members.emplace_back(t.members.back());
-//			t = mem;
-//		}
-//	}
+	if (t.type == AST::NodeType::OPERATION && t.members.size() > 2) {
+		const std::string& op_sym = t.token.token;
+
+		if (op_sym == ":=" || op_sym == "=" || op_sym == "**") {
+			// right associative operators (a = (b = 5))
+			AST mem = t;
+			mem.members.clear();
+			mem.members.emplace_back(t.members.back());
+			t.members.pop_back();
+			for (unsigned i = t.members.size(); i > 0; i--) {
+				mem.members.emplace_back(t.members[i]);
+				AST tmp = (mem);
+				mem = t;
+				mem.members.clear();
+				mem.members.emplace_back(tmp);
+			}
+			mem.members.emplace_back(t.members[0]);
+			t = mem;
+
+		} else if (op_sym == "@" || op_sym == ",") {
+			// non-associative operators (1,2,3,4,5)
+			// no action
+		} else {
+			// left-associative ((1+2)+3)
+			auto n = AST(AST::NodeType::OPERATION, t.token);
+			AST ret = t;
+			ret.members.clear();
+			AST* np = &ret;
+			AST* npp;
+			for (int i = t.members.size(); i > 0; i--) {
+				npp = np;
+				np->members.emplace_back(n);
+				np->members.emplace_back(t.members[i]);
+				np = &np->members[0];
+			}
+			*npp = t.members[0];
+
+		}
+	}
 
 	if (t.members.empty())
 		return convert_leaf(t, f, errs);

@@ -395,15 +395,21 @@ void Program::load_file(const std::string& fname) {
 	std::ifstream file = std::ifstream(fname);
 
 //	std::cout <<"tokenizing...";
+
+	DLANG_DEBUG_MSG("tokenizing...");
 	const auto toks = tokenize_stream(file);
-//	std::cout <<"done\n";
+	DLANG_DEBUG_MSG("done\n");
+
+
+	DLANG_DEBUG_MSG("parsing...");
 //	std::cout <<"parsing...";
 	AST main = parse(toks);
 //	std::cout <<"done\n";
+	DLANG_DEBUG_MSG("done\n");
 
 	// semantic analysis
 	std::vector<SemanticError> errs = process_tree(main, fname);
-//	std::cout <<debug_AST(main);
+	std::cout <<debug_AST(main);
 
 	// implicit main macro
 	ParsedMacro entry(main, fname,

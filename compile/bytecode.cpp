@@ -18,7 +18,6 @@ std::string compile_text(std::vector<Command> cmds)
 	return ret;
 }
 
-
 // convert to compressed binary format
 // return number of bytes stored in ret
 std::vector<char> compile_bin(std::vector<Command> cmds)

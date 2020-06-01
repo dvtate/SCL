@@ -9,6 +9,9 @@
 #include "../operators/operators.hpp"
 #include "../operators/math.hpp"
 
+
+
+
 static void invoke(Frame& f) {
 
 	Value v = f.eval_stack.back();
@@ -30,7 +33,18 @@ static void invoke(Frame& f) {
 
 	// call lambda sync
 	} else if (std::holds_alternative<Value::lam_t>(v.v)) {
-		Closure c = std::get<Value::lam_t>(v.v);
+
+		auto& c = std::get<Value::lam_t>(v.v);
+		Value arg = f.eval_stack.back();
+		f.eval_stack.pop_back();
+
+		// pass arg by reference
+		if (std::holds_alternative<Value::ref_t>(arg.v))
+			c.vars[c.i_id] = std::get<Value::ref_t>(arg.v);
+		else
+			c.vars[c.i_id] = Handle(new Handle(new Value(arg)));
+
+		f.rt->running->emplace_back(std::make_shared<Frame>(f.rt, c));
 //		Frame sync_scope(f.rt, );
 	} else {
 //		std::cout <<"invoke unknown type...\n";

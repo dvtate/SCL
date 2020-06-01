@@ -44,8 +44,8 @@ VM::VM(std::vector<Literal> lit_header, std::vector<std::string> argv)
 
 	// capture global variables
 	for (int64_t id : entry.capture_ids) {
-//		std::cout <<"capture id: " <<id <<std::endl;
-		main.vars[id] = get_global_id(id);
+		if (id < 10)
+			main.vars[id] = get_global_id(id);
 	}
 
 	Handle<NativeFunction> exit_fn(new ExitProgramReturn());
