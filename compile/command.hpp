@@ -224,7 +224,7 @@ public:
 				ret = (char *) realloc(ret, s);
 				ret[0] = this->instr;
 				strcpy(ret + 1, str.c_str()); // also copies the '\0'
-				ret[str.size() + 2] = OPCode::END_LIT_STRING; // hmm
+				ret[str.size() + 1] = OPCode::END_LIT_STRING; // hmm
 				break;
 			}
 			case ArgType::INT16: {

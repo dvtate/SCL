@@ -407,7 +407,7 @@ void Program::load_file(const std::string& fname) {
 
 	// semantic analysis
 	std::vector<SemanticError> errs = process_tree(main, fname);
-	std::cout <<debug_AST(main);
+	DLANG_DEBUG_MSG("After Semantics: " <<debug_AST(main) <<std::endl);
 
 	// implicit main macro
 	ParsedMacro entry(main, fname,

@@ -37,7 +37,7 @@ static inline bool end_str(T& buff, size_t& i, const F read, const char start_c 
 		}
 		// didnt find end of string... fetch next line...
 		read();
-	} while (i < buff.size());
+	} while (!read() && i < buff.size());
 	return false;
 }
 
@@ -63,16 +63,15 @@ end_multi_comment(const T& buff,
 
 		while (i < buff.size()) {
 			i++;
-			if (buff[i] == '/' && buff[i] - 1 == '*')
+			if (buff[i] == '/' && buff[i - 1] == '*') {
+				i++;
 				return true;
+			}
 		}
 		// didn't find end of multi-comment
 
-		// get next line
-		read();
-
 		// if not eof, scan again
-	} while (i < buff.size());
+	} while (!read() && i < buff.size());
 
 	// !! syntax error unterminated multi-comment
 	return false;
@@ -225,12 +224,18 @@ Token get_token(const T& buff, size_t& i, const F read) {
 std::vector<Token> tokenize_stream(std::istream& in) {
 	std::deque<char> buff;
 
+	unsigned long long chars_read = 0;
+
 	// fetch next line from stream
 	const auto read = [&] () {
 		std::string tmp;
-		std::getline(in, tmp);
+		bool ret = !std::getline(in, tmp);
+		chars_read += tmp.size();
+		// accept empty lines
+		tmp += '\n';
 		for (auto c : tmp)
 			buff.push_back(c);
+		return ret;
 	};
 
 	std::vector<Token> ret;
@@ -243,7 +248,7 @@ std::vector<Token> tokenize_stream(std::istream& in) {
 	for (; ;) {
 		const size_t prev_i = i;
 		t = get_token(buff, i, read);
-		t.pos = pos;
+		t.pos = chars_read - (i - prev_i);// pos;
 		pos += i > prev_i ? (i - prev_i) : 0;
 
 
@@ -252,8 +257,8 @@ std::vector<Token> tokenize_stream(std::istream& in) {
 			// try to read next line
 			buff.clear();
 			i = 0;
-			read();
-			if (buff.empty()) {
+
+			if (read()) {
 				ret.emplace_back(Token(Token::t::OPERATOR, "eof"));
 				ret.back().pos = pos;
 				return ret;
