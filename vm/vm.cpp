@@ -39,8 +39,8 @@ VM::VM(std::vector<Literal> lit_header, std::vector<std::string> argv)
 
 	auto& entry = std::get<ClosureDef>(this->literals.back().v);
 	main.body = &entry.body;
-	main.i_id = entry.i_id;
-	main.o_id = entry.o_id;
+	main.i_id = entry.i_id();
+	main.o_id = entry.o_id();
 
 	// capture global variables
 	for (int64_t id : entry.capture_ids) {
@@ -49,11 +49,11 @@ VM::VM(std::vector<Literal> lit_header, std::vector<std::string> argv)
 	}
 
 	Handle<NativeFunction> exit_fn(new ExitProgramReturn());
-	main.vars[entry.o_id] = Handle(new Handle(new Value(exit_fn)));
+	main.vars[main.o_id] = Value(exit_fn);
 
 	// TODO: capture command-line args
 	Value argv_list{std::string("cmd args coming soon")};
-	main.vars[entry.i_id] = Handle(new Handle(new Value(argv_list)));
+	main.vars[main.i_id] = Value(Handle(new Handle(new Value(argv_list))));
 
 	// declare locals
 	main.declare_empty_locals(entry.decl_ids);
@@ -70,22 +70,6 @@ void Runtime::run() {
 
 	while (!this->undead.empty()) {
 
-		if (this->running == nullptr) {
-			if (this->active.empty()) {
-				using namespace std::chrono_literals;
-				std::this_thread::sleep_for(10ms);
-			} else {
-				std::cout <<"switch active\n";
-				this->running = this->active.back();
-				this->active.pop_back();
-			}
-			// run main stack until completion
-		} else if (this->running->back()->tick()) {
-			// if it got to end it must be awaiting return callback
-			// so we freeze it to process other stacks
-			this->freeze_running();
-		}
-
 		// handle actions messages
 		if (!this->_msg_queue.empty()) {
 			std::vector<RTMessage*> msgs = this->clear_msg_queue();
@@ -94,6 +78,36 @@ void Runtime::run() {
 				delete(m);
 			}
 		}
+
+		// make sure we have something to do
+		if (this->running == nullptr) {
+			if (this->active.empty()) {
+				using namespace std::chrono_literals;
+				std::this_thread::sleep_for(10ms);
+			} else {
+				this->running = this->active.back();
+				this->active.pop_back();
+			}
+		} else {
+			do {
+				if (this->running->back()->tick()) {
+					// function ran out of instructions to run...
+					// 	implicitly return value on top of stack
+					std::shared_ptr<Frame>& f = this->running->back();
+					Value& ret_v = f->eval_stack.back();
+					Value& ret_fn = f->closure.vars[f->closure.o_id];
+					if (std::holds_alternative<Value::n_fn_t>(ret_fn.v)) {
+						(*std::get<Value::n_fn_t>(ret_fn.v).get_ptr())(*f);
+					} else {
+						this->freeze_running();
+					}
+					break;
+				}
+			} while (this->running != nullptr);
+
+		}
+
+
 
 	}
 

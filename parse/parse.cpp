@@ -428,13 +428,18 @@ static inline bool reduce_invocations(std::vector<AST>& stack) {
 		const AST arg = stack.back();
 		if (isOperand(stack[stack.size() - 2])) {
 			stack.pop_back();
+
 			std::vector<AST> children { stack.back() };
-			if (!arg.members.empty())
+			if (!arg.members.empty()) {
 				children.emplace_back(arg.members[0]);
+				// if they pass csv args convert them to list
+				if (children.back().type == AST::NodeType::OPERATION && children.back().token.token == ",")
+					children.back().type =  AST::NodeType::LIST;
+			}
 			if (arg.members.size() > 1)
 				throw std::vector<SyntaxError>{SyntaxError(arg.token, "Invalid parenthesised expression")};
 
-			stack.back() = AST(AST::NodeType::MACRO_INVOKE, Token(Token::t::OPERATOR, "@"), children);
+			stack.back() = AST(AST::NodeType::INVOKE, Token(Token::t::OPERATOR, "@"), children);
 		}
 	}
 
@@ -442,7 +447,13 @@ static inline bool reduce_invocations(std::vector<AST>& stack) {
 	if (stack.back().type == AST::LIST) {
 		if (stack.size() < 2)
 			return false;
-		// check is list...
+		if (isOperand(stack[stack.size() - 2])) {
+			AST ind(AST::NodeType::INDEX, stack.back().token);
+			ind.members.emplace_back(stack[stack.size() - 2]);
+			ind.members.emplace_back(stack.back().members.back()); // expr inside brackets
+			stack.pop_back();
+			stack.back() = ind;
+		}
 	}
 
 	return false;

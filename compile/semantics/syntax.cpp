@@ -46,6 +46,7 @@ static inline AST convert_branch(AST& t, const std::string& f, std::vector<Seman
 	if (t.type != AST::NodeType::PAREN_EXPR && t.members.empty())
 		return convert_leaf(t, f, errs);
 
+
 	// convert paren exprs
 	if (t.type == AST::NodeType::PAREN_EXPR) {
 		if (t.members.size() > 1) {

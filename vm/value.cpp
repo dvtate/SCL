@@ -2,6 +2,9 @@
 // Created by tate on 28-04-20.
 //
 
+#include <iostream>
+
+#include "closure.hpp"
 #include "value.hpp"
 
 
@@ -34,8 +37,10 @@ bool Value::eq_value(const Value& other) const {
 		return std::get<Value::int_t>(l->v) == std::get<Value::int_t>(r->v);
 	if (std::holds_alternative<Value::float_t>(l->v))
 		return std::get<Value::float_t>(l->v) == std::get<Value::float_t>(r->v);
+
+	// could be different instances of same function
 	if (std::holds_alternative<Value::lam_t>(l->v))
-		return std::get<Value::lam_t>(l->v) == std::get<Value::lam_t>(r->v);
+		return (*std::get<Value::lam_t>(l->v).get_ptr()) == (*std::get<Value::lam_t>(r->v).get_ptr());
 	if (std::holds_alternative<Value::empty_t>(l->v))
 		return true;
 	if (std::holds_alternative<Value::list_t>(l->v)) {
@@ -55,6 +60,7 @@ bool Value::eq_value(const Value& other) const {
 				std::get<Value::n_fn_t>(r->v).get_ptr();
 
 	// todo check unhandled type...
+	std::cout <<"ERROR: Value::eq_value typerror: " <<l->v.index() <<" | " <<r->v.index() <<std::endl;
 }
 
 
@@ -87,10 +93,13 @@ bool Value::eq_identity(const Value& other) const {
 	}
 	if (t == Value::VType::N_FN)
 		return std::get<Value::n_fn_t>(this->v).get_ptr() == std::get<Value::n_fn_t>(other.v).get_ptr();
+	// must be same instance of same function
 	if (t == Value::VType::LAM)
-		return std::get<Value::lam_t>(this->v) == std::get<Value::lam_t>(other.v);
+		return std::get<Value::lam_t>(this->v).get_ptr() == std::get<Value::lam_t>(other.v).get_ptr();
 
 	// todo check unhandled type
+	// todo check unhandled type...
+	std::cout <<"ERROR: Value::eq_identity typerror: " <<t <<std::endl;
 }
 
 
@@ -115,6 +124,7 @@ bool Value::truthy() const {
 	if (std::holds_alternative<Value::empty_t>(val->v))
 		return false;
 
-	// todo: check unhandled type
 
+	// todo: check unhandled type
+	std::cout <<"ERROR: Value::truthy typerror: " <<val->v.index() <<std::endl;
 }

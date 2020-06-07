@@ -6,9 +6,11 @@
 #include <set>
 #include <algorithm>
 #include <iostream>
+
 #include "read_bc.hpp"
 #include "../literal.hpp"
 #include "../../compile/command.hpp"
+
 
 //
 static inline void ignore_until(std::istream& is, BCInstr::OPCode instr) {
@@ -36,27 +38,8 @@ static inline Literal capture_closure(std::istream& is,
 	std::vector <int64_t> decl_ids;
 	std::set <int64_t> use_ids;
 
-	int64_t i_id = 0, o_id = 0;
-
 	char c;
 
-	// read i
-	c = is.get();
-	if (c != BCInstr::OPCode::DECL_ID) {
-		std::cout <<"expected i_id at start of macro lit\n";
-		is.unget();
-	} else {
-		is.read((char*) &i_id, sizeof(i_id));
-	}
-
-	// read o
-	c = is.get();
-	if (c != BCInstr::OPCode::DECL_ID) {
-		std::cout <<"expected o_id at start of macro lit\n";
-		is.unget();
-	} else {
-		is.read((char*) &o_id, sizeof(o_id));
-	}
 
 	while (true) {
 
@@ -74,7 +57,7 @@ static inline Literal capture_closure(std::istream& is,
 					decl_ids.begin(), decl_ids.end(),
 					std::inserter(capture_ids, capture_ids.begin()));
 
-			return Literal(ClosureDef(capture_ids, decl_ids, body, i_id, o_id));
+			return Literal(ClosureDef(capture_ids, decl_ids, body));
 		}
 
 		if (c == BCInstr::OPCode::DECL_ID) {
@@ -111,8 +94,11 @@ static inline Literal capture_closure(std::istream& is,
 				int16_t arg;
 				is.read((char*)&arg, sizeof(arg));
 				cmd.i = arg;
+			} else if (t == Command::ArgType::INT32) {
+				int32_t arg;
+				is.read((char*)&arg, sizeof(arg));
+				cmd.i = arg;
 			}
-
 			body.emplace_back(cmd);
 		}
 	}
@@ -120,7 +106,6 @@ static inline Literal capture_closure(std::istream& is,
 
 
 static std::vector<int64_t> generate_capture_ids(int64_t entry, std::unordered_map<int64_t, std::vector<int64_t>>& nested_closures, std::vector<Literal>& lits) {
-
 	if (!std::holds_alternative<ClosureDef>(lits[entry].v))
 		return {};
 	auto& cd = std::get<ClosureDef>(lits[entry].v);
@@ -161,9 +146,12 @@ std::vector<Literal> read_lit_header(std::istream& is) {
 				strlit += c;
 
 			ret.emplace_back(Literal(parse_str(strlit)));
+
+			DLANG_DEBUG_MSG("Read String Lit : " << ret.size() <<std::endl);
 		} else if (instr == BCInstr::OPCode::START_LIT_MACRO){
+
 			ret.emplace_back(capture_closure(is, nested_closures, ret.size()));
-//			std::cout <<"read macro lit\n";
+			DLANG_DEBUG_MSG("Read Macro Lit : " << ret.size() <<std::endl);
 		}
 
 		//std::cout <<instr <<" : " <<(int)instr <<std::endl;

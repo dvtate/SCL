@@ -7,13 +7,13 @@
 
 
 #include <istream>
-
+#include "../../debug.hpp"
 #include "../literal.hpp"
 
-
+// middle section where user code lives
 std::vector<Literal> read_lit_header(std::istream& is);
 
-// TODO: read fault table...
-// TODO: metadata section
+// TODO: read fault table... (bottom)
+// TODO: metadata section   (top)
 
 #endif //DLANG_READ_BC_HPP

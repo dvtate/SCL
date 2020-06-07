@@ -81,7 +81,7 @@ public:
 	void read_macro_lit(AST&);
 	void read_list_lit(AST&);
 	void read_macro_invoke(AST&);
-
+	void read_index_op(AST&);
 };
 
 class ParsedLiteral {

@@ -52,7 +52,7 @@ public:
 		VAL_TRUE,
 		VAL_FALSE,
 
-		INVOKE,
+		INVOKE, INDEX,
 			// no arg
 
 
@@ -110,6 +110,7 @@ public:
 			case VAL_TRUE:	return "VAL_TRUE";
 			case VAL_FALSE:	return "VAL_FALSE";
 			case INVOKE:	return "INVOKE";
+			case INDEX: 	return "INDEX";
 			case ID_NAME:	return "ID_NAME";
 			case ID_ID:		return "ID_ID";
 			case FILE_NAME:	return "FILE_NAME";
@@ -156,6 +157,8 @@ public:
 				return "\tCLEAR_STACK\n";
 			case OPCode::INVOKE:
 				return "\tINVOKE\n";
+			case OPCode::INDEX:
+				return "\tINDEX\n";
 			case OPCode::VAL_EMPTY:
 				return "\tC_EMPTY\n";
 			case OPCode::VAL_FALSE:
@@ -193,6 +196,8 @@ public:
 		switch (instr) {
 			case OPCode::F64_LIT:
 				return ArgType::FLOAT;
+
+			// TODO: these can all be converted to int32_t
 			case OPCode::I64_LIT: case OPCode::DECL_ID: case OPCode::USE_ID: case OPCode::USE_LIT:
 			case OPCode::ID_ID: case OPCode::SRC_POS: case OPCode::DEST_POS:
 				return ArgType::INT64;

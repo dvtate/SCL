@@ -8,18 +8,59 @@
 
 #include "value.hpp"
 #include "vm.hpp"
-
 #include "operators/internal_tools.hpp"
+
+
 //TODO: split this into multiple files...
+
+
 
 class PrintFn : public virtual NativeFunction {
 public:
+	static inline void printValue(Value& v) {
+		if (std::holds_alternative<Value::ref_t>(v.v)) {
+			Value* p = std::get<Value::ref_t>(v.v).get_ptr()->get_ptr();
+			if (p == nullptr)
+				std::cout <<"null" <<std::flush;
+			else
+				printValue(*p);
+		} else if (std::holds_alternative<Value::str_t>(v.v)) {
+			std::cout << std::get<Value::str_t>(v.v) <<std::flush;
+		} else if (std::holds_alternative<Value::int_t>(v.v)) {
+			std::cout <<std::get<Value::int_t>(v.v) <<std::flush;
+		} else if (std::holds_alternative<Value::list_t>(v.v)) {
+			auto l = std::get<Value::list_t>(v.v);
+
+			std::cout <<"[ ";
+
+			if (!l.empty())
+				printValue(l[0]);
+
+			if (l.size() > 1)
+				for (std::size_t i = 1; i < l.size(); i++) {
+					std::cout <<", ";
+					printValue(l[i]);
+				}
+
+			std::cout <<" ]" <<std::flush;
+		} else if (std::holds_alternative<Value::float_t>(v.v)) {
+			std::cout <<std::get<Value::float_t>(v.v) <<std::flush;
+		} else if (std::holds_alternative<Value::n_fn_t>(v.v)) {
+			std::cout <<"<native procedure " << std::get<Value::n_fn_t>(v.v).get_ptr() << ">" << std::flush;
+		} else if (std::holds_alternative<Value::lam_t>(v.v)) {
+			std::cout <<"(: ... )" <<std::flush;
+		} else if (std::holds_alternative<Value::empty_t>(v.v)) {
+			std::cout <<"empty";
+		} else {
+			std::cout <<"Value of type: " <<v.type() <<std::flush;
+		}
+	}
+
 	void operator()(Frame& f) override {
 		Value msg = f.eval_stack.back();
 		f.eval_stack.pop_back();
-		if (std::holds_alternative<Value::str_t>(msg.v)) {
-			std::cout << std::get<std::string>(msg.v) <<std::endl;
-		}
+		PrintFn::printValue(msg);
+		std::cout <<std::endl;
 	}
 };
 
@@ -64,7 +105,7 @@ public:
 class IfFn : public virtual NativeFunction {
 	void operator()(Frame& f) override {
 		const Value i = f.eval_stack.back();
-
+		f.eval_stack.pop_back();
 		// invalid arg
 		if (i.type() != Value::VType::LIST)
 			return;
@@ -77,13 +118,6 @@ class IfFn : public virtual NativeFunction {
 			return;
 
 		Value v = params[ind];
-		if (v.type() == Value::VType::REF) {
-			Value* p = std::get<Value::ref_t>(v.v).get_ptr()->get_ptr();
-			if (p == nullptr)
-				f.eval_stack.emplace_back(v);
-			else
-				v = *p;
-		}
 
 	}
 };
@@ -105,15 +139,15 @@ class WhileFn : public virtual NativeFunction {
 
 };
 
-static Handle<Handle<Value>> global_ids[] {
+static Value global_ids[] {
 	// 0 - empty
-	Handle(new Handle(new Value())),
+	Value(),
 	// 1 - print
-	Handle(new Handle(new Value(Handle<NativeFunction>(new PrintFn())))),
+	Value(Handle<NativeFunction>(new PrintFn())),
 	// 2 - input
-	Handle(new Handle(new Value(Handle<NativeFunction>(new InputFn())))),
+	Value(Handle<NativeFunction>(new InputFn())),
 	// 3 - if
-	Handle(new Handle(new Value(Handle<NativeFunction>(new IfFn())))),
+	Value(Handle<NativeFunction>(new IfFn())),
 
 	// 4 - while
 	// 5 - str
@@ -121,8 +155,6 @@ static Handle<Handle<Value>> global_ids[] {
 	//
 };
 
-
-
-Handle<Handle<Value>> get_global_id(int64_t id) {
+const Value& get_global_id(int64_t id) {
 	return global_ids[id];
 }

@@ -23,7 +23,8 @@ public:
 		NUM_LITERAL,
 		STR_LITERAL,
 		IDENTIFIER,
-		MACRO_INVOKE,    // fn(arg)
+		INVOKE,    // fn(arg)
+		INDEX,
 		MEMBER_REQUEST, // bracket operators
 		MACRO,	// macro literal
 		OBJECT,	// { ... }
@@ -40,7 +41,6 @@ public:
 		COMMA_SERIES,
 
 		// temporary
-		BRK_EXPR, // bracket operator
 		PAREN_EXPR, // temporary, used to add clarity to macro calls
 		OPERATOR,  // un-parsed operator
 
@@ -79,8 +79,9 @@ public:
 			case NodeType::NUM_LITERAL:		return "Number Literal";
 			case NodeType::STR_LITERAL:		return "String Literal";
 			case NodeType::IDENTIFIER:		return "Identifier";
-			case NodeType::MACRO_INVOKE:	return "Macro Call";
+			case NodeType::INVOKE:	return "Macro Call";
 			case NodeType::MACRO:			return "Macro Literal";
+			case NodeType::INDEX:		return "List Index Request";
 			case NodeType::OBJECT:			return "Object Literal";
 			case NodeType::LIST:			return "List Literal";
 			case NodeType::MACRO_OPEN:		return "Macro opening";
@@ -90,7 +91,6 @@ public:
 			case NodeType::KV_PAIR:			return "Key-Value pair";
 			case NodeType::COMMA_SERIES:	return "Comma Series";
 			case NodeType::PAREN_EXPR:		return "Parenthesized Expression";
-			case NodeType::BRK_EXPR:		return "Bracketed Expression";
 			case NodeType::DECLARATION:		return "Declaration";
 			case NodeType::OPERATOR:		return "Operator";
 			case NodeType::INVALID:			return "Invalid item";
@@ -105,9 +105,10 @@ public:
 			case NodeType::NUM_LITERAL:		return "NUM_LIT";
 			case NodeType::STR_LITERAL:		return "STR_LIT";
 			case NodeType::IDENTIFIER:		return "ID";
-			case NodeType::MACRO_INVOKE:	return "INVOKE";
+			case NodeType::INVOKE:	return "INVOKE";
 			case NodeType::MACRO:			return "MACRO_LIT";
 			case NodeType::OBJECT:			return "OBJ_LIT";
+			case NodeType::INDEX:		return "LIST_IDX";
 			case NodeType::LIST:			return "LIST_LIT";
 			case NodeType::MACRO_OPEN:		return "M_OPEN";
 			case NodeType::LIST_OPEN:		return "L_OPEN";
@@ -116,7 +117,6 @@ public:
 			case NodeType::KV_PAIR:			return "KV_PAIR";
 			case NodeType::COMMA_SERIES:	return "CSRS";
 			case NodeType::PAREN_EXPR:		return "P_EXPR";
-			case NodeType::BRK_EXPR:		return "B_EXPR";
 			case NodeType::DECLARATION:		return "DECL";
 			case NodeType::OPERATOR:		return "OP";
 			case NodeType::INVALID:			return "INVALID";

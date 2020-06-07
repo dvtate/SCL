@@ -44,6 +44,8 @@ public:
 		{}
 
 	void action(Runtime& rt) override {
+		// TODO: Once compiler is smart enough to detect BS, this can be optimized
+
 		if (!this->stack_target || !this->frame_target) {
 			std::cout <<"invalid lambda return msg call ";
 		}
@@ -59,10 +61,12 @@ public:
 			// no longer on stack wtf??
 			std::cout << "o() called out of scope???";
 			// TODO: o() out of scope error
-		} else if (i == 0) {
 
-			this->frame_target->rt->freeze_active(this->stack_target);
-			this->frame_target->rt->kill(this->stack_target);
+			// top-level return... (how does this happen?)
+//		} else if (i == 0) {
+//
+//			this->frame_target->rt->freeze_active(this->stack_target);
+//			this->frame_target->rt->kill(this->stack_target);
 
 		} else {
 
@@ -76,7 +80,7 @@ public:
 
 			// if stack target not in active stacks, put there
 			if (rt.running != this->stack_target &&
-				std::find(rt.active.begin(), rt.active.end(), this->stack_target) == rt.active.end())
+					std::find(rt.active.begin(), rt.active.end(), this->stack_target) == rt.active.end())
 				rt.active.emplace_back(this->stack_target);
 		}
 

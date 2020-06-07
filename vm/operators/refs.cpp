@@ -55,9 +55,6 @@ void check_identity(Frame& f) {
 
 
 
-
-
-
 namespace VM_ops {
 	// change value
 	VMOperator single_equals{"change value operator (=)", change_value};

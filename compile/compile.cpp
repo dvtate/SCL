@@ -84,6 +84,13 @@ void ParsedMacro::read_string_lit(AST& tree) {
 				new_pos, tree.token.pos });
 }
 
+void ParsedMacro::read_index_op(AST& tree){
+	// put args on stack
+	for (auto& m : tree.members)
+		this->read_tree(m);
+	this->body.emplace_back(Command(Command::OPCode::INDEX));
+}
+
 void ParsedMacro::read_decl(AST& tree) {
 	DLANG_DEBUG_MSG("read_decl\n");
 	if (tree.members.empty()) {
@@ -160,6 +167,7 @@ void ParsedMacro::read_operation(AST& t){
 			{ "=", 1 },
 			{ "==", 2 },
 			{ "===", 3 },
+			{ "!", 4 },
 //		{ "+", 	1 },
 //		{ "-",	2 },
 //		{ "neg",	3 },
@@ -262,7 +270,9 @@ void ParsedMacro::read_statements(AST& tree) {
 		read_tree(statement);
 		this->body.emplace_back(Command(Command::OPCode::CLEAR_STACK));
 	}
-	if (!tree.members.size())
+
+	// support implicit return value...
+	if (!tree.members.empty())
 		// don't pop last item
 		this->body.pop_back();
 }
@@ -294,14 +304,17 @@ void ParsedMacro::read_tree(AST& tree) {
 		case AST::NodeType::MACRO:
 			read_macro_lit(tree);
 			return;
-
-		case AST::NodeType::MACRO_INVOKE:
+		case AST::NodeType::INDEX:
+			read_index_op(tree);
+			return;
+		case AST::NodeType::INVOKE:
 			read_macro_invoke(tree);
 			return;
 		default:
 			this->errors.emplace_back(SemanticError(
 					"Unsupported feature: " + tree.type_name(),
 					tree.token.pos, this->file_name));
+			return;
 	}
 
 }

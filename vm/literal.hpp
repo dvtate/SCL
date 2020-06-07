@@ -19,28 +19,29 @@
 class ClosureDef {
 public:
 
-	// io ids
-	int64_t i_id;
-	int64_t o_id;
-
 	// all outside, lexical ids used by this closure and it's nested members
 	std::vector<int64_t> capture_ids;
 
-	// identifiers declared in scope of this closure
+	// identifiers declared in scope of this closure (sorted)
 	std::vector<int64_t> decl_ids;
 
 	// instruction code
 	std::vector<BCInstr> body;
 
 	ClosureDef(
-			const std::vector<int64_t>& capture_ids,
-			const std::vector<int64_t>& decl_ids,
-			const std::vector<BCInstr>& body,
-			const int64_t i_id, const int64_t o_id):
-		i_id(i_id), o_id(o_id),
-		capture_ids(capture_ids), decl_ids(decl_ids), body(body)
+			std::vector<int64_t> capture_ids,
+			std::vector<int64_t> decl_ids,
+			std::vector<BCInstr> body):
+		capture_ids(std::move(capture_ids)),
+		decl_ids(std::move(decl_ids)),
+		body(std::move(body))
 		{}
 	ClosureDef() = default;
+
+	[[nodiscard]] inline int64_t i_id()
+		const noexcept { return this->decl_ids[0]; }
+	[[nodiscard]] inline int64_t o_id()
+		const noexcept { return this->decl_ids[1]; }
 };
 
 class Literal {

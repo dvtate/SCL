@@ -12,10 +12,9 @@
 
 #include "gc/handle.hpp"
 #include "bc/bc.hpp"
-
+#include "value.hpp"
 
 class Frame;
-class Value;
 
 class Closure {
 public:
@@ -27,7 +26,7 @@ public:
 	int64_t o_id;
 
 	// captured identifiers
-	std::unordered_map<int64_t, Handle<Handle<Value>>> vars;
+	std::unordered_map<int64_t, Value> vars;
 
 	// body points to implementation defined by relevant closureDef
 	std::vector<BCInstr>* body;

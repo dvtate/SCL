@@ -9,8 +9,9 @@
 #include "../vm.hpp"
 
 
-namespace internal {
+namespace vm_util {
 	const Value* deref(const Value&);
+	void invoke_value_sync(Frame& f, bool uncallable=true);
 }
 
 #endif //DLANG_INTERNAL_TOOLS_HPP

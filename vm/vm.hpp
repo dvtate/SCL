@@ -26,9 +26,8 @@ class Runtime;
 class VM;
 class Value;
 
-//using SyncCallStack = std::vector<std::shared_ptr<Frame>>;
 
-// abstract type used for handling return values and such
+// abstract type used for ITC/IPC
 class RTMessage {
 public:
 	virtual ~RTMessage(){};
@@ -38,6 +37,7 @@ public:
 
 class SyncCallStack : public std::vector<std::shared_ptr<Frame>> {
 public:
+	// origin thread (used for generating stack-trace & handling errors)
 	std::shared_ptr<SyncCallStack> creator;
 };
 

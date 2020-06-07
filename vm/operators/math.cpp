@@ -70,8 +70,24 @@ void add_act(Frame& f) {
 		return;
 	}
 
+}
+
+int_fast8_t compare_act(Frame& f) {
+	Value rv = f.eval_stack.back();
+	f.eval_stack.pop_back();
+	Value lv = f.eval_stack.back();
+	f.eval_stack.pop_back();
+
+	Value* r = rv.deref();
+	return 0;
 
 }
+
+
+void less_than_act(Frame& f) {
+
+}
+
 
 namespace VM_ops {
 	VMOperator plus{"plus operator (+)", add_act};
