@@ -14,20 +14,20 @@
 //TODO: split this into multiple files...
 
 
-
+// a -> a returns same as input
 class PrintFn : public virtual NativeFunction {
 public:
 	static inline void printValue(Value& v) {
 		if (std::holds_alternative<Value::ref_t>(v.v)) {
 			Value* p = std::get<Value::ref_t>(v.v).get_ptr()->get_ptr();
 			if (p == nullptr)
-				std::cout <<"null" <<std::flush;
+				std::cout <<"null";
 			else
 				printValue(*p);
 		} else if (std::holds_alternative<Value::str_t>(v.v)) {
-			std::cout << std::get<Value::str_t>(v.v) <<std::flush;
+			std::cout << std::get<Value::str_t>(v.v);
 		} else if (std::holds_alternative<Value::int_t>(v.v)) {
-			std::cout <<std::get<Value::int_t>(v.v) <<std::flush;
+			std::cout <<std::get<Value::int_t>(v.v);
 		} else if (std::holds_alternative<Value::list_t>(v.v)) {
 			auto l = std::get<Value::list_t>(v.v);
 
@@ -42,28 +42,28 @@ public:
 					printValue(l[i]);
 				}
 
-			std::cout <<" ]" <<std::flush;
+			std::cout <<" ]";
 		} else if (std::holds_alternative<Value::float_t>(v.v)) {
-			std::cout <<std::get<Value::float_t>(v.v) <<std::flush;
+			std::cout <<std::get<Value::float_t>(v.v);
 		} else if (std::holds_alternative<Value::n_fn_t>(v.v)) {
-			std::cout <<"<native procedure " << std::get<Value::n_fn_t>(v.v).get_ptr() << ">" << std::flush;
+			std::cout <<"<native procedure " << std::get<Value::n_fn_t>(v.v).get_ptr() << ">";
 		} else if (std::holds_alternative<Value::lam_t>(v.v)) {
-			std::cout <<"(: ... )" <<std::flush;
+			std::cout <<"(: ... )";
 		} else if (std::holds_alternative<Value::empty_t>(v.v)) {
 			std::cout <<"empty";
 		} else {
-			std::cout <<"Value of type: " <<v.type() <<std::flush;
+			std::cout <<"Value of type: " <<v.type();
 		}
 	}
 
 	void operator()(Frame& f) override {
-		Value msg = f.eval_stack.back();
-		f.eval_stack.pop_back();
-		PrintFn::printValue(msg);
-		std::cout <<std::endl;
+		Value& msg = f.eval_stack.back();
+//		PrintFn::printValue(msg);
+		std::cout <<msg.to_string() <<std::endl;
 	}
 };
 
+// Empty -> Str
 class InputFn : public virtual NativeFunction {
 public:
 	class UnfreezeCallStack : public virtual RTMessage {
@@ -104,20 +104,21 @@ public:
 
 class IfFn : public virtual NativeFunction {
 	void operator()(Frame& f) override {
-		const Value i = f.eval_stack.back();
-		f.eval_stack.pop_back();
+
+		Value i = f.eval_stack.back();
+		DLANG_DEBUG_MSG("if(" << i.to_string() <<") called");
 		// invalid arg
 		if (i.type() != Value::VType::LIST)
 			return;
 
-		const auto& params = std::get<Value::list_t>(i.v);
+		auto& params = std::get<Value::list_t>(i.v);
 
 		const bool cond = params[0].truthy();
 		unsigned char ind = cond ? 1 : 2;
 		if (ind >= params.size())
 			return;
 
-		Value v = params[ind];
+		vm_util::invoke_value_sync(f, params[ind], true);
 
 	}
 };
@@ -139,6 +140,46 @@ class WhileFn : public virtual NativeFunction {
 
 };
 
+// Any -> Str
+class StrFn : public virtual NativeFunction {
+	void operator()(Frame& f) override {
+		f.eval_stack.back() = Value(f.eval_stack.back().to_string());
+	}
+};
+
+
+// Any -> Int | Float | Empty
+class NumFn : public virtual NativeFunction {
+
+	void operator()(Frame& f) override {
+		Value i = f.eval_stack.back();
+		Value* in = i.deref();
+		if (in == nullptr) {
+			f.eval_stack.back() = Value();
+			return;
+		}
+		if (std::holds_alternative<Value::int_t>(in->v) ||
+			std::holds_alternative<Value::float_t>(in->v))
+			// already a Num
+			return;
+
+		if (std::holds_alternative<Value::str_t>(in->v)) {
+			const auto& s = std::get<Value::str_t>(in->v);
+			try {
+				f.eval_stack.back() = Value((Value::int_t) std::stoll(s));
+			} catch (...) {
+				try {
+					f.eval_stack.back() = Value((Value::float_t) std::stod(s));
+				} catch (...) {
+					f.eval_stack.back() = Value();
+				}
+			}
+		} else {
+			f.eval_stack.back() = Value();
+		}
+	}
+};
+
 static Value global_ids[] {
 	// 0 - empty
 	Value(),
@@ -148,10 +189,12 @@ static Value global_ids[] {
 	Value(Handle<NativeFunction>(new InputFn())),
 	// 3 - if
 	Value(Handle<NativeFunction>(new IfFn())),
+	// 4 - Str
+	Value(Handle<NativeFunction>(new StrFn())),
+	// 5 - Num
+	Value(Handle<NativeFunction>(new NumFn())),
 
-	// 4 - while
-	// 5 - str
-	// 6 - range
+	// 6 - range (need objects first...)
 	//
 };
 

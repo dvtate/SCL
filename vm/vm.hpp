@@ -15,6 +15,7 @@
 #include <cstdint>
 #include <list>
 
+#include "../debug.hpp"
 #include "closure.hpp"
 #include "bc/exec_bc_instr.hpp"
 #include "literal.hpp"
@@ -92,7 +93,7 @@ public:
 	void recv_msg(RTMessage* msg) {
 		std::lock_guard<std::mutex> m(this->msg_queue_mtx);
 		this->_msg_queue.emplace_back(msg);
-		std::cout <<"recv msg\n";
+		DLANG_DEBUG_MSG("VM:RT: msg received\n");
 	}
 
 	// clears msg queue and returns old contents
@@ -101,6 +102,7 @@ public:
 		std::vector<RTMessage*> cpy = {};
 		std::lock_guard<std::mutex> m(this->msg_queue_mtx);
 		std::swap(cpy, this->_msg_queue);
+		DLANG_DEBUG_MSG("VM:RT: cleared msg queue\n");
 		return cpy;
 	}
 
@@ -113,6 +115,7 @@ public:
 		}
 		this->running = this->active.back();
 		this->active.pop_back();
+		DLANG_DEBUG_MSG("VM:RT: froze running CallStack\n");
 	}
 
 	//
@@ -122,6 +125,8 @@ public:
 				this->active.erase(it);
 				return;
 			}
+
+		DLANG_DEBUG_MSG("VM:RT: froze pending CallStack\n");
 	}
 
 	// removes call stack from undead tracker
@@ -131,13 +136,14 @@ public:
 				this->undead.erase(it);
 				return;
 			}
+		DLANG_DEBUG_MSG("VM:RT: killed CallStack\n");
 	}
 	void kill_running(){
 		auto cs = this->running;
 		this->freeze_running();
 		this->kill(cs);
 	}
-
+	void debugSummary();
 	void run();
 
 private:
@@ -156,7 +162,7 @@ public:
 	std::shared_ptr<Runtime> main_thread;
 	std::list<std::shared_ptr<Runtime>> worker_threads;
 
-	VM(std::vector<Literal> lit_header, std::vector<std::string> argv);
+	VM(std::vector<Literal> lit_header, const std::vector<std::string>&  argv);
 
 	void run();
 };

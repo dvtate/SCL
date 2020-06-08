@@ -5,11 +5,12 @@
 #include "internal_tools.hpp"
 
 #include "../value.hpp"
+#include "../lambda_return.hpp"
 
 
 namespace vm_util {
 
-	void invoke_value_sync(Frame &f, Value v, bool uncallable = true) {
+	void invoke_value_sync(Frame &f, Value& v, bool uncallable) {
 		auto vt = v.type();
 		if (vt == Value::VType::REF) {
 			Value *p = std::get<Value::ref_t>(v.v).get_ptr()->get_ptr();
@@ -23,7 +24,7 @@ namespace vm_util {
 
 		if (vt == Value::VType::N_FN) {
 			// std::cout <<"invoke native..\n";
-			(*std::get<Handle<NativeFunction>>(v.v).ptr)(f);
+			(*std::get<Handle<NativeFunction>>(v.v).get_ptr())(f);
 			return;
 		}
 		if (vt == Value::VType::LAM) {
@@ -37,6 +38,7 @@ namespace vm_util {
 			else  // wasnt given reference, copy value into one :///
 				c->vars[c->i_id] = Value(Handle(new Handle(new Value(arg))));
 
+			c->vars[c->o_id] = Value(Handle<NativeFunction>(new LambdaReturnNativeFn(f)));
 			f.rt->running->emplace_back(std::make_shared<Frame>(f.rt, *c));
 
 		}
@@ -45,7 +47,7 @@ namespace vm_util {
 		if (uncallable) {
 			f.rt->running->back()->eval_stack.emplace_back(v);
 		} else {
-			// TypeError
+			// trigger TypeError
 		}
 
 	}

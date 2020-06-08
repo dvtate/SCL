@@ -26,7 +26,7 @@ public:
 };
 
 
-VM::VM(std::vector<Literal> lit_header, std::vector<std::string> argv)
+VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv)
 {
 	this->literals = std::move(lit_header);
 
@@ -43,9 +43,10 @@ VM::VM(std::vector<Literal> lit_header, std::vector<std::string> argv)
 	main.o_id = entry.o_id();
 
 	// capture global variables
-	for (int64_t id : entry.capture_ids) {
-		if (id < 10)
-			main.vars[id] = get_global_id(id);
+	for (const int64_t id : entry.capture_ids) {
+		DLANG_DEBUG_MSG("capture global id # " <<id <<std::endl);
+		std::cout <<"cid" <<id <<std::endl;
+		main.vars[id] = get_global_id(id);
 	}
 
 	Handle<NativeFunction> exit_fn(new ExitProgramReturn());
@@ -65,10 +66,15 @@ void VM::run() {
 	main_thread->run();
 }
 
+void Runtime::debugSummary() {
+
+}
+
 // event loop
 void Runtime::run() {
 
 	while (!this->undead.empty()) {
+
 
 		// handle actions messages
 		if (!this->_msg_queue.empty()) {
@@ -83,14 +89,16 @@ void Runtime::run() {
 		if (this->running == nullptr) {
 			if (this->active.empty()) {
 				using namespace std::chrono_literals;
-				std::this_thread::sleep_for(10ms);
+				std::this_thread::sleep_for(1ms);
 			} else {
+				DLANG_DEBUG_MSG("VM:RT:Pulled Stack from active\n");
 				this->running = this->active.back();
 				this->active.pop_back();
 			}
 		} else {
 			do {
 				if (this->running->back()->tick()) {
+					DLANG_DEBUG_MSG("VM:RT:Frame: ran out of instructions\n");
 					// function ran out of instructions to run...
 					// 	implicitly return value on top of stack
 					std::shared_ptr<Frame>& f = this->running->back();

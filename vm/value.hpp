@@ -32,12 +32,14 @@ public:
 	using ref_t 	= Handle<Handle<Value>>;
 	using lam_t 	= Handle<Closure>;
 	using n_fn_t 	= Handle<NativeFunction>;
-	using bool_t 	= bool;
+	using bool_t 	= Value::int_t	;
 	using list_t	= std::vector<Value>;
 
 	using variant_t = std::variant<
 			empty_t, float_t, int_t, str_t,
 			ref_t, lam_t, n_fn_t, list_t>;
+
+	// only attribute... could simply extend variant_t...
 	variant_t v;
 
 	enum VType {
@@ -59,6 +61,7 @@ public:
 	explicit Value(const lam_t& in): 		v(in) {}
 	explicit Value(const n_fn_t& in):		v(in) {}
 	explicit Value(const list_t& in):		v(in) {}
+	explicit Value(const bool in):			v((int_t) in) {}
 	Value(const Value& other):				v(other.v) {}
 
 	inline VType type() const {
@@ -74,6 +77,7 @@ public:
 			: this;
 	}
 
+	std::string to_string(bool recursive = false);
 };
 
 

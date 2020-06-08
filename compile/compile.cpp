@@ -21,9 +21,6 @@ const static std::unordered_map<std::string, Command> keyword_values = {
 		{ "input", Command(Command::OPCode::KW_VAL, (uint16_t) 4) },
 };
 
-const static std::unordered_map<std::string, int64_t> global_ids {
-	{ "print", 1 },
-};
 
 // maybe later want first 10 symbol ids to be reserved
 int64_t MutilatedSymbol::_uid = 10;
@@ -35,6 +32,8 @@ void ParsedMacro::read_num_lit(AST& tree) {
 	try { // try to parse int first
 		// sigh...
 		int64_t v;
+
+		// TODO: replace this with <climits> LONG_BITS INT_BITS ... etc.
 		if (sizeof(long) == sizeof(int64_t)) {
 			v = std::stol(tree.token.token);
 		} else if (sizeof(long long) == sizeof(int64_t)) {
@@ -163,24 +162,17 @@ void ParsedMacro::read_operation(AST& t){
 	DLANG_DEBUG_MSG("read_operation\n");
 	// TODO: replace with actual operator ID's from VM
 	std::unordered_map<std::string, uint16_t> op_ids {
-			{ "+", 0 },
-			{ "=", 1 },
-			{ "==", 2 },
-			{ "===", 3 },
-			{ "!", 4 },
-//		{ "+", 	1 },
-//		{ "-",	2 },
-//		{ "neg",	3 },
-//		{ "*",	4 },
-//		{ "/",	5 },
-//		{ "%",	6 },
-//		{ "**",	7 },
-//		{ "!",	8 },
-//		{ "<",	9 },
-//		{ ">",	10 },
-//		{ "==",	11 },
-//		{ "=",	12 },
-//		{ ":=",	13 },
+			{ "+",		0 },
+			{ "=",		1 },
+			{ "==",		2 },
+			{ "===",		3 },
+			{ "<",		4 },
+			{ ">",		5 },
+			{ "<=",		6 },
+			{ ">=",		7 },
+			{ "!",		8 },
+			{ "-",		9 },
+
 	};
 
 	// check if it forms an expression or just lexical
@@ -198,15 +190,13 @@ void ParsedMacro::read_operation(AST& t){
 		return;
 	}
 
-	const Command op_cmd = Command(Command::OPCode::BUILTIN_OP, (uint16_t)op);
-
-
 	// compile arguments
 	for (auto& arg : t.members)
 		read_tree(arg);
 
 	std::size_t lpos = this->body.size();
-	this->body.emplace_back(op_cmd);
+	this->body.emplace_back(Command(
+			Command::OPCode::BUILTIN_OP, (uint16_t) op));
 	this->relocation.emplace_back(std::pair { lpos, t.token.pos });
 }
 
@@ -352,17 +342,19 @@ ParsedMacro::ParsedMacro(AST &tree, std::string file_name, std::vector<ParsedMac
 
 }
 
+// global ids + 1 so that zero (not found) is invalid
+static const std::unordered_map<std::string, int> global_ids {
+		{"empty",	1 },
+		{ "print",	2 },
+		{ "input",	3 },
+		{ "if",		4 },
+		{ "Str",		5 },
+		{ "Num",		6 },
+};
+
 int64_t ParsedMacro::find_id(const std::string& name) {
-	// TODO: move to dict
-	// global ids
-	if (name == "empty")
-		return 0;
-	if (name == "print")
-		return 1;
-	if (name == "input")
-		return 2;
-	if (name == "if")
-		return 3;
+
+
 
 	auto it = this->declarations.find(name);
 	if (it != this->declarations.end())
@@ -375,8 +367,15 @@ int64_t ParsedMacro::find_id(const std::string& name) {
 			return it->second.id;
 	}
 
-	// not found
-	return 0;
+	// if it's a global id use that instead...
+	try {
+		return global_ids.at(name) - 1;
+	} catch (...) {
+		// not found
+		// use before initialization
+		return 0;
+	}
+
 }
 
 int64_t ParsedMacro::declare_id(const std::string& id_name) {

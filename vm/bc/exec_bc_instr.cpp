@@ -8,48 +8,16 @@
 #include "../vm.hpp"
 #include "../operators/operators.hpp"
 #include "../operators/math.hpp"
-
-
+#include "../lambda_return.hpp"
+#include "../operators/internal_tools.hpp"
 
 
 static void invoke(Frame& f) {
 
 	Value v = f.eval_stack.back();
 	f.eval_stack.pop_back();
-	if (std::holds_alternative<Value::ref_t>(v.v)) {
-		auto& ref = std::get<Value::ref_t>(v.v);
-		Value* p = ref.get_ptr()->get_ptr();
-		if (!p) {
-			std::cout << "Cant invoke null reference...\n";
-			return; // TODO: type-error, null-pointer, etc.
-		}
-		v = Value(*p);
-	}
 
-	// call native function
-	if (std::holds_alternative<Value::n_fn_t>(v.v)) {
-		// std::cout <<"invoke native..\n";
-		(*std::get<Handle<NativeFunction>>(v.v).ptr)(f);
-
-	// call lambda sync
-	} else if (std::holds_alternative<Value::lam_t>(v.v)) {
-
-		auto* c = std::get<Value::lam_t>(v.v).get_ptr();
-		Value arg = f.eval_stack.back();
-		f.eval_stack.pop_back();
-
-		// pass arg by reference
-		if (std::holds_alternative<Value::ref_t>(arg.v))
-			c->vars[c->i_id] = arg;
-		else  // wasnt given reference, copy value into one
-			c->vars[c->i_id] = Value(Handle(new Handle(new Value(arg))));
-
-		f.rt->running->emplace_back(std::make_shared<Frame>(f.rt, *c));
-
-	} else {
-//		std::cout <<"invoke unknown type...\n";
-		// TODO: type-error
-	}
+	vm_util::invoke_value_sync(f, v, false);
 
 }
 
@@ -86,7 +54,7 @@ void index(Frame& f) {
 			f.eval_stack.back() = Value();
 		}
 	} else {
-		std::cout <<"INDEX[1] type-error..\n";
+		std::cout <<"INDEX[1] type-error..\n" <<v->to_string() <<std::endl;
 	}
 }
 
@@ -107,20 +75,24 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 
 	switch (cmd.instr) {
 		// push id ref onto stack
-		case BCInstr::OPCode::USE_ID:
-			f.eval_stack.emplace_back(Value(
-					f.closure.vars[cmd.i]));
+		case BCInstr::OPCode::USE_ID: try {
+				f.eval_stack.emplace_back(Value(
+						f.closure.vars.at(cmd.i)));
+			} catch (...) {
+				DLANG_DEBUG_MSG("Undefined var id: " <<cmd.i <<std::endl);
+			}
 			return;
 
 		// builtin operator
-		case BCInstr::OPCode::BUILTIN_OP: {
+		case BCInstr::OPCode::BUILTIN_OP:
 			builtin_operators[cmd.i]->act(f);
 			return;
-		}
+
 		// primitive numeric lits
 		case BCInstr::OPCode::I64_LIT:
 			f.eval_stack.emplace_back(cmd.i);
 			return;
+			
 		case BCInstr::OPCode::F64_LIT:
 			f.eval_stack.emplace_back(cmd.v);
 			return;
@@ -129,26 +101,40 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			invoke(f);
 			return;
 
-
 		case BCInstr::OPCode::USE_LIT: {
 			Literal &lit = f.rt->vm->literals[cmd.i];
 			if (lit.v.index() == Literal::Ltype::VAL) {
-
 				f.eval_stack.emplace_back(std::get<Value>(lit.v));
 			} else {
-				ClosureDef &cd = std::get<ClosureDef>(lit.v);
+				auto& cd = std::get<ClosureDef>(lit.v);
 
-				Closure nc{};
+				auto* c = new Closure();
 
+#ifdef DLANG_DEBUG
 				// capture lexical vars
-				// TODO: this is prolly expensive
-				for (int64_t cid : cd.capture_ids)
-					nc.vars[cid] = f.closure.vars[cid];
+				for (const int64_t cid : cd.capture_ids) {
+					try {
+						c->vars[cid] = f.closure.vars.at(cid);
+					} catch (...) {
+						DLANG_DEBUG_MSG("USE_LIT: unable to capture id# " <<cid);
+					}
+				}
+#else
+				// capture lexical vars
+				for (const int64_t cid : cd.capture_ids)
+					c->vars[cid] = f.closure.vars[cid];
+#endif
+				// reference body bytecodes
+				c->body = &cd.body;
 
-				nc.body = &cd.body;
+				// label input and output ids
+				c->i_id = cd.i_id();
+				c->o_id = cd.o_id();
 
+				// declare locals && set to empty
+				c->declare_empty_locals(cd.decl_ids);
 
-				// todo: implement
+				f.eval_stack.emplace_back(Value(Handle<Closure>(c)));
 			}
 			return;
 		}
@@ -157,7 +143,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			f.eval_stack.emplace_back(Value());
 			return;
 		case BCInstr::OPCode::CLEAR_STACK:
-			f.eval_stack.clear();
+//			f.eval_stack.clear();
 			return;
 		case BCInstr::OPCode::INDEX:
 			index(f);

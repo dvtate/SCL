@@ -22,34 +22,14 @@ void change_value(Frame& f) {
 
 	// defer value
 	if (std::holds_alternative<Value::ref_t>(r.v))
-		std::get<Value::ref_t>(l.v).set_ptr(
-				std::get<Value::ref_t>(r.v).get_ptr());
-
-
-	if (std::holds_alternative<Value::ref_t>(l.v)) {
+		std::get<Value::ref_t>(l.v).get_ptr()->set_ptr(
+				std::get<Value::ref_t>(r.v).get_ptr()->get_ptr());
+	else  {
 		Value* ref = std::get<Value::ref_t>(l.v).get_ptr()->get_ptr();
 		*ref = r;
 	}
 
-}
-
-
-void check_equality(Frame& f) {
-	// TODO: move to Value.equals()
-	Value r = f.eval_stack.back();
-	f.eval_stack.pop_back();
-	Value l = f.eval_stack.back();
-
-	f.eval_stack.back() = Value((Value::int_t)	l.eq_value(r));
-}
-
-void check_identity(Frame& f) {
-	// TODO: move to Value.equals()
-	Value r = f.eval_stack.back();
-	f.eval_stack.pop_back();
-	Value l = f.eval_stack.back();
-
-	f.eval_stack.back() = Value((Value::int_t)	l.eq_identity(r));
+	// l stays on stack...
 }
 
 
@@ -58,14 +38,5 @@ void check_identity(Frame& f) {
 namespace VM_ops {
 	// change value
 	VMOperator single_equals{"change value operator (=)", change_value};
-
-	// check equality
-	VMOperator dobule_equals{"compare equality operator (==)", check_equality};
-
-	// check Identity
-	VMOperator triple_equals{"compare identity operator (===)", check_identity};
-//
-//	// check identity
-//	VMOperator triple_equals{};
 
 }

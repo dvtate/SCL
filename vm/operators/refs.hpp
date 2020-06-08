@@ -12,11 +12,6 @@ namespace VM_ops {
 	// change value
 	extern VMOperator single_equals;
 
-	// check equality
-	extern VMOperator dobule_equals;
-
-	// check identity
-	extern VMOperator triple_equals;
 
 }
 

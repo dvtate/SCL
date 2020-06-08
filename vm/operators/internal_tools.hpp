@@ -11,7 +11,7 @@
 
 namespace vm_util {
 	const Value* deref(const Value&);
-	void invoke_value_sync(Frame& f, bool uncallable=true);
+	void invoke_value_sync(Frame& f, Value& v, bool uncallable);
 }
 
 #endif //DLANG_INTERNAL_TOOLS_HPP

@@ -12,6 +12,7 @@ extern void add_act(Frame& f);
 
 namespace VM_ops {
 	extern VMOperator plus;
+	extern VMOperator minus;
 }
 
 

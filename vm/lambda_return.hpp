@@ -7,6 +7,7 @@
 
 
 #include <iostream>
+#include "../debug.hpp"
 #include "vm.hpp"
 #include "value.hpp"
 
@@ -53,35 +54,31 @@ public:
 
 		// find frame on stack
 		ssize_t i;
-		for (i = this->stack_target->size(); i >= 0; i--)
+		for (i = this->stack_target->size() - 1; i >= 0; i--)
 			if ((*this->stack_target)[i] == this->frame_target)
 				break;
-
-		if (i < 0) {
+		i++; // don't pop frame_target...
+		if (i <= 0) {
 			// no longer on stack wtf??
 			std::cout << "o() called out of scope???";
 			// TODO: o() out of scope error
 
-			// top-level return... (how does this happen?)
-//		} else if (i == 0) {
-//
-//			this->frame_target->rt->freeze_active(this->stack_target);
-//			this->frame_target->rt->kill(this->stack_target);
 
 		} else {
 
-			// pop stack
+			// pop stack until back to call site
 			this->stack_target->erase(this->stack_target->begin() + i, this->stack_target->end());
-			for (; (unsigned long) i <= this->stack_target->size(); i++)
-				this->stack_target->pop_back();
 
 			// push return value onto top of stack
-			this->stack_target->back()->eval_stack.emplace_back(this->ret);
+			this->stack_target->back()->eval_stack.push_back(this->ret);
 
 			// if stack target not in active stacks, put there
 			if (rt.running != this->stack_target &&
-					std::find(rt.active.begin(), rt.active.end(), this->stack_target) == rt.active.end())
+					std::find(rt.active.begin(), rt.active.end(), this->stack_target) == rt.active.end()) {
+				DLANG_DEBUG_MSG("LAM_RET: queued stack..\n");
 				rt.active.emplace_back(this->stack_target);
+			}
+
 		}
 
 	}
@@ -89,20 +86,25 @@ public:
 
 // user-callable
 class LambdaReturnNativeFn : public virtual NativeFunction {
+	std::shared_ptr<Frame> frame_target;
+	std::shared_ptr<SyncCallStack> stack_target;
 	std::shared_ptr<Runtime> rt;
-	LambdaReturnMsg msg;
-
-	LambdaReturnNativeFn(): rt(nullptr), msg() {}
+public:
 	explicit LambdaReturnNativeFn(Frame& f) {
 		this->rt = f.rt->vm->main_thread; // TODO: detect thread/convert rt to weak_ptr
-		this->msg = LambdaReturnMsg(
-				f.rt->running->back(),
-				f.rt->running,
-				f.eval_stack.back());
+		this->frame_target = f.rt->running->back();
+		this->stack_target = f.rt->running;
 	}
 
 	void operator()(Frame& f) override {
-		this->rt->recv_msg(new LambdaReturnMsg(this->msg));
+		DLANG_DEBUG_MSG("o() called\n");
+		this->rt->recv_msg(new LambdaReturnMsg(
+				this->frame_target,
+				this->stack_target,
+				f.eval_stack.back()));
+		// prevent double-return
+		if (this->rt->running == this->stack_target)
+			this->rt->freeze_running();
 	}
 };
 

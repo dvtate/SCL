@@ -128,3 +128,42 @@ bool Value::truthy() const {
 	// todo: check unhandled type
 	std::cout <<"ERROR: Value::truthy typerror: " <<val->v.index() <<std::endl;
 }
+
+/// Create String representation of value
+// @param recursive: include quotes around strings
+std::string Value::to_string(bool recursive) {
+	switch (this->type()) {
+		case VType::EMPTY:
+			return "empty";
+		case VType::INT:
+			return std::to_string(std::get<Value::int_t>(this->v));
+		case VType::FLOAT:
+			return std::to_string(std::get<Value::float_t>(this->v));
+		case VType::STR:
+			return recursive
+				? (std::string("\"") + std::get<Value::str_t>(this->v) + "\"")
+				: std::get<Value::str_t>(this->v);
+		case VType::LAM:
+			return "(: ... )";
+		case VType::N_FN:
+			return "(: native )";
+		case VType::REF: {
+			auto* p = std::get<Value::ref_t>(this->v).get_ptr()->get_ptr();
+			return p != nullptr ? p->to_string(false) : "null";
+		};
+		case VType::LIST: {
+			auto l = std::get<Value::list_t>(this->v);
+			std::string ret = "[ ";
+			if (!l.empty())
+				ret += l[0].to_string(true);
+			for (std::size_t i = 1; i < l.size(); i++) {
+				ret += ", ";
+				ret += l[i].to_string(true);
+			}
+			ret += " ]";
+			return ret;
+		}
+		default:
+			return "unknown";
+	}
+}

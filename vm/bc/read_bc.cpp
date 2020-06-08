@@ -110,20 +110,38 @@ static std::vector<int64_t> generate_capture_ids(int64_t entry, std::unordered_m
 		return {};
 	auto& cd = std::get<ClosureDef>(lits[entry].v);
 
-	std::vector<int64_t>& ret = cd.capture_ids;
+	DLANG_DEBUG_MSG("generate_capture_ids(" <<entry <<"):\n");
+	auto& ret = cd.capture_ids;
+#ifdef DLANG_DEBUG
+	std::cout <<"cap: ";
+	for (auto e : ret)
+		std::cout <<e <<", ";
 
-	// Note: these are sorted
-	std::vector<int64_t>& decl_ids = cd.decl_ids;
+	std::cout <<std::endl <<"decl: ";
+#endif
+//	 Note: these are sorted
+	auto& decl_ids = cd.decl_ids;
+#ifdef DLANG_DEBUG
+	for (auto e : decl_ids)
+		std::cout <<e <<", ";
 
+	std::cout <<"\n(";
+#endif
 	for (int64_t lid : nested_closures[entry]) {
-		auto r = generate_capture_ids(lid, nested_closures, lits);
-		std::copy_if(r.begin(), r.end(), std::back_inserter(ret), [&](int64_t e){
-			return std::binary_search(decl_ids.begin(), decl_ids.end(), e);
-		});
+		const auto r = generate_capture_ids(lid, nested_closures, lits);
+		std::set_difference(r.begin(), r.end(), decl_ids.begin(), decl_ids.end(), std::back_inserter(ret));
+//		std::copy_if(r.begin(), r.end(), std::back_inserter(ret), [&](int64_t e){
+//			return !std::binary_search(decl_ids.begin(), decl_ids.end(), e);
+//		});
 	}
-
-	auto last = std::unique(ret.begin(), ret.end());
-	ret.erase(last, ret.end());
+	std::sort(ret.begin(), ret.end());
+#ifdef DLANG_DEBUG
+	std::cout <<")\nret: ";
+	for (auto e: ret)
+		std::cout <<e <<", ";
+	std::cout <<std::endl;
+#endif
+	ret.erase(std::unique(ret.begin(), ret.end()), ret.end());
 
 	return ret;
 }

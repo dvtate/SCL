@@ -5,10 +5,18 @@
 #include "operators.hpp"
 #include "math.hpp"
 #include "refs.hpp"
+#include "cmp.hpp"
+#include "logic.hpp"
 
 std::vector<VMOperator*> builtin_operators {
-	&VM_ops::plus,				// +
-	&VM_ops::single_equals,		// =
-	&VM_ops::dobule_equals,		// ==
-	&VM_ops::triple_equals,		// ===
+	&VM_ops::plus,				// 0  - +
+	&VM_ops::single_equals,		// 1  - =
+	&VM_ops::dobule_equals,		// 2  - ==
+	&VM_ops::triple_equals,		// 3  - ===
+	&VM_ops::lt,				// 4  - <
+	&VM_ops::gt,				// 5  - >
+	&VM_ops::le,				// 6  - <=
+	&VM_ops::ge,				// 7  - >=
+	&VM_ops::logical_not,		// 8  - !
+	&VM_ops::minus,				// 9  - -
 };
