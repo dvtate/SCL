@@ -131,7 +131,7 @@ bool Value::truthy() const {
 
 /// Create String representation of value
 // @param recursive: include quotes around strings
-std::string Value::to_string(bool recursive) {
+std::string Value::to_string(bool recursive) const {
 	switch (this->type()) {
 		case VType::EMPTY:
 			return "empty";

@@ -111,8 +111,8 @@ void ParsedMacro::read_decl(AST& tree) {
 					d.token.pos, this->file_name, true
 				));
 			}
-			this->declare_id(d.token.token);
-
+			const auto idid = this->declare_id(d.token.token);
+			this->body.emplace_back(Command(Command::OPCode::DECL_ID, idid));
 		} else if (d.type == AST::NodeType::OPERATION && d.token.token == "=") {
 			if (!d.members.empty() && d.members[0].type == AST::NodeType::IDENTIFIER) {
 				if (keyword_values.find(d.members[0].token.token) != keyword_values.end()) {
@@ -121,7 +121,7 @@ void ParsedMacro::read_decl(AST& tree) {
 							d.members[0].token.pos, this->file_name, true
 					));
 				}
-				auto idid = this->declare_id(d.members[0].token.token);
+				const auto idid = this->declare_id(d.members[0].token.token);
 				this->body.emplace_back(Command(Command::OPCode::DECL_ID, idid));
 				this->read_tree(d);
 				DLANG_DEBUG_MSG("read_decl: "<<d.members[0].token.token <<" = " <<idid <<std::endl);
@@ -350,11 +350,10 @@ static const std::unordered_map<std::string, int> global_ids {
 		{ "if",		4 },
 		{ "Str",		5 },
 		{ "Num",		6 },
+		{ "vars",	7 },
 };
 
 int64_t ParsedMacro::find_id(const std::string& name) {
-
-
 
 	auto it = this->declarations.find(name);
 	if (it != this->declarations.end())
@@ -379,9 +378,10 @@ int64_t ParsedMacro::find_id(const std::string& name) {
 }
 
 int64_t ParsedMacro::declare_id(const std::string& id_name) {
+
 	auto occ = this->declarations.find(id_name);
 	if (occ == this->declarations.end()) {
-		MutilatedSymbol&& ms = MutilatedSymbol(id_name);
+		MutilatedSymbol ms = MutilatedSymbol(id_name);
 		const int64_t ret = ms.id;
 		declarations[id_name] = ms;
 		return ret;

@@ -77,7 +77,7 @@ public:
 			: this;
 	}
 
-	std::string to_string(bool recursive = false);
+	std::string to_string(bool recursive = false) const;
 };
 
 

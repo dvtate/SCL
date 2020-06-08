@@ -180,6 +180,19 @@ class NumFn : public virtual NativeFunction {
 	}
 };
 
+class VarsFn : public virtual NativeFunction {
+	void operator()(Frame& f) {
+		for (const auto& scope : *f.rt->running){
+			std::cout <<"Scope " <<scope <<std::endl;
+			for (const auto& vp : scope->closure.vars) {
+				std::cout <<"\t" <<vp.first <<"\t" <<vp.second.to_string() <<std::endl;
+			}
+		}
+	}
+};
+
+
+
 static Value global_ids[] {
 	// 0 - empty
 	Value(),
@@ -193,6 +206,8 @@ static Value global_ids[] {
 	Value(Handle<NativeFunction>(new StrFn())),
 	// 5 - Num
 	Value(Handle<NativeFunction>(new NumFn())),
+	// 6 - vars
+	Value(Handle<NativeFunction>(new VarsFn())),
 
 	// 6 - range (need objects first...)
 	//
