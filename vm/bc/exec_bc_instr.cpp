@@ -131,8 +131,8 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 				c->i_id = cd.i_id();
 				c->o_id = cd.o_id();
 
-				// declare locals && set to empty
-				c->declare_empty_locals(cd.decl_ids);
+				// literal index for declaring locals
+				c->lit = cmd.i;
 
 				f.eval_stack.emplace_back(Value(Handle<Closure>(c)));
 			}
@@ -143,11 +143,20 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			f.eval_stack.emplace_back(Value());
 			return;
 		case BCInstr::OPCode::CLEAR_STACK:
-//			f.eval_stack.clear();
+			f.eval_stack.clear();
 			return;
 		case BCInstr::OPCode::INDEX:
 			index(f);
 			return;
+
+		// declaring a mutable identifier
+		case BCInstr::OPCode::DECL_ID: {
+			auto& v = f.closure.vars[cmd.i];
+			if (v.type() == Value::VType::EMPTY) // undefined
+				v = Value(Handle( new Handle<Value>(new Value())));
+			return;
+		};
+
 
 		case BCInstr::OPCode::MK_LIST:
 			make_list(f, cmd.i);

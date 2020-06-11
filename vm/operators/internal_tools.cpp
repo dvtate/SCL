@@ -28,18 +28,20 @@ namespace vm_util {
 			return;
 		}
 		if (vt == Value::VType::LAM) {
-			auto *c = std::get<Value::lam_t>(v.v).get_ptr();
+			auto c = *std::get<Value::lam_t>(v.v).get_ptr();
 			Value arg = f.eval_stack.back();
 			f.eval_stack.pop_back();
 
+
 			// pass arg by reference
 			if (std::holds_alternative<Value::ref_t>(arg.v))
-				c->vars[c->i_id] = arg;
+				c.vars[c.i_id] = arg;
 			else  // wasnt given reference, copy value into one :///
-				c->vars[c->i_id] = Value(Handle(new Handle(new Value(arg))));
+				c.vars[c.i_id] = Value(Handle(new Handle(new Value(arg))));
 
-			c->vars[c->o_id] = Value(Handle<NativeFunction>(new LambdaReturnNativeFn(f)));
-			f.rt->running->emplace_back(std::make_shared<Frame>(f.rt, *c));
+			c.vars[c.o_id] = Value(Handle<NativeFunction>(new LambdaReturnNativeFn(f)));
+
+			f.rt->running->emplace_back(std::make_shared<Frame>(f.rt, c));
 
 		}
 

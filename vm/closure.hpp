@@ -31,6 +31,8 @@ public:
 	// body points to implementation defined by relevant closureDef
 	std::vector<BCInstr>* body;
 
+	// index for corresponding literal
+	uint32_t lit;
 
 	void declare_empty_locals(const std::vector<int64_t>& ids);
 

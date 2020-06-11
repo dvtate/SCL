@@ -45,7 +45,7 @@ VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv)
 	// capture global variables
 	for (const int64_t id : entry.capture_ids) {
 		DLANG_DEBUG_MSG("capture global id # " <<id <<std::endl);
-		std::cout <<"cid" <<id <<std::endl;
+//		std::cout <<"cid" <<id <<std::endl;
 		main.vars[id] = get_global_id(id);
 	}
 
@@ -57,7 +57,7 @@ VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv)
 	main.vars[main.i_id] = Value(Handle(new Handle(new Value(argv_list))));
 
 	// declare locals
-	main.declare_empty_locals(entry.decl_ids);
+//	main.declare_empty_locals(entry.decl_ids);
 
 
 }
@@ -88,8 +88,8 @@ void Runtime::run() {
 		// make sure we have something to do
 		if (this->running == nullptr) {
 			if (this->active.empty()) {
-				using namespace std::chrono_literals;
-				std::this_thread::sleep_for(1ms);
+//				using namespace std::chrono_literals;
+//				std::this_thread::sleep_for(1ms);
 			} else {
 				DLANG_DEBUG_MSG("VM:RT:Pulled Stack from active\n");
 				this->running = this->active.back();

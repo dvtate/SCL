@@ -65,6 +65,7 @@ static inline Literal capture_closure(std::istream& is,
 			int64_t idid;
 			is.read((char*) &idid, sizeof(idid));
 			decl_ids.emplace_back(idid);
+			body.emplace_back(BCInstr((BCInstr::OPCode)c, idid));
 
 		} else if (c == BCInstr::OPCode::USE_ID) {
 			// using identifier : might need to capture from parent scope
