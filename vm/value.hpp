@@ -29,10 +29,10 @@ public:
 	using int_t 	= int64_t;
 	using float_t 	= double;
 	using str_t 	= std::string;
-	using ref_t 	= Handle<Handle<Value>>;
+	using ref_t		= Handle<Value>;
 	using lam_t 	= Handle<Closure>;
 	using n_fn_t 	= Handle<NativeFunction>;
-	using bool_t 	= Value::int_t	;
+	using bool_t 	= Value::int_t;
 	using list_t	= std::vector<Value>;
 
 	using variant_t = std::variant<
@@ -73,7 +73,7 @@ public:
 	bool truthy() const;
 	inline Value* deref() {
 		return std::holds_alternative<Value::ref_t>(this->v)
-			? std::get<Value::ref_t>(this->v).get_ptr()->get_ptr()
+			? std::get<Value::ref_t>(this->v).get_ptr()
 			: this;
 	}
 

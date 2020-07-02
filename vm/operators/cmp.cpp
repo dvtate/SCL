@@ -36,51 +36,11 @@ namespace VM_ops {
 		auto& v = std::get<Value::bool_t>(f.eval_stack.back().v);
 		v = !v;
 	}
-//	void lt(Frame& f) {
-//		Value rhs = f.eval_stack.back();
-//		f.eval_stack.pop_back();
-//		Value* l = f.eval_stack.back().deref();
-//		Value* r = rhs.deref();
-//
-//		if (l == nullptr || r == nullptr) {
-//			f.eval_stack.back() = Value(false);
-//			return;
-//		}
-//
-//		const auto lt = l->type(), rt = r->type();
-//		if (lt == Value::VType::INT) {
-//			if (rt == Value::VType::INT)
-//				f.eval_stack.back() = Value(
-//					std::get<Value::int_t>(l->v) < std::get<Value::int_t>(r->v));
-//			else if (rt == Value::VType::FLOAT)
-//				f.eval_stack.back() = Value(
-//					std::get<Value::int_t>(l->v) < std::get<Value::float_t>(r->v));
-//			else
-//				// TODO: type-error
-//				f.eval_stack.back() = Value();
-//		} else if (lt == Value::VType::FLOAT) {
-//			if (rt == Value::VType::FLOAT)
-//				f.eval_stack.back() = Value(
-//						std::get<Value::float_t>(l->v) < std::get<Value::float_t>(r->v));
-//			else if (rt == Value::VType::INT)
-//				f.eval_stack.back() = Value(
-//						std::get<Value::float_t>(l->v) < std::get<Value::int_t>(r->v));
-//			else // TODO: type-error
-//				f.eval_stack.back() = Value();
-//		} else if (lt == Value::VType::STR && rt == Value::VType::STR) {
-//			 f.eval_stack.back() = Value(
-//			 		std::get<Value::str_t>(l->v) < std::get<Value::str_t>(r->v));
-//		} else {
-//			// TODO: type-error
-//			f.eval_stack.back() = Value();
-//		}
-//
-//	}
-
+	
 
 
 // template for comparison operators... will have to replace eventually...
-#define DLANG_cmp_fn_def(FNAME, OP) \
+#define DLANG_CMP_FN_DEF(FNAME, OP) \
 	void FNAME(Frame& f) {\
 		Value rhs = f.eval_stack.back();\
 		f.eval_stack.pop_back();\
@@ -120,21 +80,22 @@ namespace VM_ops {
 		}\
 	}
 
-	DLANG_cmp_fn_def(lt_act, <);
-	DLANG_cmp_fn_def(gt_act, >);
-	DLANG_cmp_fn_def(le_act, <=);
-	DLANG_cmp_fn_def(ge_act, >=);
+	// create operators from template
+	DLANG_CMP_FN_DEF(lt_act, <)
+	DLANG_CMP_FN_DEF(gt_act, >)
+	DLANG_CMP_FN_DEF(le_act, <=)
+	DLANG_CMP_FN_DEF(ge_act, >=)
 
 	// check equality
-	VMOperator dobule_equals{"compare equality operator (==)", check_equality};
+	VMOperator dobule_equals{"compare: equality operator (==)", check_equality};
 
 	// check Identity
-	VMOperator triple_equals{"compare identity operator (===)", check_identity};
+	VMOperator triple_equals{"compare: identity operator (===)", check_identity};
 
-	VMOperator lt{"compares less than (<)", lt_act};
-	VMOperator gt{"compares greater than (>)", gt_act};
-	VMOperator le{"compares less than or equals (<=)", le_act};
-	VMOperator ge{"compares greater than or equals (>=)", ge_act};
+	VMOperator lt{"compare: less than (<)", lt_act};
+	VMOperator gt{"compare: greater than (>)", gt_act};
+	VMOperator le{"compare: less than or equals (<=)", le_act};
+	VMOperator ge{"compare: greater than or equals (>=)", ge_act};
 
 	VMOperator not_double_equals{"compares not equal (!=)", not_check_equality};
 	VMOperator not_triple_equals{"compares not identical (!==)", not_check_identity};

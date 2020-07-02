@@ -11,8 +11,6 @@
 #include "bytecode.hpp"
 #include "../parse/parse.hpp"
 
-
-
 const static std::unordered_map<std::string, Command> keyword_values = {
 		{ "empty", Command(Command::OPCode::KW_VAL, (uint16_t) 0) },
 		{ "true",  Command(Command::OPCode::KW_VAL, (uint16_t) 1) },
@@ -87,7 +85,7 @@ void ParsedMacro::read_index_op(AST& tree){
 	// put args on stack
 	for (auto& m : tree.members)
 		this->read_tree(m);
-	this->body.emplace_back(Command(Command::OPCode::INDEX));
+	this->body.emplace_back(Command(Command::OPCode::USE_INDEX));
 }
 
 void ParsedMacro::read_decl(AST& tree) {
@@ -142,8 +140,8 @@ void ParsedMacro::read_decl(AST& tree) {
 void ParsedMacro::read_id(AST& tree) {
 	DLANG_DEBUG_MSG("read_id\n");
 
-	const uint64_t id = this->find_id(tree.token.token);
-	if (!id) {
+	const MutilatedSymbol id = this->find_id(tree.token.token);
+	if (id.id < 0) {
 		this->errors.emplace_back(SemanticError(
 				"Identifier used before declaration",
 				tree.token.pos,
@@ -151,13 +149,78 @@ void ParsedMacro::read_id(AST& tree) {
 		return;
 	}
 	const size_t n_pos = this->body.size();
-	this->body.emplace_back(Command(Command::OPCode::USE_ID, (int64_t) id));
+	this->body.emplace_back(Command(Command::OPCode::USE_ID, (int64_t) id.id));
 	this->relocation.emplace_back(
 			std::pair<std::size_t, unsigned long long>{
 				n_pos, tree.token.pos });
 
 }
 
+//
+void ParsedMacro::read_assignment(AST& t) {
+	DLANG_DEBUG_MSG("read_assignment\n");
+
+	// a = 123
+	if (t.members[0].type == AST::NodeType::IDENTIFIER) {
+		auto sym = this->find_id(t.members[0].token.token);
+		if (sym.id < 0) {
+			this->errors.emplace_back(SemanticError(
+					"Left-hand side of equals not in scope", t.token.pos, this->file_name));
+			return;
+		}
+
+		if (sym.type == MutilatedSymbol::SymbolType::CONSTANT) {
+			this->errors.emplace_back(SemanticError(
+					std::string("Cannot assign to constant `") + t.token.token + "`",
+					t.token.pos, this->file_name));
+
+		}
+		if (sym.type == MutilatedSymbol::SymbolType::NO_REASSIGN) {
+			this->errors.emplace_back(SemanticError(
+					std::string("Left hand side of equals was marked as not assignable: `") + t.token.token + "`",
+					t.token.pos, this->file_name));
+		}
+
+		// If lhs is an alias insert the compiled code
+		// TODO alias should use different type than ParsedMacro
+		if (sym.type == MutilatedSymbol::SymbolType::ALIAS) {
+			read_tree(t.members[0]);
+			read_tree(t.members[1]);
+			// NOTE:
+			this->body.emplace_back(Command(Command::OPCode::BUILTIN_OP, (uint16_t) 1));
+		} else if (sym.type == MutilatedSymbol::SymbolType::VARIABLE) {
+			// Set id
+			read_tree(t.members[1]);
+			this->body.emplace_back(Command(Command::OPCode::SET_ID, (int64_t) sym.id));
+		}
+
+		return;
+	} else if (t.type == AST::NodeType::INDEX) {
+		// put args on stack
+		for (auto& m : t.members[0].members)
+			this->read_tree(m);
+		this->read_tree(t.members[1]);
+		// args: list index value
+		this->body.emplace_back(Command(Command::OPCode::SET_INDEX));
+	} else {
+		// Could be typerror
+		this->errors.emplace_back(SemanticError(
+				"Left hand size of equals is an unsupported expression type that must evaluate to a reference",
+				t.token.pos, this->file_name, true));
+
+		// compile arguments
+		for (auto& arg : t.members)
+			read_tree(arg);
+
+		// Equals operator
+		this->body.emplace_back(Command(Command::OPCode::BUILTIN_OP, (uint16_t) 1));
+	}
+
+	std::size_t lpos = this->body.size();
+	this->relocation.emplace_back(std::pair { lpos, t.token.pos });
+}
+
+// operators defined only for convenience
 void ParsedMacro::read_operation(AST& t){
 	DLANG_DEBUG_MSG("read_operation\n");
 	// TODO: replace with actual operator ID's from VM
@@ -172,7 +235,6 @@ void ParsedMacro::read_operation(AST& t){
 			{ ">=",		7 },
 			{ "!",		8 },
 			{ "-",		9 },
-
 	};
 
 	// check if it forms an expression or just lexical
@@ -286,7 +348,10 @@ void ParsedMacro::read_tree(AST& tree) {
 			read_id(tree);
 			return;
 		case AST::NodeType::OPERATION:
-			read_operation(tree);
+			if (tree.token.token == "=")
+				read_assignment(tree);
+			else
+				read_operation(tree);
 			return;
 		case AST::NodeType::LIST:
 			read_list_lit(tree);
@@ -306,10 +371,18 @@ void ParsedMacro::read_tree(AST& tree) {
 					tree.token.pos, this->file_name));
 			return;
 	}
-
 }
 
-
+// Returns a new parsed macro containing compiled contents of arg
+ParsedMacro* ParsedMacro::compile_expr(AST& t) {
+	auto* pm = new ParsedMacro();
+	pm->parents = this->parents;
+	pm->parents.emplace_back(this);
+	pm->file_name = this->file_name;
+	pm->compiler = this->compiler;
+	pm->read_tree(t);
+	return pm;
+}
 
 
 
@@ -342,37 +415,38 @@ ParsedMacro::ParsedMacro(AST &tree, std::string file_name, std::vector<ParsedMac
 
 }
 
-// global ids + 1 so that zero (not found) is invalid
-static const std::unordered_map<std::string, int> global_ids {
-		{"empty",	1 },
-		{ "print",	2 },
-		{ "input",	3 },
-		{ "if",		4 },
-		{ "Str",		5 },
-		{ "Num",		6 },
-		{ "vars",	7 },
-};
 
-int64_t ParsedMacro::find_id(const std::string& name) {
+MutilatedSymbol ParsedMacro::find_id(const std::string& name) {
 
 	auto it = this->declarations.find(name);
-	if (it != this->declarations.end())
-		return it->second.id;
+	if (it != this->declarations.end()) {
+		return it->second;
+	}
 
 	// check previous scopes
 	for (ParsedMacro* parent : parents) {
 		it = parent->declarations.find(name);
 		if (it != parent->declarations.end())
-			return it->second.id;
+			return it->second;
 	}
+
+	static const std::unordered_map<std::string, MutilatedSymbol> globals {
+			{ "empty", MutilatedSymbol("empty", 0, MutilatedSymbol::SymbolType::CONSTANT) },
+			{ "print", MutilatedSymbol("print", 1, MutilatedSymbol::SymbolType::CONSTANT) },
+			{ "input", MutilatedSymbol("input", 2, MutilatedSymbol::SymbolType::CONSTANT) },
+			{ "if", MutilatedSymbol("if", 3, MutilatedSymbol::SymbolType::CONSTANT) },
+			{ "Str", MutilatedSymbol("Str", 4, MutilatedSymbol::SymbolType::CONSTANT) },
+			{ "Num", MutilatedSymbol("Num", 5, MutilatedSymbol::SymbolType::CONSTANT) },
+			{ "vars", MutilatedSymbol("vars", 6, MutilatedSymbol::SymbolType::CONSTANT) },
+	};
 
 	// if it's a global id use that instead...
 	try {
-		return global_ids.at(name) - 1;
+		return globals.at(name);
 	} catch (...) {
 		// not found
-		// use before initialization
-		return 0;
+		// use before declaration
+		return MutilatedSymbol("", -1);
 	}
 
 }
@@ -444,7 +518,6 @@ int64_t Program::empl_lit(ParsedLiteral&& lit) {
 		std::size_t ret = this->literals.size();
 		this->literals.emplace_back(lit);
 		return ret;
-
 	} else {
 		return std::distance(this->literals.begin(), it);
 	}

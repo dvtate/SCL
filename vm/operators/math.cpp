@@ -16,15 +16,14 @@ namespace VM_ops {
 		f.eval_stack.pop_back();
 		Value& lhs = f.eval_stack.back();
 
-
 		// dereference
 		if (std::holds_alternative<Value::ref_t>(rhs.v)) {
-			Value *p = std::get<Value::ref_t>(rhs.v).get_ptr()->get_ptr();
+			Value *p = std::get<Value::ref_t>(rhs.v).get_ptr();
 			if (p == nullptr) return; // TODO: type-error/nullptr exception
 			rhs = *p;
 		}
 		if (std::holds_alternative<Value::ref_t>(lhs.v)) {
-			Value *p = std::get<Value::ref_t>(lhs.v).get_ptr()->get_ptr();
+			Value *p = std::get<Value::ref_t>(lhs.v).get_ptr();
 			if (p == nullptr) return; // TODO: type-error/nullptr exception
 
 			// this also copies so that we don't mutate referenced value

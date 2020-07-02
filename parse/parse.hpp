@@ -33,6 +33,7 @@ public:
 		// containers
 		MACRO_OPEN,
 		LIST_OPEN,
+		OBJ_OPEN,
 		PAREN_OPEN,
 		CONT_CLOSE,
 
@@ -49,6 +50,7 @@ public:
 
 		INVALID,
 
+		BOUND_ID,
 
 	} type;
 
@@ -56,18 +58,15 @@ public:
 
 	std::vector<AST> members;
 
-	// used for reducing constexprs
-	// 1 : known volatile
-	// 0 : unknown volatility
-	// -1 : known const/constexpr
-	signed char volatility : 4;
+	// value added after the fact
+	int64_t num;
 
 	AST():
-		type(INVALID), token(Token()), members(), volatility(0) {}
+		type(INVALID), token(Token()), members() {}
 	AST(const NodeType type, const Token& token):
-			type(type), token(token), members(), volatility(0) {}
+			type(type), token(token), members() {}
 	AST(const NodeType type, const Token& token, std::vector<AST> children):
-			type(type), token(token), members(std::move(children)), volatility(0) {}
+			type(type), token(token), members(std::move(children)) {}
 	AST(const AST& other) = default;
 
 	// std::variant<std::string, int64_t, double> val;
@@ -87,6 +86,7 @@ public:
 			case NodeType::MACRO_OPEN:		return "Macro opening";
 			case NodeType::LIST_OPEN:		return "List opening";
 			case NodeType::PAREN_OPEN:		return "Opening Parenthesis";
+			case NodeType::OBJ_OPEN:		return "Object opening";
 			case NodeType::CONT_CLOSE:		return "Container closing";
 			case NodeType::KV_PAIR:			return "Key-Value pair";
 			case NodeType::COMMA_SERIES:	return "Comma Series";
@@ -105,14 +105,15 @@ public:
 			case NodeType::NUM_LITERAL:		return "NUM_LIT";
 			case NodeType::STR_LITERAL:		return "STR_LIT";
 			case NodeType::IDENTIFIER:		return "ID";
-			case NodeType::INVOKE:	return "INVOKE";
+			case NodeType::INVOKE:			return "INVOKE";
 			case NodeType::MACRO:			return "MACRO_LIT";
 			case NodeType::OBJECT:			return "OBJ_LIT";
-			case NodeType::INDEX:		return "LIST_IDX";
+			case NodeType::INDEX:			return "LIST_IDX";
 			case NodeType::LIST:			return "LIST_LIT";
 			case NodeType::MACRO_OPEN:		return "M_OPEN";
 			case NodeType::LIST_OPEN:		return "L_OPEN";
 			case NodeType::PAREN_OPEN:		return "P_OPEN";
+			case NodeType::OBJ_OPEN:		return "O_OPEN";
 			case NodeType::CONT_CLOSE:		return "C_CLOSE";
 			case NodeType::KV_PAIR:			return "KV_PAIR";
 			case NodeType::COMMA_SERIES:	return "CSRS";

@@ -51,35 +51,51 @@ public:
 			std::cout <<"invalid lambda return msg call ";
 		}
 
+		while (this->stack_target->back() != this->frame_target &&
+			!this->stack_target->empty())
+			this->stack_target->pop_back();
 
-		// find frame on stack
-		ssize_t i;
-		for (i = this->stack_target->size() - 1; i >= 0; i--)
-			if ((*this->stack_target)[i] == this->frame_target)
-				break;
-		i++; // don't pop frame_target...
-		if (i <= 0) {
-			// no longer on stack wtf??
-			std::cout << "o() called out of scope???";
-			// TODO: o() out of scope error
-
-
-		} else {
-
-			// pop stack until back to call site
-			this->stack_target->erase(this->stack_target->begin() + i, this->stack_target->end());
-
-			// push return value onto top of stack
-			this->stack_target->back()->eval_stack.push_back(this->ret);
-
-			// if stack target not in active stacks, put there
-			if (rt.running != this->stack_target &&
-					std::find(rt.active.begin(), rt.active.end(), this->stack_target) == rt.active.end()) {
-				DLANG_DEBUG_MSG("LAM_RET: queued stack..\n");
-				rt.active.emplace_back(this->stack_target);
-			}
-
+		if (this->stack_target->empty()) {
+			std::cout <<"o() called out of frame???\n";
+			return;
 		}
+
+		this->stack_target->back()->eval_stack.push_back(this->ret);
+		// if stack target not in active stacks, put there
+		if (rt.running != this->stack_target &&
+			std::find(rt.active.begin(), rt.active.end(), this->stack_target) == rt.active.end()) {
+			DLANG_DEBUG_MSG("LAM_RET: queued stack..\n");
+			rt.active.emplace_back(this->stack_target);
+		}
+
+//		// find frame on stack
+//		ssize_t i;
+//		for (i = this->stack_target->size() - 1; i >= 0; i--)
+//			if ((*this->stack_target)[i] == this->frame_target)
+//				break;
+//		i++; // don't pop frame_target...
+//		if (i <= 0) {
+//			// no longer on stack wtf??
+//			std::cout << "o() called out of scope???";
+//			// TODO: o() out of scope error
+//
+//
+//		} else {
+//
+//			// pop stack until back to call site
+//			this->stack_target->erase(this->stack_target->begin() + i, this->stack_target->end());
+//
+//			// push return value onto top of stack
+//			this->stack_target->back()->eval_stack.push_back(this->ret);
+//
+//			// if stack target not in active stacks, put there
+//			if (rt.running != this->stack_target &&
+//					std::find(rt.active.begin(), rt.active.end(), this->stack_target) == rt.active.end()) {
+//				DLANG_DEBUG_MSG("LAM_RET: queued stack..\n");
+//				rt.active.emplace_back(this->stack_target);
+//			}
+//
+//		}
 
 	}
 };

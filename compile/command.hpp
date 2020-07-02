@@ -13,6 +13,9 @@
 
 class Command {
 public:
+	using id_t = int64_t;
+	using size_t = int32_t;
+	using enum_t = uint16_t;
 
 	// mnemonic instruction
 	enum OPCode : unsigned char {
@@ -35,6 +38,8 @@ public:
 			// arg: double
 		DECL_ID,		// declare identifier
 			// arg: int64, idid
+		SET_ID,
+			// arg: int64, idid
 		USE_ID,			// get value at identifier
 			// arg: int64, idid
 		USE_LIT,		// push literal onto stack
@@ -52,9 +57,8 @@ public:
 		VAL_TRUE,
 		VAL_FALSE,
 
-		INVOKE, INDEX,
-			// no arg
-
+		INVOKE, USE_INDEX, SET_INDEX,
+			// args come from stack only
 
 		// begin fault table
 		ID_NAME,		// user-defined identifier name
@@ -100,6 +104,7 @@ public:
 			case I64_LIT:	return "I64_LIT";
 			case F64_LIT:	return "F64_LIT";
 			case DECL_ID:	return "DECL_ID";
+			case SET_ID:	return "SET_ID";
 			case USE_ID:	return "USE_ID";
 			case USE_LIT:	return "USE_LIT";
 			case BUILTIN_OP:return "BUILTIN_OP";
@@ -110,7 +115,8 @@ public:
 			case VAL_TRUE:	return "VAL_TRUE";
 			case VAL_FALSE:	return "VAL_FALSE";
 			case INVOKE:	return "INVOKE";
-			case INDEX: 	return "INDEX";
+			case USE_INDEX: return "USE_INDEX";
+			case SET_INDEX: return "SET_INDEX";
 			case ID_NAME:	return "ID_NAME";
 			case ID_ID:		return "ID_ID";
 			case FILE_NAME:	return "FILE_NAME";
@@ -142,7 +148,9 @@ public:
 			case OPCode::F64_LIT:
 				return "\tF64 " + std::to_string(std::get<double>(this->arg))  + "\n";
 			case OPCode::DECL_ID:
-				return "\tLET_ID " + std::to_string((uint64_t) std::get<int64_t>(this->arg)) + "\n";
+				return "\tDECL_ID " + std::to_string((uint64_t) std::get<int64_t>(this->arg)) + "\n";
+			case OPCode::SET_ID:
+				return "\tSET_ID " + std::to_string((uint64_t) std::get<int64_t>(this->arg)) + "\n";
 			case OPCode::USE_ID:
 				return "\tUSE_ID " + std::to_string((uint64_t) std::get<int64_t>(this->arg)) + "\n";
 			case OPCode::USE_LIT:
@@ -157,8 +165,8 @@ public:
 				return "\tCLEAR_STACK\n";
 			case OPCode::INVOKE:
 				return "\tINVOKE\n";
-			case OPCode::INDEX:
-				return "\tINDEX\n";
+			case OPCode::USE_INDEX:
+				return "\tUSE_INDEX\n";
 			case OPCode::VAL_EMPTY:
 				return "\tC_EMPTY\n";
 			case OPCode::VAL_FALSE:
@@ -198,8 +206,8 @@ public:
 				return ArgType::FLOAT;
 
 			// TODO: these can all be converted to int32_t
-			case OPCode::I64_LIT: case OPCode::DECL_ID: case OPCode::USE_ID: case OPCode::USE_LIT:
-			case OPCode::ID_ID: case OPCode::SRC_POS: case OPCode::DEST_POS:
+			case OPCode::I64_LIT: case OPCode::DECL_ID: case OPCode::SET_ID: case OPCode::USE_ID:
+			case OPCode::USE_LIT: case OPCode::ID_ID: case OPCode::SRC_POS: case OPCode::DEST_POS:
 				return ArgType::INT64;
 			case OPCode::BUILTIN_OP: case OPCode::KW_VAL:
 				return ArgType::INT16;

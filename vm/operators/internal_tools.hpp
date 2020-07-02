@@ -10,7 +10,6 @@
 
 
 namespace vm_util {
-	const Value* deref(const Value&);
 	void invoke_value_sync(Frame& f, Value& v, bool uncallable);
 }
 

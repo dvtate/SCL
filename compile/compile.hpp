@@ -11,6 +11,7 @@
 #include <vector>
 #include <list>
 #include <forward_list>
+#include <memory>
 
 #include "semantics/process_tree.hpp"
 #include "command.hpp"
@@ -19,6 +20,8 @@
  * main program file is implicitly converted into a macro and all the global identifiers are loaded
  *
  */
+
+class ParsedMacro;
 
 // all identifiers are replaced with numbers so we don't have to do hashes or put strings in bytecode
 class MutilatedSymbol {
@@ -30,9 +33,26 @@ public:
 	int64_t id;
 	std::string name;
 
-	MutilatedSymbol(): id(_uid++) {}
-	explicit MutilatedSymbol(std::string uname): id(_uid++), name(std::move(uname)) {}
-	MutilatedSymbol(const std::string name, int64_t id): id(id), name(std::move(name)) {}
+	// Alias substitution
+	std::shared_ptr<ParsedMacro> substitution;
+	// TODO alias should use different type than ParsedMacro as we only want to have symbols bound and not change syntax meaning/context
+
+	enum SymbolType {
+		VARIABLE,
+		ALIAS,
+		CONSTANT,
+		NO_REASSIGN
+	} type {VARIABLE};
+
+	MutilatedSymbol(): id(_uid++), substitution(nullptr) {}
+	explicit MutilatedSymbol(const int64_t id, const SymbolType type = SymbolType::VARIABLE):
+		id(id), substitution(nullptr), type(type) {}
+	explicit MutilatedSymbol(std::string name, const SymbolType type = SymbolType::VARIABLE):
+		id(_uid++), name(std::move(name)), substitution(nullptr), type(type) {}
+	MutilatedSymbol(std::string name, const int64_t id, const SymbolType type = SymbolType::VARIABLE):
+		id(id), name(std::move(name)), substitution(nullptr), type(type) {}
+	MutilatedSymbol(std::string name, const int64_t id, ParsedMacro* substitution, const SymbolType type = SymbolType::VARIABLE):
+		id(id), name(std::move(name)), substitution(substitution), type(type) {}
 	MutilatedSymbol(const MutilatedSymbol& cpy) = default;
 };
 
@@ -53,11 +73,13 @@ public:
 	// file name of definition
 	std::string file_name;
 
+	// Lexical parents
 	std::vector<ParsedMacro*> parents;
 
 	// where did different commands originate in source program
 	std::vector<std::pair<std::size_t, unsigned long long>> relocation;
 
+	//
 	std::vector<SemanticError> errors;
 
 	Program* compiler;
@@ -66,9 +88,20 @@ public:
 			std::vector<ParsedMacro*> parents, Program* prog,
 			std::unordered_map<std::string, MutilatedSymbol> locals = {});
 	ParsedMacro(const ParsedMacro& other) = default;
+	ParsedMacro() = default;
 
-	int64_t find_id(const std::string& name);
+	MutilatedSymbol find_id(const std::string& name);
 	int64_t declare_id(const std::string& id_name);
+
+	// Context that needs to be passed to children
+	struct context_arg {
+		bool lhs_eq : 1;
+	};
+
+	//
+	struct context_ret {
+		bool immutable : 1;
+	};
 
 	// translating different branch types into bytecode and populating internal structures
 	void read_tree(AST&); // main entry
@@ -82,6 +115,10 @@ public:
 	void read_list_lit(AST&);
 	void read_macro_invoke(AST&);
 	void read_index_op(AST&);
+	void read_assignment(AST&);
+
+	// Returns a new parsed macro containing compiled contents of arg
+	ParsedMacro* compile_expr(AST&);
 };
 
 class ParsedLiteral {

@@ -7,8 +7,6 @@
 #include "exec_bc_instr.hpp"
 #include "../vm.hpp"
 #include "../operators/operators.hpp"
-#include "../operators/math.hpp"
-#include "../lambda_return.hpp"
 #include "../operators/internal_tools.hpp"
 
 
@@ -25,7 +23,7 @@ static void invoke(Frame& f) {
 void index(Frame& f) {
 	Value* v = f.eval_stack.back().deref();
 	if (v == nullptr) {
-		std::cout <<"null passed to INDEX[0]!!!\n";
+		std::cout <<"null passed to USE_INDEX[0]!!!\n";
 		return;
 	}
 
@@ -35,7 +33,7 @@ void index(Frame& f) {
 	} else if (std::holds_alternative<Value::float_t>(v->v)) {
 		ind = (uint64_t) std::get<Value::float_t>(v->v);
 	} else {
-		std::cout << "INDEX[0] type-error..\n";
+		std::cout << "USE_INDEX[0] type-error..\n";
 		f.eval_stack.pop_back();
 		return;
 	}
@@ -43,7 +41,7 @@ void index(Frame& f) {
 	f.eval_stack.pop_back();
 	v = f.eval_stack.back().deref();
 	if (v == nullptr) {
-		std::cout <<"null passed to INDEX[1]!!!\n";
+		std::cout <<"null passed to USE_INDEX[1]!!!\n";
 		return;
 	}
 	if (std::holds_alternative<Value::list_t>(v->v)) {
@@ -54,7 +52,7 @@ void index(Frame& f) {
 			f.eval_stack.back() = Value();
 		}
 	} else {
-		std::cout <<"INDEX[1] type-error..\n" <<v->to_string() <<std::endl;
+		std::cout <<"USE_INDEX[1] type-error..\n" <<v->to_string() <<std::endl;
 	}
 }
 
@@ -69,18 +67,66 @@ void make_list(Frame& f, uint32_t n) {
 	f.eval_stack.emplace_back(std::move(lv));
 }
 
+static void use_lit(Frame& f, const std::size_t litnum) {
+	Literal &lit = f.rt->vm->literals[litnum];
+	if (lit.v.index() == Literal::Ltype::VAL) {
+		f.eval_stack.emplace_back(std::get<Value>(lit.v));
+	} else {
+		auto &cd = std::get<ClosureDef>(lit.v);
+
+		auto *c = new Closure();
+
+#ifdef DLANG_DEBUG
+		// capture lexical vars
+		for (const int64_t cid : cd.capture_ids) {
+			try {
+				c->vars[cid] = f.closure.vars.at(cid);
+			} catch (...) {
+				DLANG_DEBUG_MSG("USE_LIT: unable to capture id# " << cid << std::endl);
+			}
+		}
+#else
+		// capture lexical vars
+		for (const int64_t cid : cd.capture_ids)
+			c->vars[cid] = f.closure.vars[cid];
+#endif
+		// reference body bytecodes
+		c->body = &cd.body;
+
+		// label input and output ids
+		c->i_id = cd.i_id();
+		c->o_id = cd.o_id();
+
+		// literal index for declaring locals
+		c->lit = litnum;
+
+		f.eval_stack.emplace_back(Value(Handle<Closure>(c)));
+	}
+}
+
+
 void exec_bc_instr(Frame& f, BCInstr cmd) {
 	DLANG_DEBUG_MSG(cmd.repr() <<std::endl);
 	// OPTIMIZE: use jump table
 
 	switch (cmd.instr) {
 		// push id ref onto stack
-		case BCInstr::OPCode::USE_ID: try {
-				f.eval_stack.emplace_back(Value(
-						f.closure.vars.at(cmd.i)));
+		case BCInstr::OPCode::USE_ID:
+#ifdef DLANG_DEBUG
+			try {
+				Value* v = f.closure.vars.at(cmd.i).get_ptr();
+				if (v) {
+					f.eval_stack.emplace_back(*v);
+				} else {
+					DLANG_DEBUG_MSG("var initialized to null wtf\n");
+					exit(1);
+				}
 			} catch (...) {
 				DLANG_DEBUG_MSG("Undefined var id: " <<cmd.i <<std::endl);
 			}
+#else
+				f.eval_stack.emplace_back(*f.closure.vars[cmd.i].get_ptr());
+#endif
 			return;
 
 		// builtin operator
@@ -101,43 +147,10 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			invoke(f);
 			return;
 
-		case BCInstr::OPCode::USE_LIT: {
-			Literal &lit = f.rt->vm->literals[cmd.i];
-			if (lit.v.index() == Literal::Ltype::VAL) {
-				f.eval_stack.emplace_back(std::get<Value>(lit.v));
-			} else {
-				auto& cd = std::get<ClosureDef>(lit.v);
-
-				auto* c = new Closure();
-
-#ifdef DLANG_DEBUG
-				// capture lexical vars
-				for (const int64_t cid : cd.capture_ids) {
-					try {
-						c->vars[cid] = f.closure.vars.at(cid);
-					} catch (...) {
-						DLANG_DEBUG_MSG("USE_LIT: unable to capture id# " <<cid);
-					}
-				}
-#else
-				// capture lexical vars
-				for (const int64_t cid : cd.capture_ids)
-					c->vars[cid] = f.closure.vars[cid];
-#endif
-				// reference body bytecodes
-				c->body = &cd.body;
-
-				// label input and output ids
-				c->i_id = cd.i_id();
-				c->o_id = cd.o_id();
-
-				// literal index for declaring locals
-				c->lit = cmd.i;
-
-				f.eval_stack.emplace_back(Value(Handle<Closure>(c)));
-			}
+		case BCInstr::OPCode::USE_LIT:
+			use_lit(f, cmd.i);
 			return;
-		}
+
 
 		case BCInstr::OPCode::VAL_EMPTY:
 			f.eval_stack.emplace_back(Value());
@@ -145,23 +158,56 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 		case BCInstr::OPCode::CLEAR_STACK:
 			f.eval_stack.clear();
 			return;
-		case BCInstr::OPCode::INDEX:
+		case BCInstr::OPCode::USE_INDEX:
 			index(f);
 			return;
 
 		// declaring a mutable identifier
 		case BCInstr::OPCode::DECL_ID: {
 			auto& v = f.closure.vars[cmd.i];
-			if (v.type() == Value::VType::EMPTY) // undefined
-				v = Value(Handle( new Handle<Value>(new Value())));
+			if (v.get_ptr() == nullptr) // undefined
+				v.set_ptr(new Value());
 			return;
 		};
 
+		case BCInstr::OPCode::SET_ID:
+#ifdef DLANG_DEBUG
+			try {
+				Value* p = f.closure.vars.at(cmd.i).get_ptr();
+				if (!p) {
+					DLANG_DEBUG_MSG("id " <<cmd.i <<" = null\n");
+				}
+				*f.closure.vars[cmd.i].get_ptr() = f.eval_stack.back();
+			} catch (...) {
+				DLANG_DEBUG_MSG("SET_ID(" <<cmd.i <<") failed\n");
+			}
+#else
+			*f.closure.vars[cmd.i].get_ptr() = f.eval_stack.back();
+#endif
+			break;
 
 		case BCInstr::OPCode::MK_LIST:
 			make_list(f, cmd.i);
 			return;
 
+		case BCInstr::OPCode::SET_INDEX: {
+			const Value v = f.eval_stack.back();
+			f.eval_stack.pop_back();
+			const Value ind_v = f.eval_stack.back();
+			std::size_t ind;
+			switch (ind_v.type()) {
+				case Value::VType::INT:
+					ind = std::get<Value::int_t>(ind_v.v);
+					break;
+				case Value::VType::FLOAT:
+					ind = (std::size_t) std::get<Value::float_t>(ind_v.v);
+					break;
+				default:
+					std::cout <<"SET_INDEX: type-error\n";
+					return;
+			}
+
+		}
 		default:
 			DLANG_DEBUG_MSG("... not implemented\n");
 			return;

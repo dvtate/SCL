@@ -4,6 +4,16 @@
 
 #include "parse.hpp"
 
+/**
+ * This file is a fucking spaghetti mess and should be rewritten
+ *
+ * The basic idea is a shift reduce parser with a lookahead token and infinite lookback
+ *
+ * When I bootstrap compiler, will likely use recursive descent parser
+ *
+ */
+
+
 
 // convert AST to lisp
 /// TODO: indentation + depth tracking
@@ -28,6 +38,7 @@ std::unordered_map<std::string, signed char> op_prec = {
 		{ "(",  21 },
 		{ "[",  20 },
 		{ ".",	20 },
+		{ "ref", 18 },
 		{ "!", 17 },
 		{ "neg", 17 },
 		{ "**", 16 },
@@ -56,9 +67,11 @@ std::unordered_map<std::string, signed char> op_prec = {
 		{ ":", 	2 }, // key value pair
 		{ ",", 	1 }, // comma seq
 		{ "let", 0 },
+		{ "using", 0},
 		{ "]",  0 },
-		{ ";", 	0 }, // statement separator
-		{ ")", 0 },
+		{ "}",  0 },
+		{ ";",  0 }, // statement separator
+		{ ")",  0 },
 		{ "eof", 0 }
 };
 
@@ -97,16 +110,11 @@ static inline AST next_node(const std::vector<Token>& tokens, size_t& i, std::ve
 	// everything past here is only single token
 	i++;
 
-	if (t.type == Token::t::NUMBER) {
-		AST ret(AST::NodeType::NUM_LITERAL, t);
-		ret.volatility = -1;
-		return ret;
-	}
-	if (t.type == Token::t::STRING) {
-		AST ret(AST::NodeType::STR_LITERAL, t);
-		ret.volatility = -1;
-		return ret;
-	}
+	if (t.type == Token::t::NUMBER)
+		return AST(AST::NodeType::NUM_LITERAL, t);
+	if (t.type == Token::t::STRING)
+		return AST(AST::NodeType::STR_LITERAL, t);
+
 	if (t.type == Token::t::IDENTIFIER) {
 		if (t.token == "let") {
 			t.type = Token::t::OPERATOR;
@@ -118,15 +126,16 @@ static inline AST next_node(const std::vector<Token>& tokens, size_t& i, std::ve
 
 	if (t.type == Token::t::OPERATOR) {
 		// container openings
-		if (t.token[0] == '(') {
+		if (t.token[0] == '(')
 			return AST(AST::NodeType::PAREN_OPEN, t);
-		}
-		if (t.token[0] == '[') {
+		if (t.token[0] == '[')
 			return AST(AST::NodeType::LIST_OPEN, t);
-		}
-		if (t.token[0] == ')' || t.token[0] == ']') {
+		if (t.token[0] == '{')
+			return AST(AST::NodeType::OBJ_OPEN, t);
+
+		if (t.token[0] == ')' || t.token[0] == ']')
 			return AST(AST::NodeType::CONT_CLOSE, t);
-		}
+
 
 		// unary minus (negation)
 		if (t.token == "-" && !isOperand(stack.back())) {
@@ -134,9 +143,9 @@ static inline AST next_node(const std::vector<Token>& tokens, size_t& i, std::ve
 			return AST(AST::NodeType::OPERATOR, t);
 		}
 
-		if (t.token == "eof") {
+		if (t.token == "eof")
 			return AST(AST::NodeType::INVALID, t);
-		}
+
 
 
 		return AST(AST::NodeType::OPERATOR, t);
@@ -335,7 +344,8 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 		while (i > 0) {
 			if (stack[i].type == AST::NodeType::LIST_OPEN ||
 				stack[i].type == AST::NodeType::MACRO_OPEN ||
-				stack[i].type == AST::NodeType::PAREN_OPEN)
+				stack[i].type == AST::NodeType::PAREN_OPEN ||
+				stack[i].type == AST::NodeType::OBJ_OPEN)
 				break;
 			i--;
 		}
@@ -344,8 +354,9 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 		if (stack[i].type == AST::NodeType::LIST_OPEN) {
 			if (stack.back().token.token != "]")
 				throw std::vector<SyntaxError>{
-						SyntaxError(stack[i].token, "unclosed `[`"),
-						SyntaxError(stack.back().token, "unexpected `)`"),
+					SyntaxError(stack[i].token, "unclosed `[`"),
+					SyntaxError(stack.back().token,
+					std::string("unexpected `") + stack.back().token.token + '`'),
 				};
 			if (stack.size() - i > 3)
 				throw std::vector<SyntaxError>{SyntaxError(stack[i].token, "invalid expression in list")};
@@ -367,8 +378,9 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 		if (stack[i].type == AST::NodeType::PAREN_OPEN) {
 			if (stack.back().token.token != ")")
 				throw std::vector<SyntaxError>{
-						SyntaxError(stack[i].token, "unclosed `(`"),
-						SyntaxError(stack.back().token, "unexpected `]`"),
+					SyntaxError(stack[i].token, "unclosed `(`"),
+					SyntaxError(stack.back().token,
+						std::string("unexpected `") + stack.back().token.token + '`'),
 				};
 			if (stack.size() - i > 3)
 				throw std::vector<SyntaxError>{SyntaxError(stack[i].token, "invalid expression in parens")};
@@ -395,8 +407,9 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 		if (stack[i].type == AST::NodeType::MACRO_OPEN) {
 			if (stack.back().token.token != ")")
 				throw std::vector<SyntaxError>{
-						SyntaxError(stack[i].token, "unclosed `(:`"),
-						SyntaxError(stack.back().token, "unexpected `]`"),
+					SyntaxError(stack[i].token, "unclosed `(:`"),
+					SyntaxError(stack.back().token,
+						std::string("unexpected `") + stack.back().token.token + '`'),
 				};
 			stack.pop_back();
 			for (unsigned short m = i + 1; m < stack.size(); m++)
@@ -405,6 +418,24 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 				stack.pop_back();
 			stack.back().type = AST::NodeType::MACRO;
 
+			return true;
+		}
+
+
+		// Handle Objects
+		if (stack[i].type == AST::NodeType::OBJ_OPEN) {
+			if (stack.back().token.token != "}")
+				throw std::vector<SyntaxError>{
+					SyntaxError(stack[i].token, "unclosed `{`"),
+					SyntaxError(stack[i].token,
+						std::string("unexpected `") + stack.back().token.token + '`')
+				};
+			stack.pop_back();
+			for (unsigned short m = i+1; m < stack.size(); m++)
+				stack[i].members.emplace_back(stack[m]);
+			while (stack.size() > i + 1U)
+				stack.pop_back();
+			stack.back().type = AST::NodeType::OBJECT;
 			return true;
 		}
 	}

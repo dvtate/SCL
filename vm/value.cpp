@@ -14,12 +14,12 @@ bool Value::eq_value(const Value& other) const {
 
 	// de-ref
 	if (std::holds_alternative<Value::ref_t>(this->v))
-		l = std::get<Value::ref_t>(this->v).get_ptr()->get_ptr();
+		l = std::get<Value::ref_t>(this->v).get_ptr();
 	else
 		l = (Value*) this;
 
 	if (std::holds_alternative<Value::ref_t>(other.v))
-		r = std::get<Value::ref_t>(other.v).get_ptr()->get_ptr();
+		r = std::get<Value::ref_t>(other.v).get_ptr();
 	else
 		r = (Value*) &other;
 
@@ -68,8 +68,8 @@ bool Value::eq_identity(const Value& other) const {
 	if (this->type() != other.type())
 		return false;
 	if (std::holds_alternative<Value::ref_t>(this->v))
-		return  std::get<Value::ref_t>(this->v).get_ptr()->get_ptr() ==
-				std::get<Value::ref_t>(other.v).get_ptr()->get_ptr();
+		return  std::get<Value::ref_t>(this->v).get_ptr() ==
+				std::get<Value::ref_t>(other.v).get_ptr();
 
 	auto t = this->type();
 
@@ -107,7 +107,7 @@ bool Value::truthy() const {
 
 	Value* val = (Value*) this;
 	if (std::holds_alternative<Value::ref_t>(this->v))
-		val = std::get<Value::ref_t>(this->v).get_ptr()->get_ptr();
+		val = std::get<Value::ref_t>(this->v).get_ptr();
 
 //	if (std::holds_alternative<Value::bool_t>(val->v))
 //		return std::get<Value::bool_t>(val->v);
@@ -148,7 +148,7 @@ std::string Value::to_string(bool recursive) const {
 		case VType::N_FN:
 			return "(: native )";
 		case VType::REF: {
-			auto* p = std::get<Value::ref_t>(this->v).get_ptr()->get_ptr();
+			auto* p = std::get<Value::ref_t>(this->v).get_ptr();
 			return p != nullptr ? p->to_string(false) : "null";
 		};
 		case VType::LIST: {

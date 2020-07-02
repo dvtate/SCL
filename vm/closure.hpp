@@ -26,7 +26,7 @@ public:
 	int64_t o_id;
 
 	// captured identifiers
-	std::unordered_map<int64_t, Value> vars;
+	std::unordered_map<int64_t, Handle<Value>> vars;
 
 	// body points to implementation defined by relevant closureDef
 	std::vector<BCInstr>* body;

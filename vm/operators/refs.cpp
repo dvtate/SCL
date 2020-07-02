@@ -15,21 +15,12 @@ void change_value(Frame& f) {
 	f.eval_stack.pop_back();
 	Value l = f.eval_stack.back();
 
-	if (!std::holds_alternative<Value::ref_t>(l.v)) {
-		std::cout <<"lhs eq not a ref?\n";
-		return; // todo typeError
-	}
+	Value* ref = l.deref();
+	// todo typerror/nullptr exception
+	if (ref == nullptr)
+		return;
+	*ref = r;
 
-	// defer value
-	if (std::holds_alternative<Value::ref_t>(r.v))
-		std::get<Value::ref_t>(l.v).get_ptr()->set_ptr(
-				std::get<Value::ref_t>(r.v).get_ptr()->get_ptr());
-	else  {
-		Value* ref = std::get<Value::ref_t>(l.v).get_ptr()->get_ptr();
-		*ref = r;
-	}
-
-	// l stays on stack...
 }
 
 

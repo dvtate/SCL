@@ -19,7 +19,7 @@ class PrintFn : public virtual NativeFunction {
 public:
 	static inline void printValue(Value& v) {
 		if (std::holds_alternative<Value::ref_t>(v.v)) {
-			Value* p = std::get<Value::ref_t>(v.v).get_ptr()->get_ptr();
+			Value* p = std::get<Value::ref_t>(v.v).get_ptr();
 			if (p == nullptr)
 				std::cout <<"null";
 			else
@@ -182,37 +182,39 @@ class NumFn : public virtual NativeFunction {
 
 class VarsFn : public virtual NativeFunction {
 	void operator()(Frame& f) {
-		for (const auto& scope : *f.rt->running){
+		for (const auto& scope : *f.rt->running) {
 			std::cout <<"Scope " <<scope <<std::endl;
-			for (const auto& vp : scope->closure.vars) {
-				std::cout <<"\t" <<vp.first <<"\t" <<vp.second.to_string() <<std::endl;
-			}
+			for (const auto& vp : scope->closure.vars)
+				std::cout <<'\t' <<vp.first <<'\t' <<vp.second.get_ptr()->to_string()
+						  <<'\t' <<vp.second.get_ptr() <<std::endl;
+
 		}
 	}
 };
 
 
 
-static Value global_ids[] {
+static Handle<Value> global_ids[] {
 	// 0 - empty
-	Value(),
+	Handle(new Value()),
 	// 1 - print
-	Value(Handle<NativeFunction>(new PrintFn())),
+	Handle(new Value(Handle<NativeFunction>(new PrintFn()))),
 	// 2 - input
-	Value(Handle<NativeFunction>(new InputFn())),
+	Handle(new Value(Handle<NativeFunction>(new InputFn()))),
 	// 3 - if
-	Value(Handle<NativeFunction>(new IfFn())),
+	Handle(new Value(Handle<NativeFunction>(new IfFn()))),
 	// 4 - Str
-	Value(Handle<NativeFunction>(new StrFn())),
+	Handle(new Value(Handle<NativeFunction>(new StrFn()))),
 	// 5 - Num
-	Value(Handle<NativeFunction>(new NumFn())),
+	Handle(new Value(Handle<NativeFunction>(new NumFn()))),
 	// 6 - vars
-	Value(Handle<NativeFunction>(new VarsFn())),
+	Handle(new Value(Handle<NativeFunction>(new VarsFn()))),
 
-	// 6 - range (need objects first...)
-	//
+	// - range (need objects first...)
+	// - copy
+	// -
 };
 
-const Value& get_global_id(int64_t id) {
+const Handle<Value>& get_global_id(int64_t id) {
 	return global_ids[id];
 }
