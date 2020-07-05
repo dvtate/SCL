@@ -17,7 +17,7 @@ public:
 	enum NodeType {
 		STATEMENTS=0, // semicolon delineated
 
-		// operand types
+		// operand types (must start with OPERATION and end with LIST
 		OPERATION, // parsed operator args put in this->members
 //		EXPRESSION,
 		NUM_LITERAL,
@@ -78,9 +78,9 @@ public:
 			case NodeType::NUM_LITERAL:		return "Number Literal";
 			case NodeType::STR_LITERAL:		return "String Literal";
 			case NodeType::IDENTIFIER:		return "Identifier";
-			case NodeType::INVOKE:	return "Macro Call";
+			case NodeType::INVOKE:			return "Macro Call";
 			case NodeType::MACRO:			return "Macro Literal";
-			case NodeType::INDEX:		return "List Index Request";
+			case NodeType::INDEX:			return "List Index Request";
 			case NodeType::OBJECT:			return "Object Literal";
 			case NodeType::LIST:			return "List Literal";
 			case NodeType::MACRO_OPEN:		return "Macro opening";

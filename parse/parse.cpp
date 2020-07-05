@@ -32,6 +32,8 @@ std::string debug_AST(const AST& tree) {
 // using a shift-reduce parser
 std::vector<std::string> keywords;
 
+
+// Operator Precedence
 std::unordered_map<std::string, signed char> op_prec = {
 		{ "(:", 22 },
 		{ "{", 22  },
@@ -66,8 +68,8 @@ std::unordered_map<std::string, signed char> op_prec = {
 		{ "=", 	3 }, // assignment
 		{ ":", 	2 }, // key value pair
 		{ ",", 	1 }, // comma seq
-		{ "let", 0 },
-		{ "using", 0},
+		{ "let", 0 }, // declarations
+		{ "using", 0}, // template engine
 		{ "]",  0 },
 		{ "}",  0 },
 		{ ";",  0 }, // statement separator
@@ -75,15 +77,19 @@ std::unordered_map<std::string, signed char> op_prec = {
 		{ "eof", 0 }
 };
 
-
+// Is given node a valid expression with a resulting type
+//  enum entries ordered specifically to enable this
 static inline bool isOperand(const AST& n) {
 	return n.type >= AST::NodeType::OPERATION && n.type <= AST::NodeType::LIST;
 }
 
+// Get the next AST node from the list of tokens
+//   Also finish lexers job as some tokens combine into single nodes
 static inline AST next_node(const std::vector<Token>& tokens, size_t& i, std::vector<AST> stack) {
 
-	Token t = tokens[i];
+	Token& t = tokens[i];
 
+	// Lexer error, (ie: unterminated comment/string/etc.)
 	if (t.type == Token::t::ERROR) {
 		throw std::vector<SyntaxError>{SyntaxError(t, t.token)};
 	}
@@ -93,14 +99,15 @@ static inline AST next_node(const std::vector<Token>& tokens, size_t& i, std::ve
 		const std::string combined = tokens[i].token + tokens[i + 1].token;
 		static const std::vector<std::string> mc_ops = { "&&", "||", "<=", ">=", "==", "!=", "**" };
 
-		// special case for macro-open
 		if (combined == "(:") {
+			// special case for macro-open (different NodeType)
 			t.token = combined;
 			const AST ret = AST(AST::NodeType::MACRO_OPEN, t);
 			i += 2;
 			return ret;
 
 		} else if (std::find(mc_ops.begin(), mc_ops.end(), combined) != mc_ops.end()) {
+			// Other multicharacter operator
 			t.token = combined;
 			i += 2;
 			return AST(AST::NodeType::OPERATOR, t );
@@ -110,72 +117,100 @@ static inline AST next_node(const std::vector<Token>& tokens, size_t& i, std::ve
 	// everything past here is only single token
 	i++;
 
+	// Literals
 	if (t.type == Token::t::NUMBER)
 		return AST(AST::NodeType::NUM_LITERAL, t);
 	if (t.type == Token::t::STRING)
 		return AST(AST::NodeType::STR_LITERAL, t);
 
+	// Handle Identifiers
 	if (t.type == Token::t::IDENTIFIER) {
-		if (t.token == "let") {
-			t.type = Token::t::OPERATOR;
+		// These are technically operators
+		if (t.token == "let" || t.token == "using") {
+			t.type = Token::t::OPERATOR; // prob not needed anymore..
 			return AST(AST::NodeType::OPERATOR, t);
 		}
 		return AST(AST::NodeType::IDENTIFIER, t);
 	}
 
-
+	// TODO Lexer could probably handle some of this logic better
 	if (t.type == Token::t::OPERATOR) {
-		// container openings
+		// Containers
 		if (t.token[0] == '(')
 			return AST(AST::NodeType::PAREN_OPEN, t);
 		if (t.token[0] == '[')
 			return AST(AST::NodeType::LIST_OPEN, t);
 		if (t.token[0] == '{')
 			return AST(AST::NodeType::OBJ_OPEN, t);
-
-		if (t.token[0] == ')' || t.token[0] == ']')
+		if (t.token[0] == ')' || t.token[0] == ']' || t.token[0] == '}')
 			return AST(AST::NodeType::CONT_CLOSE, t);
-
 
 		// unary minus (negation)
 		if (t.token == "-" && !isOperand(stack.back())) {
-			t.token = "neg";
+			t.token = "neg"; // Distinct name for precedence and compilation
 			return AST(AST::NodeType::OPERATOR, t);
 		}
 
+		// eof only purpose is to force expression reducing
 		if (t.token == "eof")
 			return AST(AST::NodeType::INVALID, t);
 
-
-
+		// Otherwise it's just a basic operator like +,-,*,/ etc.
 		return AST(AST::NodeType::OPERATOR, t);
 	}
 
-	throw SyntaxError(t, "Unknown token");
+	throw std::vector<SyntaxError>{SyntaxError(t, "Unknown token")};
 }
 
+/** Find index of corresponding container open node on stack
+ * @param stack - parse stack
+ * @param nn - container closing
+ * @returns -1 if passed invalid close character
+ * @throws {SyntaxError} if no matching container start
+ */
 static inline int prev_matching_container_index(std::vector<AST>& stack, const AST& nn) {
 	if (nn.type != AST::NodeType::CONT_CLOSE)
 		return -1;
-	int ret = stack.size() - 1;
-	while (ret >= 0) {
-		if (nn.token.token == ")")
+	std::size_t ret = stack.size();
+
+	// Find macro/paren_expr open
+	if (nn.token.token[0] == ')')
+		while (--ret >= 0)
 			if (stack[ret].type == AST::NodeType::MACRO_OPEN ||
 				stack[ret].type == AST::NodeType::PAREN_OPEN)
 				return ret;
-		if (nn.token.token == "]")
+
+	// Else Find list open
+	if (nn.token.token[0] == ']')
+		while (--ret >= 0)
 			if (stack[ret].type == AST::NodeType::LIST_OPEN)
 				return ret;
-		ret--;
-	}
-	return 0;
+
+	// Else find object open
+	if (nn.token.token[0] == '}')
+		while (--ret >= 0)
+			if (stack[ret].type == AST::NodeType::OBJ_OPEN)
+				return ret;
+
+	// closing without opener
+	throw std::vector<SyntaxError>{SyntaxError(nn.token,
+			"unexpected " + nn.type_name() + ": " + nn.token.token)};
 }
-static inline int prev_operator(std::vector<AST>& stack, const AST& n) {
+
+/**
+ * Get index of last operator on stack
+ * @param stack - Parse stack
+ * @param n - lookahead node
+ * @return - index of operator or -1 if none found
+ */
+static inline int prev_operator(std::vector<AST>& stack, const AST& lookahead) {
 	int min_i = 0;
-	// only reduce operators within current container
-	if (n.type == AST::NodeType::CONT_CLOSE) {
-		min_i = prev_matching_container_index(stack, n);
+	// only reduce operators within current container scope (ie - parens)
+	if (lookahead.type == AST::NodeType::CONT_CLOSE) {
+		min_i = prev_matching_container_index(stack, lookahead);
 	}
+
+	// Find next operator
 	ssize_t ret = stack.size();
 	while (--ret >= min_i)
 		if (stack[ret].type == AST::NodeType::OPERATOR)
@@ -184,9 +219,21 @@ static inline int prev_operator(std::vector<AST>& stack, const AST& n) {
 	return -1;
 }
 
+/**
+ * Attempt to link operator at index i on the stack with it's operands
+ *  there are many problems with this function but it works for the most part
+ *
+ * @param stack - parse stack
+ * @param i - index
+ * @return nullptr on success and error message on failure
+ */
 static inline const char* reduce_operator(std::vector<AST>& stack, const size_t i) {
 	// all operators are binary except: "neg", "let", and !
-	// oddballs: , ; :
+	// Lexical operators: , ; :
+	// we will only ever reduce the last operator on the stack
+	// 	otherwise we wait for something with lower precedence to get placed on
+	//  Might not be a good idea to rely on this but idk
+
 	AST n = stack[i];
 	const std::string op = n.token.token;
 
@@ -206,16 +253,7 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 		return nullptr;
 	}
 
-	// postfix semicolon at end
-//	if (op == ";" && i == stack.size() - 1) {
-//		stack.pop_back();
-//		n.members.insert(n.members.end(), stack.begin() + i + 1, stack.end());
-//		while (stack.size() > i + 1)
-//			stack.pop_back();
-//		return nullptr;
-//	}
-
-	// unary
+	// unary prefix
 	if (op == "neg" || op == "!") {
 		if (stack.size() - i != 2)
 			return "invalid unary operation";
@@ -226,7 +264,7 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 		return nullptr;
 	}
 
-	// declaration
+	// unary prefix declaration
 	if (op == "let") {
 		if (stack.size() - i != 2)
 			return "invalid declaration";
@@ -234,31 +272,34 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 		n.members.emplace_back(stack.back());
 		stack.pop_back();
 		stack.back() = n;
-		//
 		return nullptr;
 	}
 
+	// postfix semicolon
 	if (op == ";") {
-		// not an infix operator
 
+		// drop semi
 		stack.pop_back();
+
+		// allow empty-statements ;;;;;;
 		if (stack.empty())
 			return nullptr;
-
 		if (stack.back().type == AST::NodeType::STATEMENTS)
 			return nullptr;
 
-		AST b = stack.back();
+		// Make a new statements node
+		AST expr = stack.back();
 		stack.pop_back();
 		if (stack.empty() || stack.back().type != AST::NodeType::STATEMENTS) {
 			stack.emplace_back(AST(
 					AST::NodeType::STATEMENTS,
-					Token(Token::t::OPERATOR, ";", b.token.pos),
-					{ b }));
+					Token(Token::t::OPERATOR, ";", expr.token.pos),
+					{ expr }));
 			return nullptr;
 		}
+		// Combine with previous statements
 		if (stack.back().type == AST::NodeType::STATEMENTS)
-			stack.back().members.emplace_back(b);
+			stack.back().members.emplace_back(expr);
 		return nullptr;
 
 	}
@@ -269,22 +310,26 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 		return "invalid infix operator";
 	}
 
+	// invalid operand
 	if (!isOperand(stack.back())) {
 #ifdef DLANG_DEBUG
-		std::cout <<"\nnot an op: `" <<stack.back().token.token <<"` n=`" <<n.token.token <<"`\n";
+		std::cout <<"\nnot an operand: `" <<stack.back().token.token <<"` n=`" <<n.token.token <<"`\n";
 #endif
 		return "invalid operand";
 	}
 
+	// get two operands (left and right)
 	const AST r = stack.back();
 	stack.pop_back(); // pop r
 	stack.pop_back(); // pop n
 	const AST l = stack.back();
 
+	// OPERATION is valid operand, OPERATOR is not
 	n.type = AST::NodeType::OPERATION;
 
 	// if multiple members of same type, combine into bulk operation
-	//  this makes dealing with associativity easier
+	//    we can deal with associativity later
+	// 1+2+3+4-5-6  =>  (+ 1 2 3 (- 4 5 6))
 	if (l.type == AST::NodeType::OPERATION && l.token.token == n.token.token)
 		n.members = l.members;
 	else
@@ -295,74 +340,103 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 	else
 		n.members.emplace_back(r);
 
+	// replace l with our new operation
 	stack.back() = n;
-
 	return nullptr;
-
 }
 
+
+/**
+ * Try to reduce expressions involving operators ((1)(+)(2) => (+ 1 2)
+ * @param stack - parse stack
+ * @param n - lookahead
+ * @return - true/false depending on if a reduction was made
+ */
 static inline bool reduce_operators(std::vector<struct AST>& stack, const AST& n) {
 	// dont reduce if given neg
 	if (n.type == AST::NodeType::OPERATOR && n.token.token == "neg")
 		return false;
 
+	// lookahead is an operator
 	if (!isOperand(n)) {
-		// if lookahead is an operator
+		// find last operator
 		const int i = prev_operator(stack, n);
 		if (i < 0)
 			return false;
+
+		// Get precedences
 		const auto prec_p = op_prec.at(stack[i].token.token);
 		const auto prec_n = op_prec.at(n.token.token);
-		// reduce if it's lower precedence than prev operator
+
+		// reduce if lookahead is lower precedence than prev operator
 		if (prec_n <= prec_p || stack[i].token.token == ";") {
-			return !reduce_operator(stack, i);
-			//return true;
+			// NOTE reduction can fail in normal course of parse ://///
+			const auto ret = reduce_operator(stack, i);
+			DLANG_DEBUG_MSG("Parser reduce operator(" <<stack[i].token.token <<"): " <<ret <<std::endl);
+			return !ret;
 		} else {
+			// lookahead is higher precidence, need to reduce it before can reduce prev
 			return false;
 		}
 	}
 
+	// double operands
 	// assumed/given end of expr, reduce it before adding more
+	// TODO this is also the condition for ASI
 	if ((n.type != AST::NodeType::LIST_OPEN && n.type != AST::PAREN_OPEN && isOperand(stack.back()))
 		|| (stack.back().token.token == ";" && stack.back().type != AST::NodeType::STATEMENTS)) {
+		// find previous operator (if any)
 		auto p_op_i = prev_operator(stack, n);
 		if (p_op_i < 0)
 			return false;
 
-		reduce_operator(stack, p_op_i);
-		return true;
+		// try to reduce it
+		const auto ret = reduce_operator(stack, p_op_i);
+		DLANG_DEBUG_MSG("Parser ASI reduce operator(" <<stack[i].token.token <<"): " <<ret <<std::endl);
+		return !ret;
 	}
 
+	// No reduce
 	return false;
 }
-
+/**
+ * Reduce containers replacing (open) (body) (close) with (container (body))
+ * @param stack - parse stack
+ * @return - true/false depending on if a reduction was made
+ */
 static inline bool reduce_containers(std::vector<AST>& stack) {
-
+	// Need to see a container close to be able to reduce
 	if (!stack.empty() && stack.back().type == AST::NodeType::CONT_CLOSE) {
 		// find nearest opener
-		int i = (int) stack.size() - 1;
-		while (i > 0) {
+		int i = (int) stack.size();
+		while (--i >= 0)
 			if (stack[i].type == AST::NodeType::LIST_OPEN ||
 				stack[i].type == AST::NodeType::MACRO_OPEN ||
 				stack[i].type == AST::NodeType::PAREN_OPEN ||
 				stack[i].type == AST::NodeType::OBJ_OPEN)
 				break;
-			i--;
-		}
+
+		// No matching opener found!
+		if (i < 0)
+			throw std::vector<SyntaxError>{SyntaxError(stack.back().token,
+					"Unexpected " + stack.back().token.token + " missing matching open")};
 
 		// handle lists
 		if (stack[i].type == AST::NodeType::LIST_OPEN) {
+			// mismatch
 			if (stack.back().token.token != "]")
 				throw std::vector<SyntaxError>{
 					SyntaxError(stack[i].token, "unclosed `[`"),
 					SyntaxError(stack.back().token,
 					std::string("unexpected `") + stack.back().token.token + '`'),
 				};
+			// Should only be one node in container
 			if (stack.size() - i > 3)
 				throw std::vector<SyntaxError>{SyntaxError(stack[i].token, "invalid expression in list")};
-			stack.pop_back();
+
+			stack.pop_back(); // pop close
 			AST n = stack.back();
-			stack.pop_back();
+			stack.pop_back(); // pop inside
 
 			// list.members = comma separated values
 			if ((n.type == AST::NodeType::OPERATION && n.token.token == ",") || n.type == AST::NodeType::COMMA_SERIES)
@@ -370,12 +444,14 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 			else
 				n = AST(AST::NodeType::LIST, stack.back().token, std::vector<AST>({n}));
 
+			// replace start of container with new container node
 			stack.back() = n;
 			return true;
 		}
 
 		// handle parens
 		if (stack[i].type == AST::NodeType::PAREN_OPEN) {
+			// handle mismatch
 			if (stack.back().token.token != ")")
 				throw std::vector<SyntaxError>{
 					SyntaxError(stack[i].token, "unclosed `(`"),
@@ -405,6 +481,7 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 
 		// handle macros
 		if (stack[i].type == AST::NodeType::MACRO_OPEN) {
+			// handle mismatch
 			if (stack.back().token.token != ")")
 				throw std::vector<SyntaxError>{
 					SyntaxError(stack[i].token, "unclosed `(:`"),
@@ -430,12 +507,22 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 					SyntaxError(stack[i].token,
 						std::string("unexpected `") + stack.back().token.token + '`')
 				};
+
+			if (stack.size() - i > 3)
+				throw std::vector<SyntaxError>{SyntaxError(stack[i].token, "invalid expression in parens")};
+
+			// pop closer
 			stack.pop_back();
-			for (unsigned short m = i+1; m < stack.size(); m++)
-				stack[i].members.emplace_back(stack[m]);
-			while (stack.size() > i + 1U)
+			if ( (long int) stack.size() - 2 == i) {
+				// has expression to capture
+				const AST e = stack.back();
 				stack.pop_back();
-			stack.back().type = AST::NodeType::OBJECT;
+				stack.back().type = AST::NodeType::OBJECT;
+				stack.back().members.emplace_back(e);
+			} else {
+				// () empty parenexpr
+				stack.back().type = AST::NodeType::OBJECT;
+			}
 			return true;
 		}
 	}
@@ -445,7 +532,6 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 
 // macro calls			abc(123)
 // bracket operator 	abc[123]
-//
 static inline bool reduce_invocations(std::vector<AST>& stack) {
 	/* macro calls
 	 * takes something that evaluates to a macro
@@ -491,33 +577,35 @@ static inline bool reduce_invocations(std::vector<AST>& stack) {
 	return false;
 }
 
-
+// Follow rules to form parse tree
 static inline bool reduce(const std::vector<Token>& tokens, size_t& i, std::vector<AST>& stack, const AST& n) {
 	if (stack.empty())
 		return false;
 
-
-	// TODO: if <eof> or <;> try to reduce to single statements token (stack.insert(...))
-
+	// TODO ASI if <eof> or <;> try to reduce to single statements token (stack.insert(...))
 	return
 			reduce_invocations(stack)
 			||
 			reduce_containers(stack)
 			||
 			reduce_operators(stack, n);
-
 }
 
+// [placeholder] Can we put node onto stack?
 static inline bool can_shift(const AST& n) {
 	return n.type != AST::NodeType::INVALID;
 }
 
+
+/// Read through tokens shifting and reducing as needed
+/// @return parse tree
 AST parse(const std::vector<Token>& tokens) {
 	std::vector<AST> stack;
 
 	size_t i = 0;
 
 	while (i < tokens.size()) {
+		// get lookahead
 		AST tok = next_node(tokens, i, stack);
 #ifdef DLANG_DEBUG
 		std::cout <<"Lookahead: " << debug_AST(tok) <<std::endl;
@@ -528,11 +616,12 @@ AST parse(const std::vector<Token>& tokens) {
 			std::cout <<std::endl;
 		}
 #endif
+		// call reduce until it stops making changes
 		while (reduce(tokens, i, stack, tok));
 
+		// shift node onto parse stack
 		if (can_shift(tok))
 			stack.emplace_back(tok);
-
 	}
 #ifdef DLANG_DEBUG
 	std::cout <<"\nStack: ";
@@ -541,24 +630,23 @@ AST parse(const std::vector<Token>& tokens) {
 	std::cout <<std::endl;
 #endif
 
+	// Parsed multiple items... probably syntax error and/or parse poorly written
 	if (stack.size() > 1) {
+		// Dump stack
 		std::cout <<"\nStack: ";
 		for (const AST& n : stack)
 			std::cout <<debug_AST(n) << "   ";
 		std::cout <<std::endl;
 
+		// Point to everything on stack in their code
+		// TODO mark statements groups as safe and/or other regions as bad
 		std::vector<SyntaxError> errs;
 		for (auto& t : stack)
 			errs.emplace_back(SyntaxError(t.token,
 					"Unable to parse to single item (maybe bad syntax here?)"));
-
 		throw errs;
 	}
 
-
+	// return top of stack
 	return stack.back();
-
-	// if multi-char operator sequence try to reduce
-	// always reduce containers
-	//
 }
