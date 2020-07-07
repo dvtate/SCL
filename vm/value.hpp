@@ -33,7 +33,7 @@ public:
 	using lam_t 	= Handle<Closure>;
 	using n_fn_t 	= Handle<NativeFunction>;
 	using bool_t 	= Value::int_t;
-	using list_t	= std::vector<Value>;
+	using list_t	= Handle<std::vector<Value>>;
 
 	using variant_t = std::variant<
 			empty_t, float_t, int_t, str_t,

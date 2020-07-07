@@ -9,17 +9,15 @@
 #include "../operators/operators.hpp"
 #include "../operators/internal_tools.hpp"
 
-
+// (())
 static void invoke(Frame& f) {
-
 	Value v = f.eval_stack.back();
 	f.eval_stack.pop_back();
 
 	vm_util::invoke_value_sync(f, v, false);
-
 }
 
-
+// ([])
 void index(Frame& f) {
 	Value* v = f.eval_stack.back().deref();
 	if (v == nullptr) {
@@ -47,7 +45,7 @@ void index(Frame& f) {
 	if (std::holds_alternative<Value::list_t>(v->v)) {
 		auto l = std::get<Value::list_t>(v->v);
 		try {
-			f.eval_stack.back() = l.at(ind);
+			f.eval_stack.back() = l.ptr->at(ind);
 		} catch (...) {
 			f.eval_stack.back() = Value();
 		}
@@ -56,13 +54,14 @@ void index(Frame& f) {
 	}
 }
 
+//
 void make_list(Frame& f, uint32_t n) {
-	Value lv(Value::list_t{});
+	Value lv(Handle(new std::vector<Value>()));
 	auto& l = std::get<Value::list_t>(lv.v);
 
 	// take items off stack and put them into lv -> l
-	l.reserve(n);
-	l.insert(l.begin(), f.eval_stack.end() - n, f.eval_stack.end());
+	l.ptr->reserve(n);
+	l.ptr->insert(l.ptr->begin(), f.eval_stack.end() - n, f.eval_stack.end());
 	f.eval_stack.erase(f.eval_stack.end() - n, f.eval_stack.end());
 	f.eval_stack.emplace_back(std::move(lv));
 }
