@@ -98,10 +98,10 @@ int main(int argc, char** argv) {
 		auto fis = std::ifstream(fname); // reuse istream
 		for (auto& e : errs)
 			if (e.is_warn) {
-				std::cout <<"Compiler Warning: " <<e.msg <<std::endl
+				std::cout <<util::term_eff_red <<"Compiler Warning: " <<util::term_eff_reset <<e.msg <<std::endl
 						  << util::show_line_pos(fis, e.pos, fname);
 			} else {
-				std::cout <<"Compiler Error: " <<e.msg <<std::endl
+				std::cout <<util::term_eff_red <<"Compiler Error: " <<util::term_eff_reset <<e.msg <<std::endl
 						<<util::show_line_pos(fis, e.pos, fname) <<std::endl;
 				fatal = true;
 			}

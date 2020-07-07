@@ -5,7 +5,15 @@
 #ifndef DLANG_HANDLE_HPP
 #define DLANG_HANDLE_HPP
 
+/*
+ * These are defined to help with the following
+ * - GC tracing
+ * - Size segregation? (potential optimization)
+ * - Hiding the GC API's from the rest of the VM
+ */
 // TODO: link w/ gc...
+
+
 template <class T>
 class Handle {
 public:
@@ -25,16 +33,25 @@ public:
 	void set_ptr(T* ptr) {
 		this->ptr = ptr;
 	}
-
-	void set_value(const T& v) {
-		*this->get_ptr() = v;
-	}
 };
 
+// this type stores data that may become untracable but is still being managed by some other data-structure
 template <class T>
-class StaticHandle : public Handle<T> {
-
+class ManagedHandle : public Handle<T> {
+public:
 	// TODO: change constructor so that ptr isn't managed by gc
+	ManagedHandle() {
+		this->ptr = nullptr;
+	}
+	explicit ManagedHandle(T* p) {
+		this->ptr = p;
+	}
+
+	//
+	void enable_gc() {
+		// let gc manage this pointer
+		// probably will need some GC api to be implemented
+	}
 };
 
 

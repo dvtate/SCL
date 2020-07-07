@@ -66,10 +66,6 @@ void VM::run() {
 	main_thread->run();
 }
 
-void Runtime::debugSummary() {
-
-}
-
 // event loop
 void Runtime::run() {
 

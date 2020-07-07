@@ -86,8 +86,8 @@ static inline bool isOperand(const AST& n) {
 // Get the next AST node from the list of tokens
 //   Also finish lexers job as some tokens combine into single nodes
 static inline AST next_node(const std::vector<Token>& tokens, size_t& i, std::vector<AST> stack) {
-
-	Token& t = tokens[i];
+	// Mutable copy of token
+	Token t = tokens[i];
 
 	// Lexer error, (ie: unterminated comment/string/etc.)
 	if (t.type == Token::t::ERROR) {

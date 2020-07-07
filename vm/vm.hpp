@@ -37,22 +37,19 @@ public:
 
 
 class SyncCallStack : public std::vector<std::shared_ptr<Frame>> {
-public:
-	// origin thread (used for generating stack-trace & handling errors)
-	std::shared_ptr<SyncCallStack> creator;
+
 };
 
 
 class Frame {
 public:
-
 	Runtime* rt;
 
 	// closure we're running
 	Closure closure;
 
 	// index of bytecode read head
-	unsigned int pos;
+	uint_fast32_t pos;
 
 	// values we're working with
 	std::vector<Value> eval_stack;
@@ -63,12 +60,12 @@ public:
 
 	// run a single bytecode instruction and return
 	inline bool tick(){
-		if (pos >= this->closure.body->size())
-			return true;
-		exec_bc_instr(*this, (*this->closure.body)[this->pos++]);
-		return false;
+		if (pos < this->closure.body->size()) {
+			exec_bc_instr(*this, (*this->closure.body)[this->pos++]);
+			return false;
+		}
+		return true;
 	}
-
 };
 
 // different threads running on same process
@@ -106,7 +103,6 @@ public:
 		return cpy;
 	}
 
-
 	//
 	void freeze_running() {
 		if (this->active.empty()) {
@@ -131,6 +127,7 @@ public:
 
 	// removes call stack from undead tracker
 	void kill(const std::shared_ptr<SyncCallStack>& cs){
+		// TODO replace undead with a std::set or sth
 		for (auto it = this->undead.begin(); it < this->undead.end(); it += 1)
 			if (*it == cs) {
 				this->undead.erase(it);
@@ -138,12 +135,24 @@ public:
 			}
 		DLANG_DEBUG_MSG("VM:RT: killed CallStack\n");
 	}
+
 	void kill_running(){
 		auto cs = this->running;
 		this->freeze_running();
 		this->kill(cs);
 	}
-	void debugSummary();
+
+	void set_active(const std::shared_ptr<SyncCallStack>& cs) {
+		// if stack target not in active stacks, put there
+		if (this->running != cs &&
+			// TODO replace this->active with a set or sth
+			std::find(this->active.begin(), this->active.end(), cs) == this->active.end()) \
+		{
+			DLANG_DEBUG_MSG("VM:RT: queued stack..\n");
+			this->active.emplace_back(cs);
+		}
+	}
+
 	void run();
 
 private:

@@ -27,6 +27,12 @@
 			- go back to executing instructions
 */
 
+/*
+ * There is a lot of room for optimization here
+ * - Noteably, reducing number of values stored
+ * - Removing safety checks performed by compiler
+ *
+ */
 
 // executed by rt event loop
 class LambdaReturnMsg : public virtual RTMessage {
@@ -51,8 +57,8 @@ public:
 			std::cout <<"invalid lambda return msg call ";
 		}
 
-		while (this->stack_target->back() != this->frame_target &&
-			!this->stack_target->empty())
+		//
+		while (this->stack_target->back() != this->frame_target && !this->stack_target->empty())
 			this->stack_target->pop_back();
 
 		if (this->stack_target->empty()) {
@@ -62,11 +68,7 @@ public:
 
 		this->stack_target->back()->eval_stack.push_back(this->ret);
 		// if stack target not in active stacks, put there
-		if (rt.running != this->stack_target &&
-			std::find(rt.active.begin(), rt.active.end(), this->stack_target) == rt.active.end()) {
-			DLANG_DEBUG_MSG("LAM_RET: queued stack..\n");
-			rt.active.emplace_back(this->stack_target);
-		}
+		rt.set_active(this->stack_target);
 
 //		// find frame on stack
 //		ssize_t i;

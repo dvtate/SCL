@@ -11,6 +11,10 @@
 #include <fstream>
 
 namespace util {
+	// Escape sequences
+	extern const char* term_eff_bold;
+	extern const char* term_eff_red;
+	extern const char* term_eff_reset;
 
 	// show full line at position pos in file
 	std::string show_line_pos(std::istream& file, unsigned long long pos, std::string fname);
@@ -20,9 +24,6 @@ namespace util {
 		std::ifstream f(fname, std::ifstream::in);
 		return show_line_pos(f, pos, fname);
 	}
-	
 }
-
-
 
 #endif //DLANG_UTIL_HPP

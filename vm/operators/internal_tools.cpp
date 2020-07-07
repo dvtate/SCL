@@ -44,7 +44,7 @@ namespace vm_util {
 			c.vars[c.o_id].set_ptr(new Value(Handle<NativeFunction>(new LambdaReturnNativeFn(f))));
 
 			f.rt->running->emplace_back(std::make_shared<Frame>(f.rt, c));
-
+			return;
 		}
 
 		if (uncallable) {

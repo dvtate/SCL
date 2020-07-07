@@ -9,6 +9,7 @@
 #include "value.hpp"
 #include "vm.hpp"
 #include "operators/internal_tools.hpp"
+#include "async.hpp"
 
 
 //TODO: split this into multiple files...
@@ -192,6 +193,12 @@ class VarsFn : public virtual NativeFunction {
 	}
 };
 
+class AsyncFn : public virtual NativeFunction {
+	void operator()(Frame& f) override {
+		f.eval_stack.back() = Value(Handle<NativeFunction>(new AsyncWrapperNativeFn(f.eval_stack.back())));
+	}
+};
+
 
 
 static Handle<Value> global_ids[] {
@@ -209,6 +216,8 @@ static Handle<Value> global_ids[] {
 	Handle(new Value(Handle<NativeFunction>(new NumFn()))),
 	// 6 - vars
 	Handle(new Value(Handle<NativeFunction>(new VarsFn()))),
+	// 7 - async
+	Handle(new Value(Handle<NativeFunction>(new AsyncFn()))),
 
 	// - range (need objects first...)
 	// - copy
