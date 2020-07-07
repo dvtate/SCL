@@ -146,6 +146,17 @@ let n = 0;
 while ((: n < 5 ), (: 
     n += 1;
     print(n);
+));
+```
+Also note that you can implement `while` on your own like this:
+```
+let while = (:
+    using args = i;
+    using break = o;
+    if (args[0](break), (:
+        args[1](break);
+        while(args);
+    ));
 );
 ```
 
