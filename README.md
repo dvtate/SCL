@@ -22,7 +22,7 @@ Currently more focused on language stuff than main program, sorry this is ugly f
 #### Bytecode Text
 Useful for debugging compiler. Also prints compile errors.
 ```
-[build] $ echo 'print("Hi")' > test.s && ./dlang -ftest.s -o
+$ echo 'print("Hi")' > test.s && ./dlang -ftest.s -o
 # Literal 0:
 String: "Hi"
 # Literal 1:
@@ -44,9 +44,13 @@ Compiled Line#4 came from Source Pos#0
 ```
 
 #### Bytecode bin
-The following command will compile  `print("Hi")` in test.s into binary test.bin. Run until it doesn't give syntax errors before sending output to test.bin
+The following command will compile  `print("Hi")` in test.s. If it doesn't have any syntax errors it will output a file `o.bin` which you can run with the `-r` flag
 ```
-[build] $ echo 'print("Hi")' > test.s && ./dlang -ftest.s -o > test.bin
+$ echo 'print("Hi")' > test.s && ./dlang -ftest.s -o
+compiled to o.bin
+$ ./dlang -fo.bin -r
+Hi
+$
 ```
 
 
@@ -87,11 +91,14 @@ It's important to note that all variables are actually references, (more on this
 
 ## Values
 Supports any valid JSON data. Note there are a number of functions 
-- [x] Strings `"hello"`
-- [x] Ints `10`
-- [x] Floats `1.2`
-- [ ] objects/dicts `{ "temp": 98.6, }`
-- [ ] lists/arrays `[1, 2.5, "cat" ]`
+|Ready|Type|Literal| Use
+|---|---|---|---|
+|<ul><li>[x] </li></ul>|`Str`|`"Hello, world!"`| Holds character sequences|
+|<ul><li>[x] </li></ul>|`Int`|`10`| Holds whole numbers (64 bits) |
+|<ul><li>[x] </li></ul>|`Float`|`1.2`| 64bit floating point numbers |
+|<ul><li>[x] </li></ul>|`a -> b`|`(: i + 2 )` | first-class functions, alternatives to blocks|
+|<ul><li>[x] </li></ul>|`List`|`[1, 2.5, 'cat']`| Hold series of values |
+|<ul><li>[ ] </li></ul>|`Obj`|`{ temp: 98.6 }`| Holds associative |
 
 ## Macros/Lambdas
 Macros/Lambdas are like first-class functions except they only have one input and one output.
@@ -108,7 +115,7 @@ say_hello(); // greets user
 ```
 
 ### Input and Output
-Input is accessible via the local variable i. Use the local variable o to return a value. Although you can use i and o themselves, declaring variables for them can improve clarity.
+Input is accessible via the local variable i. Use the local variable o to return a value. Although you can use i and o themselves, declaring variables (`let`) or aliases (`using`) for them can improve clarity and is required if they get shadowed by a previous scope.
 ```
 let greeting = (:
     let name = i;
@@ -151,17 +158,19 @@ while ((: n < 5 ), (:
 Also note that you can implement `while` on your own like this:
 ```
 let while = (:
-    using args = i;
-    using break = o;
+    using args = i, break = o;
     if (args[0](break), (:
         args[1](break);
         while(args);
     ));
 );
 ```
+- Calling `i()` from body or condition will break out of the loop
+- Calling `o()` from the body will skip to next cycle
+- Calling `i(true)` will make `while(...)` return `true` when you break out
 
 #### Range Based For
-Given increased user tools for control flow (no confusion with return/await/etc. being operators), I don't think this language needs a C-Style For loop. As an alternative Collections have their own implementations of for_each, map, filter, etc. as members.
+Given increased user tools for control flow (no confusion with return/await/break/continue/etc. being operators), I don't think this language needs a C-Style For loop. As an alternative Collections have their own implementations of for_each, map, filter, etc. as members.
 
 ```
 range(0, 5).for_each((:
