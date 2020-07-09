@@ -205,7 +205,11 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 					std::cout <<"SET_INDEX: type-error\n";
 					return;
 			}
-
+			if (f.eval_stack.back().type() == Value::VType::LIST) {
+				(*std::get<Value::list_t>(f.eval_stack.back().v).ptr)[ind] = v;
+			} else {
+				// typerror
+			}
 		}
 		default:
 			DLANG_DEBUG_MSG("... not implemented\n");

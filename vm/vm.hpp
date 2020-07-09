@@ -147,7 +147,7 @@ public:
 		this->kill(cs);
 	}
 
-	void set_active(const std::shared_ptr<SyncCallStack>& cs) {
+	void set_active(std::shared_ptr<SyncCallStack>& cs) {
 		// if stack target not in active stacks, put there
 		if (this->running != cs &&
 			// TODO replace this->active with a set or sth
