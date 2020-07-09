@@ -15,5 +15,6 @@ jobs:
     - uses: actions/checkout@v2
     - name: configure
       run: mkdir build && cd build && cmake ..
+      # Note: does not preserve working directory
     - name: make
-      run: make
+      run: cd build && make && mv dlang ..

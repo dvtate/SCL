@@ -44,6 +44,7 @@ class SyncCallStack : public std::vector<std::shared_ptr<Frame>> {
 class Frame {
 public:
 	Runtime* rt;
+	Value* error_handler{nullptr};
 
 	// closure we're running
 	Closure closure;
@@ -57,6 +58,10 @@ public:
 	Frame(Runtime* rt, Closure body, unsigned int pos = 0, std::vector<Value> eval_stack = {}):
 			rt(rt), closure(std::move(body)), pos(pos), eval_stack(std::move(eval_stack))
 		{}
+
+	~Frame(){
+		delete(this->error_handler);
+	}
 
 	// run a single bytecode instruction and return
 	inline bool tick(){
