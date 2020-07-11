@@ -129,20 +129,18 @@ print(greeting(input()))
 These are currently defined as builtin globals, but in the future they will likely be converted to proper operators. 
 
 ### Conditionals
-Traditional If-else style conditionals. Note: the else argument is optional (also note comma separated arguments converted to a list)
-
+Might change syntax for this later to make `if` an operator but for now it's just a function. Note: comma separated arguments implicitly converted to list
 ```
-let gpa = Number(input());
+let gpa = Num(input()); // 3.86
 
 if (gpa > 4 || gpa < 0, (:
     print("seems rigged");
+), gpa >= 2, (:
+    print("PASS");
 ), (:
-    if (gpa >= 2, (:
-        print("PASS");
-    ), (:
-        print("FAIL");
-    ));
+    print("FAIL");
 ));
+// PASS
 ```
 
 ### Looping
