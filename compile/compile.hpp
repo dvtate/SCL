@@ -116,6 +116,8 @@ public:
 	void read_macro_invoke(AST&);
 	void read_index_op(AST&);
 	void read_assignment(AST&);
+	void read_dot_op(AST&);
+	void read_obj_lit(AST&);
 
 	// Returns a new parsed macro containing compiled contents of arg
 	ParsedMacro* compile_expr(AST&);

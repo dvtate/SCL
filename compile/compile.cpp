@@ -4,7 +4,7 @@
 
 #include <istream>
 #include <fstream>
-
+#include <unordered_map>
 
 #include "../debug.hpp"
 #include "compile.hpp"
@@ -31,7 +31,7 @@ void ParsedMacro::read_num_lit(AST& tree) {
 		// sigh...
 		int64_t v;
 
-		// TODO: replace this with <climits> LONG_BITS INT_BITS ... etc.
+		// TODO replace this with <climits> LONG_BITS INT_BITS ... etc.
 		if (sizeof(long) == sizeof(int64_t)) {
 			v = std::stol(tree.token.token);
 		} else if (sizeof(long long) == sizeof(int64_t)) {
@@ -79,6 +79,39 @@ void ParsedMacro::read_string_lit(AST& tree) {
 	this->relocation.emplace_back(
 			std::pair<std::size_t, unsigned long long>{
 				new_pos, tree.token.pos });
+}
+
+void ParsedMacro::read_dot_op(AST& tree) {
+	DLANG_DEBUG_MSG("read_dot_op");
+
+	auto& obj = tree.members[0];
+	auto& mem = tree.members[1];
+
+	this->read_tree(obj);
+
+	// parser allows things like `obj.[1 + 2]` or `obj.(abc[1+2] + Str(66))`
+	// but for now at least we only want statically
+	if (mem.type != AST::NodeType::IDENTIFIER) {
+		this->errors.emplace_back(SemanticError(
+				"Unsupported expression on right hand side of dot operator (.): " + mem.type_name(),
+				mem.token.pos, this->file_name));
+
+		// Scan subtrees to see if there are other errors
+		this->read_tree(mem);
+		return;
+	}
+
+	// add member name to lit header
+	const std::string req = mem.token.token;
+	const auto lit_num = this->compiler->empl_lit(
+			ParsedLiteral(ParsedLiteral::LitType::STRING, req));
+
+	// add
+	const auto pos = this->body.size();
+	this->body.emplace_back(Command(Command::OPCode::USE_MEM_L, lit_num));
+	this->relocation.emplace_back(
+			std::pair<std::size_t, unsigned long long> {
+				pos, tree.token.pos});
 }
 
 void ParsedMacro::read_index_op(AST& tree){
@@ -195,13 +228,26 @@ void ParsedMacro::read_assignment(AST& t) {
 		}
 
 		return;
-	} else if (t.type == AST::NodeType::INDEX) {
+	} else if (t.members[0].type == AST::NodeType::INDEX) {
+		// list[index] = 5;
+
 		// put args on stack
-		for (auto& m : t.members[0].members)
+		for (auto &m : t.members[0].members)
 			this->read_tree(m);
 		this->read_tree(t.members[1]);
 		// args: list index value
 		this->body.emplace_back(Command(Command::OPCode::SET_INDEX));
+
+	} else if (t.members[0].type == AST::NodeType::OPERATION && t.members[0].token.token == ".") {
+		// obj.name = "steve";
+
+		// read value ("steve")
+		this->read_tree(t.members[1]);
+
+		// read member-request and convert to set_mem_l
+		this->read_tree(t.members[0]);
+		this->body.back().instr = Command::OPCode::SET_MEM_L;
+
 	} else {
 		// Could be typerror
 		this->errors.emplace_back(SemanticError(
@@ -228,7 +274,7 @@ void ParsedMacro::read_operation(AST& t){
 			{ "+",		0 },
 			{ "=",		1 },
 			{ "==",		2 },
-			{ "===",		3 },
+			{ "===",	3 },
 			{ "<",		4 },
 			{ ">",		5 },
 			{ "<=",		6 },
@@ -329,6 +375,31 @@ void ParsedMacro::read_statements(AST& tree) {
 		this->body.pop_back();
 }
 
+void ParsedMacro::read_obj_lit(AST& tree) {
+	DLANG_DEBUG_MSG("read_obj_lit");
+
+	// Handle {}
+	if (tree.members.empty()) {
+		this->body.emplace_back(Command(Command::OPCode::MK_OBJ, (int32_t) 0));
+		return;
+	}
+
+	this->errors.emplace_back(SemanticError(
+			"Multi-item object literals currently not supported, please use {} and then initialize members",
+			tree.token.pos, this->file_name));
+//	if (tree.members[0].type == AST::NodeType::COMMA_SERIES) {
+//		for (auto& mem : tree.members[0].members) {
+//			if (mem.type == AST::NodeType::KV_PAIR) {
+//				std::string key;
+//				if (mem.members[0].type == AST::NodeType::IDENTIFIER || mem.members[0].type == AST::NodeType::STR_LITERAL) {
+//					key = mem.members[0].token.token;
+//				}
+//			}
+//		}
+//	}
+
+}
+
 void ParsedMacro::read_tree(AST& tree) {
 	DLANG_DEBUG_MSG("read_tree: " <<tree.type_name() <<std::endl);
 	switch (tree.type) {
@@ -350,6 +421,8 @@ void ParsedMacro::read_tree(AST& tree) {
 		case AST::NodeType::OPERATION:
 			if (tree.token.token == "=")
 				read_assignment(tree);
+			else if (tree.token.token == ".")
+				read_dot_op(tree);
 			else
 				read_operation(tree);
 			return;
@@ -364,6 +437,9 @@ void ParsedMacro::read_tree(AST& tree) {
 			return;
 		case AST::NodeType::INVOKE:
 			read_macro_invoke(tree);
+			return;
+		case AST::NodeType::OBJECT:
+			read_obj_lit(tree);
 			return;
 		default:
 			this->errors.emplace_back(SemanticError(
@@ -404,9 +480,8 @@ ParsedMacro* ParsedMacro::compile_expr(AST& t) {
 //
 ParsedMacro::ParsedMacro(AST &tree, std::string file_name, std::vector<ParsedMacro *> parents,
 		Program* prog, std::unordered_map<std::string, MutilatedSymbol> locals):
-	file_name(std::move(file_name)), parents(std::move(parents)), compiler(prog)
+	file_name(std::move(file_name)), parents(std::move(parents)), compiler(prog), declarations(std::move(locals))
 {
-	declarations = std::move(locals);
 	MutilatedSymbol i("i"), o("o");
 	declarations["o"] = o;
 	declarations["i"] = i;
@@ -430,7 +505,7 @@ MutilatedSymbol ParsedMacro::find_id(const std::string& name) {
 			return it->second;
 	}
 
-	static const std::unordered_map<std::string, MutilatedSymbol> globals {
+	static const std::unordered_map<std::string, MutilatedSymbol> globals = {
 			{ "empty", MutilatedSymbol("empty", 0, MutilatedSymbol::SymbolType::CONSTANT) },
 			{ "print", MutilatedSymbol("print", 1, MutilatedSymbol::SymbolType::CONSTANT) },
 			{ "input", MutilatedSymbol("input", 2, MutilatedSymbol::SymbolType::CONSTANT) },

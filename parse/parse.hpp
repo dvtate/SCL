@@ -27,6 +27,7 @@ public:
 		INDEX,
 		MEMBER_REQUEST, // bracket operators
 		MACRO,	// macro literal
+		PAREN_EXPR, // temporary, used to add clarity to macro calls
 		OBJECT,	// { ... }
 		LIST, // [ ... ]
 
@@ -42,7 +43,6 @@ public:
 		COMMA_SERIES,
 
 		// temporary
-		PAREN_EXPR, // temporary, used to add clarity to macro calls
 		OPERATOR,  // un-parsed operator
 
 		// result of a let expr ?
@@ -122,7 +122,6 @@ public:
 			case NodeType::OPERATOR:		return "OP";
 			case NodeType::INVALID:			return "INVALID";
 			default:						return "?:" + std::to_string(this->type);
-
 		}
 	}
 };

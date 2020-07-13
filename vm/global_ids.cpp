@@ -47,19 +47,18 @@ public:
 		// freeze thread until input received (eloop can work on other stuff)
 		f.rt->freeze_running();
 
-		std::thread([](const std::shared_ptr<SyncCallStack>& cs_sp){
+		std::thread([](const std::shared_ptr<SyncCallStack>& cs){
 			std::string inp;
 			if (!std::getline(std::cin, inp)) {
 				// TODO: eof-error
 			}
 
 			// return value
-			cs_sp->back()->eval_stack.emplace_back(Value(inp));
+			cs->back()->eval_stack.emplace_back(Value(inp));
 			// unfreeze origin thread
-			cs_sp->back()->rt->recv_msg(new UnfreezeCallStack(cs_sp));
+			cs->back()->rt->recv_msg(new UnfreezeCallStack(cs));
 			// die
 		}, cs_sp).detach();
-
 	}
 };
 
@@ -100,7 +99,6 @@ class WhileFn : public virtual NativeFunction {
 
 		}
 	}
-
 };
 
 // Any -> Str
@@ -108,6 +106,38 @@ class StrFn : public virtual NativeFunction {
 	void operator()(Frame& f) override {
 		f.eval_stack.back() = Value(f.eval_stack.back().to_string());
 	}
+};
+
+class BlockingNativeFunction : public virtual NativeFunction {
+	class UnfreezeCallStack : public virtual RTMessage {
+	public:
+		std::shared_ptr<SyncCallStack> cs;
+		explicit UnfreezeCallStack(std::shared_ptr<SyncCallStack> cs):
+				cs(std::move(cs)) {}
+
+		void action(Runtime& rt) override {
+			rt.active.emplace_back(cs);
+		}
+	};
+
+	// User API
+	virtual void setup(Frame& f) {}
+	virtual void blocking() {}
+	virtual void finish() {}
+
+	// This shouldn't be overridden
+	void operator()(Frame& f) final {
+		// ignore inp, should be empty
+		this->setup(f);
+
+		// freeze thread until input received (eloop can work on other stuff)
+		f.rt->freeze_running();
+
+	}
+};
+
+class DelayFn : public virtual NativeFunction {
+
 };
 
 

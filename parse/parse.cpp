@@ -6,6 +6,9 @@
 
 /**
  * This file is a fucking spaghetti mess and should be rewritten
+ * should also probably rewrite:
+ *  - lexer: we have to finish it's job in next_node here
+ *  - compile/semantics/syntax:
  *
  * The basic idea is a shift reduce parser with a lookahead token and infinite lookback
  *
@@ -40,6 +43,8 @@ std::unordered_map<std::string, signed char> op_prec = {
 		{ "(",  21 },
 		{ "[",  20 },
 		{ ".",	20 },
+		{ "@inv", 20 }, // invoke
+		{ "@idx", 20 }, // index
 		{ "ref", 18 },
 		{ "!", 17 },
 		{ "neg", 17 },
@@ -310,10 +315,18 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 		return "invalid infix operator";
 	}
 
+	// convert paren exprs
+	if (stack.back().type == AST::NodeType::PAREN_EXPR) {
+		auto& m = stack.back().members[0];
+		if (isOperand(m))
+			stack.back() = m;
+	}
+
 	// invalid operand
 	if (!isOperand(stack.back())) {
 #ifdef DLANG_DEBUG
-		std::cout <<"\nnot an operand: `" <<stack.back().token.token <<"` n=`" <<n.token.token <<"`\n";
+		std::cout <<"\nnot an operand: `" <<stack.back().token.token <<"::" <<stack.back().short_type_name()
+		<<"` n=`" <<n.token.token <<"::" <<n.short_type_name() <<"`\n";
 #endif
 		return "invalid operand";
 	}
@@ -372,7 +385,8 @@ static inline bool reduce_operators(std::vector<struct AST>& stack, const AST& n
 		if (prec_n <= prec_p || stack[i].token.token == ";") {
 			// NOTE reduction can fail in normal course of parse ://///
 			const auto ret = reduce_operator(stack, i);
-			DLANG_DEBUG_MSG("Parser reduce operator(" <<stack[i].token.token <<"): " <<ret <<std::endl);
+			DLANG_DEBUG_MSG("Parser reduce operator(" <<stack[i].token.token <<"): " <<(ret ? ret : "null") <<std::endl);
+
 			return !ret;
 		} else {
 			// lookahead is higher precidence, need to reduce it before can reduce prev
@@ -392,7 +406,7 @@ static inline bool reduce_operators(std::vector<struct AST>& stack, const AST& n
 
 		// try to reduce it
 		const auto ret = reduce_operator(stack, p_op_i);
-		DLANG_DEBUG_MSG("Parser ASI reduce operator(" <<stack[i].token.token <<"): " <<ret <<std::endl);
+		DLANG_DEBUG_MSG("Parser ASI reduce operator(" <<stack[p_op_i].token.token <<"): " <<(ret ? ret : "null") <<std::endl);
 		return !ret;
 	}
 
@@ -520,7 +534,7 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 				stack.back().type = AST::NodeType::OBJECT;
 				stack.back().members.emplace_back(e);
 			} else {
-				// () empty parenexpr
+				// {} empty obj
 				stack.back().type = AST::NodeType::OBJECT;
 			}
 			return true;

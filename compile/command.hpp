@@ -53,6 +53,16 @@ public:
 		MK_LIST,		// constructs a list from values on stack
 			// arg: int32, number of items to pull from stack
 
+		USE_MEM_L,		// gets member from an object (using literal number for mem name)
+			// arg: lit id int64
+			// stack args: <obj> USE_MEM_L(lit_num)
+		SET_MEM_L,		// sets object member (using literal number for mem name)
+			// arg: lit id int64
+			// stack args: <value> <obj> SET_MEM_L(lit_num)
+		MK_OBJ,			// construct object from values on stack
+			// arg: number of items to pull from stack
+
+
 		VAL_EMPTY,
 		VAL_TRUE,
 		VAL_FALSE,
@@ -122,8 +132,11 @@ public:
 			case FILE_NAME:	return "FILE_NAME";
 			case DEST_POS:	return "DEST_POS";
 			case SRC_POS:	return "SRC_POS";
+			case USE_MEM_L: return "USE_MEM_L";
+			case SET_MEM_L: return "SET_MEM_L";
+			case MK_OBJ:	return "MK_OBJ";
+			default:		return "UNKNOWN";
 		}
-		return "UNKNOWN";
 	}
 
 	// used for generating bytecode text format for debugging
@@ -176,7 +189,15 @@ public:
 			case OPCode::MK_LIST:
 				return "\tMAKE_LIST(" + std::to_string(std::get<int32_t>(this->arg)) + ")\n";
 
-			// fault table
+			case OPCode::MK_OBJ:
+				return "\tMK_OBJ(" + std::to_string(std::get<int32_t>(this->arg)) + ")\n";
+			case OPCode::USE_MEM_L:
+				return "\tUSE_MEM_Lit[" + std::to_string(std::get<int64_t>(this->arg)) + "]\n";
+			case OPCode::SET_MEM_L:
+				return "\tSET_MEM_Lit[" + std::to_string(std::get<int64_t>(this->arg)) + "]\n";
+
+
+				// fault table
 
 				// identifier translations
 			case OPCode::ID_NAME:
@@ -208,13 +229,16 @@ public:
 			// TODO: these can all be converted to int32_t
 			case OPCode::I64_LIT: case OPCode::DECL_ID: case OPCode::SET_ID: case OPCode::USE_ID:
 			case OPCode::USE_LIT: case OPCode::ID_ID: case OPCode::SRC_POS: case OPCode::DEST_POS:
+			case OPCode::USE_MEM_L: case OPCode::SET_MEM_L:
 				return ArgType::INT64;
+
+
 			case OPCode::BUILTIN_OP: case OPCode::KW_VAL:
 				return ArgType::INT16;
 			case OPCode::START_LIT_STRING: case OPCode::START_LIT_JSON: case OPCode::ID_NAME: case OPCode::FILE_NAME:
 				return ArgType::STRING;
 
-			case OPCode::MK_LIST:
+				case OPCode::MK_LIST: case OPCode::MK_OBJ:
 				return ArgType::INT32;
 			default:
 				return ArgType::NO_ARG;
@@ -225,8 +249,11 @@ public:
 		return Command::arg_type(this->instr);
 	}
 
-	// copies compiled instruction into ret
-	// returns number of chars to read
+	/**
+	 * Compiles command to a bytecode instruction
+	 * @param ret referenced buffer to put the compiled instruction
+	 * @returns number of chars read
+	 */
 	std::size_t compile(char*& ret) {
 		ArgType t = arg_type();
 		size_t s = 1;
@@ -250,10 +277,10 @@ public:
 			}
 			case ArgType::INT32: {
 				s += sizeof(int32_t);
-				ret = (char*) realloc(ret, s);
-				int32_t n = std::get<int32_t >(this->arg);
+				ret = (char *) realloc(ret, s);
+				int32_t n = std::get<int32_t>(this->arg);
 				ret[0] = this->instr;
-				strncpy(ret+1, (char*) &n, sizeof(int32_t));
+				strncpy(ret + 1, (char *) &n, sizeof(int32_t));
 				break;
 			}
 			case ArgType::INT64: {
@@ -285,6 +312,23 @@ public:
 		}
 
 		return s;
+	}
+
+	/**
+	 * Verifies that arg holds correct type
+	 *
+	 * @returns true if valid false if something's wrong
+	 */
+	bool check_arg() {
+		const auto ind = this->arg.index();
+		switch (this->arg_type()) {
+			case ArgType::FLOAT:	return ind == 3;
+			case ArgType::INT64:	return ind == 2;
+			case ArgType::INT16:	return ind == 0;
+			case ArgType::INT32:	return ind == 1;
+			case ArgType::STRING:	return ind == 4;
+			default:				return true;
+		}
 	}
 
 };

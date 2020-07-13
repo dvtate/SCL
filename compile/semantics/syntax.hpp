@@ -7,8 +7,7 @@
 
 #include "process_tree.hpp"
 
-
+// Basically finish parser's job
 void sem_convert_syntax(AST& t, const std::string& f, std::vector<SemanticError>& errs);
-
 
 #endif //DLANG_SYNTAX_HPP
