@@ -43,9 +43,9 @@ bool Value::eq_value(const Value& other) const {
 		return (*std::get<Value::lam_t>(l->v).get_ptr()) == (*std::get<Value::lam_t>(r->v).get_ptr());
 	if (std::holds_alternative<Value::empty_t>(l->v))
 		return true;
-	if (std::holds_alternative<Value::list_t>(l->v)) {
-		auto& ll = *std::get<Value::list_t>(l->v).ptr;
-		auto& rl = *std::get<Value::list_t>(r->v).ptr;
+	if (std::holds_alternative<Value::list_ref>(l->v)) {
+		auto& ll = *std::get<Value::list_ref>(l->v).ptr;
+		auto& rl = *std::get<Value::list_ref>(r->v).ptr;
 		if (ll.size() != rl.size())
 			return false;
 		for (size_t i = 0; i < ll.size(); i++)
@@ -82,8 +82,8 @@ bool Value::eq_identity(const Value& other) const {
 	if (t == Value::VType::EMPTY)
 		return true;
 	if (t == Value::VType::LIST) {
-		const auto& l = *std::get<Value::list_t>(this->v).ptr;
-		const auto& r = *std::get<Value::list_t>(other.v).ptr;
+		const auto& l = *std::get<Value::list_ref>(this->v).ptr;
+		const auto& r = *std::get<Value::list_ref>(other.v).ptr;
 		if (l.size() != r.size())
 			return false;
 		for (size_t i = 0; i < l.size(); i++)
@@ -117,8 +117,8 @@ bool Value::truthy() const {
 		return std::get<Value::float_t>(val->v);
 	if (std::holds_alternative<Value::str_t>(val->v))
 		return !std::get<Value::str_t>(val->v).empty();
-	if (std::holds_alternative<Value::list_t>(val->v))
-		return !std::get<Value::list_t>(val->v).ptr->empty();
+	if (std::holds_alternative<Value::list_ref>(val->v))
+		return !std::get<Value::list_ref>(val->v).ptr->empty();
 	if (std::holds_alternative<Value::n_fn_t>(val->v) || std::holds_alternative<Value::lam_t>(val->v))
 		return true;
 	if (std::holds_alternative<Value::empty_t>(val->v))
@@ -152,7 +152,7 @@ std::string Value::to_string(bool recursive) const {
 			return p != nullptr ? p->to_string(false) : "null";
 		};
 		case VType::LIST: {
-			auto& l = *std::get<Value::list_t>(this->v).ptr;
+			auto& l = *std::get<Value::list_ref >(this->v).ptr;
 			std::string ret = "[ ";
 			if (!l.empty())
 				ret += l[0].to_string(true);

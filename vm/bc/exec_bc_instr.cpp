@@ -42,8 +42,8 @@ void index(Frame& f) {
 		std::cout <<"null passed to USE_INDEX[1]!!!\n";
 		return;
 	}
-	if (std::holds_alternative<Value::list_t>(v->v)) {
-		auto l = std::get<Value::list_t>(v->v);
+	if (std::holds_alternative<Value::list_ref>(v->v)) {
+		auto l = std::get<Value::list_ref>(v->v);
 		try {
 			f.eval_stack.back() = l.ptr->at(ind);
 		} catch (...) {
@@ -57,11 +57,11 @@ void index(Frame& f) {
 //
 void make_list(Frame& f, uint32_t n) {
 	Value lv(Handle(new std::vector<Value>()));
-	auto& l = std::get<Value::list_t>(lv.v);
+	auto& l = std::get<Value::list_ref>(lv.v).ptr;
 
 	// take items off stack and put them into lv -> l
-	l.ptr->reserve(n);
-	l.ptr->insert(l.ptr->begin(), f.eval_stack.end() - n, f.eval_stack.end());
+	l->reserve(n);
+	l->insert(l->begin(), f.eval_stack.end() - n, f.eval_stack.end());
 	f.eval_stack.erase(f.eval_stack.end() - n, f.eval_stack.end());
 	f.eval_stack.emplace_back(std::move(lv));
 }
@@ -137,7 +137,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 		case BCInstr::OPCode::I64_LIT:
 			f.eval_stack.emplace_back(cmd.i);
 			return;
-			
+
 		case BCInstr::OPCode::F64_LIT:
 			f.eval_stack.emplace_back(cmd.v);
 			return;
@@ -206,13 +206,39 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 					return;
 			}
 			if (f.eval_stack.back().type() == Value::VType::LIST) {
-				(*std::get<Value::list_t>(f.eval_stack.back().v).ptr)[ind] = v;
+				(*std::get<Value::list_ref>(f.eval_stack.back().v).ptr)[ind] = v;
 			} else {
 				// typerror
 			}
+		};
+
+		case BCInstr::OPCode::MK_OBJ:
+			if (cmd.i == 0) {
+				f.eval_stack.emplace_back(Value(Handle(new Value::obj_t())));
+			} else {
+				std::cerr <<"sry rn only support {} objects";
+			}
+			return;
+
+		case BCInstr::OPCode::USE_MEM_L:
+			try {
+				f.eval_stack.back() = (*std::get<Value::obj_ref>(f.eval_stack.back().v).ptr)
+					[std::get<Value::str_t>(std::get<Value>(f.rt->vm->literals[cmd.i].v).v)];
+
+			} catch (const std::bad_variant_access& e) {
+				// typeerror
+			}
+			return;
+		case BCInstr::OPCode::SET_MEM_L:
+		{
+			Value& ref = (*std::get<Value::obj_ref>(f.eval_stack.back().v).ptr)
+				[std::get<Value::str_t>(std::get<Value>(f.rt->vm->literals[cmd.i].v).v)];
+			f.eval_stack.pop_back();
+			ref = f.eval_stack.back();
+			return;
 		}
 		default:
-			DLANG_DEBUG_MSG("... not implemented\n");
+			DLANG_DEBUG_MSG("... not implemented" <<cmd.repr() <<std::endl);
 			return;
 	}
 }

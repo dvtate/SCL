@@ -10,6 +10,8 @@
 #include <string>
 #include <vector>
 
+#include "../lib/tsl/ordered_map.hpp"
+
 #include "gc/handle.hpp"
 
 class Closure;
@@ -28,16 +30,23 @@ public:
 	using empty_t	= std::monostate;
 	using int_t 	= int64_t;
 	using float_t 	= double;
+
 	using str_t 	= std::string;
+//	using str_ref	= Handle<std::string>;
 	using ref_t		= Handle<Value>;
 	using lam_t 	= Handle<Closure>;
 	using n_fn_t 	= Handle<NativeFunction>;
+
+	using list_t	= std::vector<Value>;
+	using list_ref	= Handle<std::vector<Value>>;
+	using obj_t		= tsl::ordered_map<std::string, Value>;
+	using obj_ref	= Handle<tsl::ordered_map<std::string, Value>>;
+
 	using bool_t 	= Value::int_t;
-	using list_t	= Handle<std::vector<Value>>;
 
 	using variant_t = std::variant<
 			empty_t, float_t, int_t, str_t,
-			ref_t, lam_t, n_fn_t, list_t>;
+			ref_t, lam_t, n_fn_t, obj_ref, list_ref>;
 
 	// only attribute... could simply extend variant_t...
 	variant_t v;
@@ -50,17 +59,22 @@ public:
 		REF = 4,
 		LAM = 5,
 		N_FN = 6,
-		LIST = 7
+		OBJ = 7,
+		LIST = 8,
 	};
 
 	Value(){};
+	explicit Value(empty_t in): 			v(in) {}
 	explicit Value(float_t in): 			v(in) {}
 	explicit Value(const str_t& in): 		v(in) {}
 	explicit Value(int_t in): 				v(in) {}
 	explicit Value(const ref_t& in): 		v(in) {}
 	explicit Value(const lam_t& in): 		v(in) {}
 	explicit Value(const n_fn_t& in):		v(in) {}
-	explicit Value(const list_t& in):		v(in) {}
+	explicit Value(const list_t& in):		v(list_ref(new list_t(in))) {}
+	explicit Value(const list_ref& in):		v(in) {}
+	explicit Value(const obj_t& in):		v(obj_ref(new obj_t(in))) {}
+	explicit Value(const obj_ref& in):		v(in) {}
 	explicit Value(const bool in):			v((int_t) in) {}
 	Value(const Value& other):				v(other.v) {}
 

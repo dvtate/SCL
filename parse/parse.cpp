@@ -42,7 +42,7 @@ std::unordered_map<std::string, signed char> op_prec = {
 		{ "{", 22  },
 		{ "(",  21 },
 		{ "[",  20 },
-		{ ".",	20 },
+		{ ".",	21 }, // TODO switch this back to 20 and replace reduce_invoke with operator insertion
 		{ "@inv", 20 }, // invoke
 		{ "@idx", 20 }, // index
 		{ "ref", 18 },

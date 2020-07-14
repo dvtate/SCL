@@ -72,7 +72,7 @@ class IfFn : public virtual NativeFunction {
 			return;
 
 		// get values
-		auto& params = *std::get<Value::list_t>(i.v).ptr;
+		auto& params = *std::get<Value::list_ref>(i.v).ptr;
 
 		// pick velue
 		const bool cond = params[0].truthy();
