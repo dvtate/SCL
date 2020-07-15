@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <dlfcn.h>
 
 #include "global_ids.hpp"
 
@@ -14,6 +15,17 @@
 
 //TODO: split this into multiple files...
 
+
+class UnfreezeCallStack : public virtual RTMessage {
+public:
+	std::shared_ptr<SyncCallStack> cs;
+	explicit UnfreezeCallStack(std::shared_ptr<SyncCallStack> cs):
+			cs(std::move(cs)) {}
+
+	void action(Runtime& rt) override {
+		rt.active.emplace_back(cs);
+	}
+};
 
 // a -> a returns same as input
 class PrintFn : public virtual NativeFunction {
@@ -27,17 +39,6 @@ public:
 // Empty -> Str
 class InputFn : public virtual NativeFunction {
 public:
-	class UnfreezeCallStack : public virtual RTMessage {
-	public:
-		std::shared_ptr<SyncCallStack> cs;
-		explicit UnfreezeCallStack(std::shared_ptr<SyncCallStack> cs):
-			cs(std::move(cs)) {}
-
-		void action(Runtime& rt) override {
-			rt.active.emplace_back(cs);
-		}
-	};
-
 	void operator()(Frame& f) override {
 		// ignore inp, should be empty
 		f.eval_stack.pop_back();
@@ -108,38 +109,57 @@ class StrFn : public virtual NativeFunction {
 	}
 };
 
-class BlockingNativeFunction : public virtual NativeFunction {
-	class UnfreezeCallStack : public virtual RTMessage {
-	public:
-		std::shared_ptr<SyncCallStack> cs;
-		explicit UnfreezeCallStack(std::shared_ptr<SyncCallStack> cs):
-				cs(std::move(cs)) {}
+// Num -> Num
+class DelayFn : public virtual NativeFunction {
+	void operator()(Frame& f) override {
+		// Get sleep duration (arg)
+		using namespace std::chrono_literals;
+		auto dur = 1ms;
+		if (f.eval_stack.back().type() == Value::VType::FLOAT)
+			dur *= std::get<Value::float_t>(f.eval_stack.back().v);
+		else if (f.eval_stack.back().type() == Value::VType::INT)
+			dur *= std::get<Value::int_t>(f.eval_stack.back().v);
 
-		void action(Runtime& rt) override {
-			rt.active.emplace_back(cs);
-		}
-	};
-
-	// User API
-	virtual void setup(Frame& f) {}
-	virtual void blocking() {}
-	virtual void finish() {}
-
-	// This shouldn't be overridden
-	void operator()(Frame& f) final {
-		// ignore inp, should be empty
-		this->setup(f);
-
-		// freeze thread until input received (eloop can work on other stuff)
+		// freeze thread until delay expires (eloop can work on other stuff)
+		std::shared_ptr<SyncCallStack> cs_sp = f.rt->running;
 		f.rt->freeze_running();
 
+		std::thread([dur, cs_sp](){
+			std::this_thread::sleep_for(dur);
+
+			// unfreeze origin thread
+			cs_sp->back()->rt->recv_msg(new UnfreezeCallStack(cs_sp));
+		}).detach();
 	}
 };
 
-class DelayFn : public virtual NativeFunction {
+class ImportFn : public virtual NativeFunction {
+public:
+	void operator()(Frame&f) override {
 
+		std::cout <<"impfn:\n";
+		const std::string path = std::get<Value::str_t>(f.eval_stack.back().v);
+
+		// import file
+		void* dl = dlopen(path.c_str(), RTLD_LAZY);
+		if (!dl) {
+			std::cerr <<"Fatal: import error:" <<dlerror() <<std::endl;
+			exit(1);
+		}
+
+		// import action
+		using imported_fn = void(*)(Frame*);
+		imported_fn import_action = (imported_fn) dlsym(dl, "export_action");
+		if (!import_action) {
+			std::cerr <<"Fatal: import error: dlerror: " <<dlerror() <<std::endl;
+			exit(1);
+		}
+		std::cout <<"impfn:\n";
+
+		// Call the imported fn and let it take it's course
+		import_action(&f);
+	}
 };
-
 
 // Any -> Int | Float | Empty
 class NumFn : public virtual NativeFunction {
@@ -191,8 +211,6 @@ class AsyncFn : public virtual NativeFunction {
 	}
 };
 
-
-
 static Handle<Value> global_ids[] {
 	// 0 - empty
 	Handle(new Value()),
@@ -210,6 +228,8 @@ static Handle<Value> global_ids[] {
 	Handle(new Value(Handle<NativeFunction>(new VarsFn()))),
 	// 7 - async
 	Handle(new Value(Handle<NativeFunction>(new AsyncFn()))),
+	// 8 - import
+	Handle(new Value(Handle<NativeFunction>(new ImportFn()))),
 
 	// - range (need objects first...)
 	// - copy

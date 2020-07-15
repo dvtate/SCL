@@ -74,7 +74,7 @@ std::unordered_map<std::string, signed char> op_prec = {
 		{ ":", 	2 }, // key value pair
 		{ ",", 	1 }, // comma seq
 		{ "let", 0 }, // declarations
-		{ "using", 0}, // template engine
+		{ "using", 0 }, // template engine
 		{ "]",  0 },
 		{ "}",  0 },
 		{ ";",  0 }, // statement separator
