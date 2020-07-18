@@ -15,9 +15,13 @@
 class AST {
 public:
 	enum NodeType {
+		//
 		STATEMENTS=0, // semicolon delineated
 
-		// operand types (must start with OPERATION and end with LIST
+		// result of a let expr
+		DECLARATION,
+
+		// operand types (must start with OPERATION and end with LIST)
 		OPERATION, // parsed operator args put in this->members
 //		EXPRESSION,
 		NUM_LITERAL,
@@ -30,6 +34,8 @@ public:
 		PAREN_EXPR, // temporary, used to add clarity to macro calls
 		OBJECT,	// { ... }
 		LIST, // [ ... ]
+
+
 
 		// containers
 		MACRO_OPEN,
@@ -45,8 +51,6 @@ public:
 		// temporary
 		OPERATOR,  // un-parsed operator
 
-		// result of a let expr ?
-		DECLARATION,
 
 		INVALID,
 
@@ -124,6 +128,7 @@ public:
 			default:						return "?:" + std::to_string(this->type);
 		}
 	}
+
 };
 
 class SyntaxError {

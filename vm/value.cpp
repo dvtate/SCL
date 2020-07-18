@@ -61,6 +61,7 @@ bool Value::eq_value(const Value& other) const {
 
 	// todo check unhandled type...
 	std::cout <<"ERROR: Value::eq_value typerror: " <<l->v.index() <<" | " <<r->v.index() <<std::endl;
+	return false;
 }
 
 
@@ -100,33 +101,34 @@ bool Value::eq_identity(const Value& other) const {
 	// todo check unhandled type
 	// todo check unhandled type...
 	std::cout <<"ERROR: Value::eq_identity typerror: " <<t <<std::endl;
+	return false;
 }
 
 
 bool Value::truthy() const {
-
 	auto* val = (Value*) this;
-	if (std::holds_alternative<Value::ref_t>(this->v))
-		val = std::get<Value::ref_t>(this->v).get_ptr();
-
+	switch (val->type()) {
+		case VType::REF:
+			return std::get<Value::ref_t>(this->v).get_ptr()->truthy();
+		case VType::INT:
+			return std::get<Value::int_t>(val->v);
+		case VType::FLOAT:
+			return std::get<Value::float_t>(val->v);
+		case VType::STR:
+			return !std::get<Value::str_t>(val->v).empty();
+		case VType::LIST:
+			return !std::get<Value::list_ref>(val->v).ptr->empty();
+		case VType::LAM: case VType::N_FN:
+			return true;
+		case VType::EMPTY:
+			return false;
+		default:
+			// todo: check unhandled type
+			std::cout <<"ERROR: Value::truthy typerror: " <<val->v.index() <<std::endl;
+			return false;
+	}
 //	if (std::holds_alternative<Value::bool_t>(val->v))
 //		return std::get<Value::bool_t>(val->v);
-	if (std::holds_alternative<Value::int_t>(val->v))
-		return std::get<Value::int_t>(val->v);
-	if (std::holds_alternative<Value::float_t>(val->v))
-		return std::get<Value::float_t>(val->v);
-	if (std::holds_alternative<Value::str_t>(val->v))
-		return !std::get<Value::str_t>(val->v).empty();
-	if (std::holds_alternative<Value::list_ref>(val->v))
-		return !std::get<Value::list_ref>(val->v).ptr->empty();
-	if (std::holds_alternative<Value::n_fn_t>(val->v) || std::holds_alternative<Value::lam_t>(val->v))
-		return true;
-	if (std::holds_alternative<Value::empty_t>(val->v))
-		return false;
-
-
-	// todo: check unhandled type
-	std::cout <<"ERROR: Value::truthy typerror: " <<val->v.index() <<std::endl;
 }
 
 /// Create String representation of value

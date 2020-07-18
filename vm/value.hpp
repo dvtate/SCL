@@ -76,7 +76,7 @@ public:
 	explicit Value(const obj_t& in):		v(obj_ref(new obj_t(in))) {}
 	explicit Value(const obj_ref& in):		v(in) {}
 	explicit Value(const bool in):			v((int_t) in) {}
-	Value(const Value& other):				v(other.v) {}
+	Value(const Value& other) = default;
 
 	inline VType type() const {
 		return (VType) this->v.index();

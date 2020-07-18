@@ -70,8 +70,6 @@ void VM::run() {
 void Runtime::run() {
 
 	while (!this->undead.empty()) {
-
-
 		// handle actions messages
 		if (!this->_msg_queue.empty()) {
 			std::vector<RTMessage*> msgs = this->clear_msg_queue();
@@ -98,7 +96,6 @@ void Runtime::run() {
 					// function ran out of instructions to run...
 					// 	implicitly return value on top of stack
 					std::shared_ptr<Frame>& f = this->running->back();
-//					Value& ret_v = f->eval_stack.back();
 					Value* ret_fn = f->closure.vars[f->closure.o_id].get_ptr();
 					if (std::holds_alternative<Value::n_fn_t>(ret_fn->v)) {
 						(*std::get<Value::n_fn_t>(ret_fn->v).get_ptr())(*f);
@@ -108,11 +105,7 @@ void Runtime::run() {
 					break;
 				}
 			} while (this->running != nullptr);
-
 		}
-
-
-
 	}
 
 }

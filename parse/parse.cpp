@@ -591,6 +591,24 @@ static inline bool reduce_invocations(std::vector<AST>& stack) {
 	return false;
 }
 
+static inline bool reduce_asi(std::vector<AST>& stack, const AST& n) {
+	if (n.type != AST::NodeType::INVALID || stack.size() == 1 || n.token.token != "eof")
+		return false;
+
+	// Verify that all tokens are fully parsed
+	for (auto n : stack)
+		if (n.type > AST::NodeType::LIST)
+			return false;
+
+	// Put them all in a global statements node
+	AST program = n;
+	program.type = AST::NodeType::STATEMENTS;
+	program.members = stack;
+	stack.clear();
+	stack.emplace_back(program);
+	return true;
+}
+
 // Follow rules to form parse tree
 static inline bool reduce(const std::vector<Token>& tokens, size_t& i, std::vector<AST>& stack, const AST& n) {
 	if (stack.empty())
@@ -600,9 +618,11 @@ static inline bool reduce(const std::vector<Token>& tokens, size_t& i, std::vect
 	return
 			reduce_invocations(stack)
 			||
+			reduce_operators(stack, n)
+			||
 			reduce_containers(stack)
 			||
-			reduce_operators(stack, n);
+			reduce_asi(stack, n);
 }
 
 // [placeholder] Can we put node onto stack?
