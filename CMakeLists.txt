@@ -4,7 +4,6 @@ project(dlang)
 set(CMAKE_CXX_STANDARD 20)
 
 find_package(Threads REQUIRED)
-
 link_libraries(dl)
 
 #set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lefence")

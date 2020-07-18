@@ -21,7 +21,7 @@ public:
 
 	explicit Handle(): ptr(nullptr) {}
 	explicit Handle(T* p): ptr(p) {}
-	Handle(const Handle& other): ptr(other.ptr) {}
+	Handle(const Handle& other) = default;
 	~Handle() = default;
 
 	T* get_ptr() const {

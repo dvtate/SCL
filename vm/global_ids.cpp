@@ -135,9 +135,7 @@ class DelayFn : public virtual NativeFunction {
 
 class ImportFn : public virtual NativeFunction {
 public:
-	void operator()(Frame&f) override {
-
-		std::cout <<"impfn:\n";
+	void operator()(Frame& f) override {
 		const std::string path = std::get<Value::str_t>(f.eval_stack.back().v);
 
 		// import file
@@ -154,7 +152,6 @@ public:
 			std::cerr <<"Fatal: import error: dlerror: " <<dlerror() <<std::endl;
 			exit(1);
 		}
-		std::cout <<"impfn:\n";
 
 		// Call the imported fn and let it take it's course
 		import_action(&f);
@@ -209,6 +206,10 @@ class AsyncFn : public virtual NativeFunction {
 	void operator()(Frame& f) override {
 		f.eval_stack.back() = Value(Handle<NativeFunction>(new AsyncWrapperNativeFn(f.eval_stack.back())));
 	}
+};
+
+class FreezeFn : public virtual NativeFunction {
+	void operator()(Frame& f) override {}
 };
 
 static Handle<Value> global_ids[] {

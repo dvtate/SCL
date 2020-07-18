@@ -120,6 +120,7 @@ public:
 			f.rt->freeze_running();
 			f.rt->active.emplace_back(rcs);
 			f.rt->running = std::make_shared<SyncCallStack>();
+			f.rt->undead.emplace_back(f.rt->running);
 			f.rt->running->emplace_back(std::make_shared<Frame>(f.rt, c));
 		} else {
 			// todo: typerror
