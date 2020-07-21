@@ -67,6 +67,9 @@ public:
 	explicit Literal(const ClosureDef& c): v(c) {}
 	explicit Literal(const std::string& str, bool is_json = false);
 
+	void mark() {
+		if (v.index())
+	}
 };
 
 

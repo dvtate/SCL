@@ -100,6 +100,12 @@ public:
 //		}
 
 	}
+
+	void mark() override {
+		this->frame_target->mark();
+		this->stack_target->mark();
+		this->ret.mark();
+	}
 };
 
 // user-callable
@@ -123,6 +129,12 @@ public:
 		// prevent double-return
 		if (this->rt->running == this->stack_target)
 			this->rt->freeze_running();
+	}
+
+	void mark() override {
+		this->frame_target->mark();
+		this->stack_target->mark();
+		this->rt->mark();
 	}
 };
 

@@ -27,17 +27,20 @@ class Runtime;
 class VM;
 class Value;
 
-
-// abstract type used for ITC/IPC
+// abstract type used for ITC/IPC/Synchronization
 class RTMessage {
 public:
-	virtual ~RTMessage(){};
+	virtual ~RTMessage() = 0;
 	virtual void action(Runtime&) = 0;
+	virtual void mark() = 0;
 };
 
-
+// TODO make std::vector a member instead
 class SyncCallStack : public std::vector<std::shared_ptr<Frame>> {
-
+	void mark() {
+		for (auto f : *this)
+			(*it)->mark();
+	}
 };
 
 
@@ -71,12 +74,23 @@ public:
 		}
 		return true;
 	}
+
+	// GC mark
+	void mark() {
+		this->closure.mark();
+		for (Value& v : this->eval_stack) {
+			v.mark();
+			if (this->error_handler)
+				this->error_handler->mark();
+		}
+	}
 };
 
 // different threads running on same process
 class Runtime {
 public:
 	VM* vm;
+
 	// currently running thread
 	std::shared_ptr<SyncCallStack> running;
 
@@ -106,6 +120,17 @@ public:
 		std::swap(cpy, this->_msg_queue);
 		DLANG_DEBUG_MSG("VM:RT: cleared msg queue\n");
 		return cpy;
+	}
+
+	// TODO these memeber functions need to be renamed/deleted/refactored
+
+	// Replaces running with a new thread
+	void spawn_thread(){
+		auto rcs = this->running;
+		this->freeze_running();
+		this->active.emplace_back(rcs);
+		this->running = std::make_shared<SyncCallStack>();
+		this->undead.emplace_back(this->running);
 	}
 
 	//
@@ -158,7 +183,16 @@ public:
 		}
 	}
 
+	// Process entry point
 	void run();
+
+	//
+	void mark() {
+		this->running->mark();
+		for (auto sp : this->undead) {
+			sp->mark();
+		}
+	}
 
 private:
 	// mutex guards on r/w
@@ -170,7 +204,6 @@ private:
 
 class VM {
 public:
-
 	std::vector<Literal> literals;
 
 	std::shared_ptr<Runtime> main_thread;
@@ -179,6 +212,14 @@ public:
 	VM(std::vector<Literal> lit_header, const std::vector<std::string>&  argv);
 
 	void run();
+
+	void mark() {
+		for (auto& l : this->literals)
+			l.mark();
+		this->main_thread->mark();
+		for (auto& sp : this->worker_threads)
+			sp->mark();
+	}
 };
 
 /*

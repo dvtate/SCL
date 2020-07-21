@@ -25,6 +25,10 @@ public:
 	void action(Runtime& rt) override {
 		rt.active.emplace_back(cs);
 	}
+
+	void mark() override {
+		this->cs->mark();
+	}
 };
 
 // a -> a returns same as input
@@ -34,6 +38,8 @@ public:
 		Value& msg = f.eval_stack.back();
 		std::cout <<msg.to_string() <<std::endl;
 	}
+
+	void mark() override {}
 };
 
 // Empty -> Str
@@ -61,6 +67,8 @@ public:
 			// die
 		}, cs_sp).detach();
 	}
+
+	void mark() override {}
 };
 
 class IfFn : public virtual NativeFunction {
@@ -84,6 +92,8 @@ class IfFn : public virtual NativeFunction {
 		// call/push corresponding value
 		vm_util::invoke_value_sync(f, params[ind], true);
 	}
+
+	void mark() override {}
 };
 
 class WhileFn : public virtual NativeFunction {
@@ -100,6 +110,8 @@ class WhileFn : public virtual NativeFunction {
 
 		}
 	}
+
+	void mark() override {}
 };
 
 // Any -> Str
@@ -107,6 +119,8 @@ class StrFn : public virtual NativeFunction {
 	void operator()(Frame& f) override {
 		f.eval_stack.back() = Value(f.eval_stack.back().to_string());
 	}
+
+	void mark() override {}
 };
 
 // Num -> Num
@@ -131,6 +145,8 @@ class DelayFn : public virtual NativeFunction {
 			cs_sp->back()->rt->recv_msg(new UnfreezeCallStack(cs_sp));
 		}).detach();
 	}
+
+	void mark() override {}
 };
 
 class ImportFn : public virtual NativeFunction {
@@ -156,6 +172,8 @@ public:
 		// Call the imported fn and let it take it's course
 		import_action(&f);
 	}
+
+	void mark() override {}
 };
 
 // Any -> Int | Float | Empty
@@ -188,6 +206,8 @@ class NumFn : public virtual NativeFunction {
 			f.eval_stack.back() = Value();
 		}
 	}
+
+	void mark() override {}
 };
 
 class VarsFn : public virtual NativeFunction {
@@ -200,16 +220,21 @@ class VarsFn : public virtual NativeFunction {
 
 		}
 	}
+
+	void mark() override {}
 };
 
 class AsyncFn : public virtual NativeFunction {
 	void operator()(Frame& f) override {
 		f.eval_stack.back() = Value(Handle<NativeFunction>(new AsyncWrapperNativeFn(f.eval_stack.back())));
 	}
+
+	void mark() override {}
 };
 
 class FreezeFn : public virtual NativeFunction {
 	void operator()(Frame& f) override {}
+	void mark() override {}
 };
 
 static Handle<Value> global_ids[] {

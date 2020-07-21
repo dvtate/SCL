@@ -21,8 +21,11 @@ class Closure;
 class Frame;
 class NativeFunction {
 public:
-	virtual ~NativeFunction() = default;
+	virtual ~NativeFunction() = 0;
+	// Invoke function
 	virtual void operator()(Frame& f) = 0;
+	//
+	virtual void mark() = 0;
 };
 
 class Value {
@@ -51,7 +54,8 @@ public:
 	// only attribute... could simply extend variant_t...
 	variant_t v;
 
-	enum VType {
+	// Aligned with v.index
+	enum class VType {
 		EMPTY = 0,
 		FLOAT = 1,
 		INT = 2,
@@ -92,6 +96,29 @@ public:
 	}
 
 	std::string to_string(bool recursive = false) const;
+
+	// Mark GC managed objects
+	void mark() {
+		switch (this->type()) {
+			case VType::LAM:
+				std::get<lam_t>(this->v).mark();
+				return;
+			case VType::N_FN:
+				std::get<n_fn_t>(this->v).mark();
+				return;
+			case VType::LIST:
+				std::get<list_ref>(this->v).mark();
+				return;
+			case VType::OBJ:
+				std::get<obj_ref>(this->v).mark();
+				return;
+			case VType::REF:
+				std::get<ref_t>(this->v).mark();
+				return;
+			default:
+				return;
+		}
+	}
 };
 
 

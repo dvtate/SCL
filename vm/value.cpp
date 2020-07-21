@@ -98,9 +98,8 @@ bool Value::eq_identity(const Value& other) const {
 	if (t == Value::VType::LAM)
 		return std::get<Value::lam_t>(this->v).get_ptr() == std::get<Value::lam_t>(other.v).get_ptr();
 
-	// todo check unhandled type
 	// todo check unhandled type...
-	std::cout <<"ERROR: Value::eq_identity typerror: " <<t <<std::endl;
+	std::cout <<"ERROR: Value::eq_identity typerror: " <<(int)t <<std::endl;
 	return false;
 }
 
