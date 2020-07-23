@@ -18,15 +18,9 @@ template <class T>
 class Handle {
 public:
 	T* ptr;
-
-	explicit Handle(): ptr(nullptr) {}
-	explicit Handle(T* p): ptr(p) {}
+	explicit Handle(T* p = nullptr): ptr(p) {}
 	Handle(const Handle& other) = default;
 	~Handle() = default;
-
-	T* get_ptr() const {
-		return this->ptr;
-	}
 
 	// Note: expects ptr to be GC-allocated pointer
 	void set_ptr(T* ptr) {
@@ -37,6 +31,11 @@ public:
 		GC::mark(this->ptr);
 	}
 };
+
+class Value;
+class NativeFunction;
+template <> class Handle<NativeFunction>;
+template <> class Handle<Value>;
 
 
 #endif //DLANG_HANDLE_HPP

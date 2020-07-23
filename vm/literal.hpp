@@ -46,21 +46,15 @@ public:
 
 class Literal {
 public:
-	std::variant<ClosureDef, Value> v;
+	std::variant<std::monostate, ClosureDef, Value> v;
 	enum Ltype {
-		ERR = -1,
-		LAM = 0,
-		VAL = 1
+		ERR = 0,
+		LAM = 1,
+		VAL = 2,
 	};
 
-	static inline Ltype type(size_t i) {
-		if (i == std::variant_npos)
-			return Ltype::ERR;
-		return i ? Ltype::VAL : Ltype::LAM;
-	}
-
 	inline Ltype type() const {
-		return Literal::type(v.index());
+		return (Ltype) v.index();
 	}
 
 	Literal() {}
@@ -68,7 +62,8 @@ public:
 	explicit Literal(const std::string& str, bool is_json = false);
 
 	void mark() {
-		if (v.index())
+		if (this->type() == Ltype::VAL)
+			std::get<Value>(v).mark();
 	}
 };
 

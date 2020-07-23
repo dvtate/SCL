@@ -35,12 +35,10 @@ public:
 	virtual void mark() = 0;
 };
 
-// TODO make std::vector a member instead
+// TODO
 class SyncCallStack : public std::vector<std::shared_ptr<Frame>> {
-	void mark() {
-		for (auto f : *this)
-			(*it)->mark();
-	}
+public:
+	void mark();
 };
 
 
@@ -85,6 +83,11 @@ public:
 		}
 	}
 };
+
+void SyncCallStack::mark() {
+	for (auto& f : *this)
+		f->mark();
+}
 
 // different threads running on same process
 class Runtime {

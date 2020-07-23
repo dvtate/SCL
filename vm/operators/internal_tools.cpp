@@ -13,7 +13,8 @@ namespace vm_util {
 	void invoke_value_sync(Frame &f, Value& v, bool uncallable) {
 		auto vt = v.type();
 		if (vt == Value::VType::REF) {
-			Value *p = std::get<Value::ref_t>(v.v).get_ptr();
+			Value::ref_t &receiver = std::get<Value::ref_t>(v.v);
+			Value *p = receiver->ptr;
 			if (p == nullptr) {
 				if (uncallable)
 					f.eval_stack.emplace_back(v);
@@ -26,16 +27,20 @@ namespace vm_util {
 
 		if (vt == Value::VType::N_FN) {
 			// std::cout <<"invoke native..\n";
-			(*std::get<Handle<NativeFunction>>(v.v).get_ptr())(f);
+			Handle<NativeFunction> &receiver = std::get<Handle<NativeFunction>>(v.v);
+			(*receiver->ptr)(f);
 			return;
 		}
 
 		if (vt == Value::VType::LAM) {
-			auto c = *std::get<Value::lam_t>(v.v).get_ptr();
+			Value::lam_t &receiver = std::get<Value::lam_t>(v.v);
+			auto c = *receiver->ptr;
 
 			// Pass by reference
-			if (f.eval_stack.back().type() == Value::VType::REF)
-				c.vars[c.i_id].set_ptr(std::get<Value::ref_t>(f.eval_stack.back().v).get_ptr());
+			if (f.eval_stack.back().type() == Value::VType::REF) {
+				Value::ref_t &receiver1 = std::get<Value::ref_t>(f.eval_stack.back().v);
+				c.vars[c.i_id].set_ptr(receiver1->ptr);
+			}
 			else
 				c.vars[c.i_id].set_ptr(new Value(f.eval_stack.back()));
 

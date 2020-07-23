@@ -8,87 +8,95 @@
 #include <atomic>
 #include <vector>
 #include <memory>
+#include <deque>
+
 #include <cstdlib>
+#include <cstring> // memcpy
 
-#define DLANG__GC_DECL(TYPE, NAME) \
-	std::vector<TYPE> heap_NAME;
+/* TODO
+ * Generic pointer types
+ * Space tracking
+ * Load factor
+ * Tricolor tracing
+ * Concurrent tracing
+ *
+ * DONE
+ * - naive marking
+ * -
+ *
+ * MAYBE
+ * - paging
+ * -
+ */
 
-// Function template specializations for given type
-// TODO tricolor
-//
-#define DLANG__GC_SPEC(TYPE, NAME) \
-	template<class... Args> \
-	TYPE* make<TYPE>(Args&& ...args) { \
-		void* p = malloc(sizeof(T) + 1) + 1; \
-		::new(p) T(std::forward<Args>(args)...); \
-		heap.emplace_back(p); \
-		return p; \
-	} \
-	template<> \
-	inline void mark(T* ptr) { \
-		((Usage*) (((char*) ptr) - 1))->mark = Usage::Color::GREY; \
-	} \
-
+/**
+ * This rough draft is a naive stw mark and sweep gc
+ * Features:
+ * - Segregated storage for first-party types
+ * -
+ * - Recyling
+ * -
+ */
 
 //
 namespace GC {
-	// TODO use segregated storage, root nodes, space tracking, etc.
-	extern std::vector<void*> heap_void;
 
-	DLANG__GC_DECL(Handle<Value>, value);
-	DLANG__GC_SPEC(Handle<Value>, value);
+	/// Needed to track destructor for object because &Type::~Type is not allowed
+    template <class T> struct Destructor {
+		/**
+		 * Calls type T destructor on given object passed via pointer
+		 *
+		 * @param obj - pointer to object to destroy
+		 */
+		virtual void destroy(T* obj) const {
+			obj->~T();
+		}
+	};
+	//generic finalizer that does nothing
+	struct _Destructor {
+		virtual void destroy(void *obj) const {}
+	};
 
-	struct Usage {
+    // TODO paging, recycling, etc.
+	std::deque<void*> generic_ptrs;
+	std::deque<_Destructor> generic_destructors;
 
+	// tracking data
+	typedef struct Usage {
 		// NOTE: this is misleading as this isn't a complete tricolor GC
-		// TODO tricolor garbage collector
 		enum class Color : unsigned int {
 			WHITE = 0,		// Candidate for GC
 			GREY,			// Not a candidate for GC
-			BLACK,			// WiP
+			BLACK,			// TODO: tricolor tracing
+			FREE,			// This object is in recycle bin
 		} mark : 2;
-	};
+	} Usage;
 
-	// Construct GC'd object in place
+	// Unspecialzed === dont use GC as we don't have a segregated type for it...
+	/// Construct GC'd object in place
 	template <class T, class... Args>
 	T* make(Args&&... args) {
-		void* p = malloc(sizeof(T) + 1) + 1;
-		::new(p) T(std::forward<Args>(args)...);
-		heap.emplace_back(p);
+		Usage* p = malloc(sizeof(T) + 1) + 1;
+		p->mark = Usage::Color::WHITE; // TODO tricolor
+		T* ret = (T*)((char*)p + 1);
+		::new(ret) T(std::forward<Args>(args)...);
+		generic_ptrs.emplace_back(ret);
+		generic_destructors.emplace_back();
+		const Destructor<T> destroy;
+		std::memcpy(&generic_destructors.back(), &destroy, sizeof(destroy));
+//		heap.emplace_back(p);
 		return p;
 	}
 
-	// Mark items that are in use... gets called by Handle<>.mark()
-	template<typename T>
+	/// Mark items that are in use... gets called by Handle<>.mark()
+	template<class T>
 	inline void mark(T* ptr) {
 		((Usage*) (((char*) ptr) - 1))->mark = Usage::Color::GREY; // TODO tricolor
 	}
 
-	// Unspecialzed === dont use GC as we don't have a segregated type for it...
-	// TODO we still want to support tracing for user-defined types (ie - language extensions)
-	//  can do this with a distinct separate usage +
-	// Construct GC'd object in place
-	template <class T, class... Args>
-	T* make(Args&&... args) {
-		return new T(std::forward<Args>(args)...);
-		return p;
-	}
-	// Mark items that are in use... gets called by Handle<>.mark()
-	template<typename T>
-	inline void mark(T* ptr) {
-		return;
-	}
-
 	// Free items not in use
-	void sweep() {
-		for (void* ptr : heap) {
-			Usage* p = (Usage*) (((char *) p) - 1);
-			if (p->mark == Usage::Color::WHITE) {
-				::operator delete(ptr);
-				free(p);
-			}
-		}
-	}
+	void sweep();
+
 }
 
 

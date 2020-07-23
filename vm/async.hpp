@@ -18,22 +18,22 @@
 /// Resumes execution of frame after async result received
 class AsyncResultMsg : public virtual RTMessage {
 public:
-	std::shared_ptr<Value> ret;
+	Value ret;
 	std::shared_ptr<SyncCallStack> stack_target;
 
 	AsyncResultMsg(std::shared_ptr<Value> ret, std::shared_ptr<SyncCallStack> stack_target):
 		ret(std::move(ret)), stack_target(std::move(stack_target)) {}
 
 	void action(Runtime& rt) override {
-		stack_target->back()->eval_stack.emplace_back(*ret);
+		stack_target->back()->eval_stack.emplace_back(ret);
 
 		// run it again bc should have been stopped when the Future was invoked
 		rt.set_active(this->stack_target);
 	}
+	void mark() override {
+		ret.mark();
+	}
 };
-
-
-class AsyncFutureNativeFn;
 
 /// typeof o within async call
 class AsyncReturnNativeFn : public virtual NativeFunction {
@@ -56,29 +56,30 @@ public:
 				new AsyncResultMsg(this->ret, this->stack_target));
 	}
 
-	friend class AsyncFutureNativeFn;
+	void mark() override {
+		if (ret)
+			ret->mark();
+	}
 };
 
 /// typeof async(fn)(args)
 class AsyncFutureNativeFn : public virtual NativeFunction {
 public:
-	ManagedHandle<AsyncReturnNativeFn> ofn;
+	Handle<AsyncReturnNativeFn> ofn;
 
-	explicit AsyncFutureNativeFn(const ManagedHandle<AsyncReturnNativeFn>& ofn):
-			ofn(ofn) {}
-
-	~AsyncFutureNativeFn() {
-		// This pointer is no longer managed by us it's now the GC's problem
-		ofn.enable_gc();
-	}
+	explicit AsyncFutureNativeFn(const Handle<AsyncReturnNativeFn>& ofn): ofn(ofn) {}
 
 	void operator()(Frame& f) override {
-		ofn.ptr->stack_target = f.rt->running;
+		*ofn.ptr->stack_target = f.rt->running;
 		if (ofn.ptr->ret != nullptr) {
 			f.eval_stack.emplace_back(*ofn.ptr->ret);
 		} else {
 			f.rt->freeze_running();
 		}
+	}
+
+	void mark() override {
+		ofn.mark();
 	}
 };
 
@@ -96,20 +97,20 @@ public:
 			// Make async lambda call
 
 			// Get lambda
-			auto& c = *std::get<Value::lam_t>(v.v).get_ptr();
+			Value::lam_t &receiver = std::get<Value::lam_t>(v.v);
+			auto& c = *receiver->ptr;
 
-			// get input
-			// Pass by reference
-			if (f.eval_stack.back().type() == Value::VType::REF)
-				c.vars[c.i_id].set_ptr(std::get<Value::ref_t>(f.eval_stack.back().v).get_ptr());
-			else
-				c.vars[c.i_id].set_ptr(new Value(f.eval_stack.back()));
+			// get input (pass by reference vs value
+			Value::ref_t &receiver1 = std::get<Value::ref_t>(f.eval_stack.back().v);
+			c.vars[c.i_id].set_ptr(f.eval_stack.back().type() == Value::VType::REF
+				? receiver1->ptr
+				: new Value(f.eval_stack.back()));
 			f.eval_stack.pop_back();
 
 			// make output fn
 			auto* ofn = new AsyncReturnNativeFn();
-			auto* future = new AsyncFutureNativeFn(ManagedHandle<AsyncReturnNativeFn>(
-					ManagedHandle<AsyncReturnNativeFn>(ofn)));
+			auto* future = new AsyncFutureNativeFn(Handle<AsyncReturnNativeFn>(
+					Handle<AsyncReturnNativeFn>(ofn)));
 			c.vars[c.o_id].set_ptr(new Value(Handle<NativeFunction>(ofn)));
 
 			// return future functor
@@ -120,6 +121,7 @@ public:
 			f.rt->spawn_thread();
 			f.rt->running->emplace_back(std::make_shared<Frame>(f.rt, c));
 		} else {
+			std::cerr <<"async only accepts closures for now :/\n";
 			// todo: typerror
 			// not a closure
 			// just run it as tho it's sync lol
@@ -130,6 +132,10 @@ public:
 		// push running onto active stack
 		// replace running with new SyncCallStack for call
 		std::shared_ptr<SyncCallStack> cs = f.rt->running;
+	}
+
+	void mark() override {
+		v.mark();
 	}
 };
 

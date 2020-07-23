@@ -124,7 +124,9 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 				DLANG_DEBUG_MSG("Undefined var id: " <<cmd.i <<std::endl);
 			}
 #else
-				f.eval_stack.emplace_back(*f.closure.vars[cmd.i].get_ptr());
+		{
+			f.eval_stack.emplace_back(*f.closure.vars[cmd.i]->ptr);
+		}
 #endif
 			return;
 
@@ -164,7 +166,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 		// declaring a mutable identifier
 		case BCInstr::OPCode::DECL_ID: {
 			auto& v = f.closure.vars[cmd.i];
-			if (v.get_ptr() == nullptr) // undefined
+			if (v->ptr == nullptr) // undefined
 				v.set_ptr(new Value());
 			return;
 		};
@@ -181,7 +183,9 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 				DLANG_DEBUG_MSG("SET_ID(" <<cmd.i <<") failed\n");
 			}
 #else
-			*f.closure.vars[cmd.i].get_ptr() = f.eval_stack.back();
+		{
+			*f.closure.vars[cmd.i]->ptr = f.eval_stack.back();
+		}
 #endif
 			break;
 

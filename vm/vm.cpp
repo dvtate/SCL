@@ -23,6 +23,7 @@ public:
 		else
 			exit(0);
 	}
+	void mark() override {}
 };
 
 
@@ -95,12 +96,13 @@ void Runtime::run() {
 					DLANG_DEBUG_MSG("VM:RT:Frame: ran out of instructions\n");
 					// function ran out of instructions to run...
 					// 	implicitly return value on top of stack
-					std::shared_ptr<Frame>& f = this->running->back();
-					Value* ret_fn = f->closure.vars[f->closure.o_id].get_ptr();
+					std::shared_ptr<Frame>& f = running->back();
+					Value* ret_fn = f->closure.vars[f->closure.o_id]->ptr;
 					if (std::holds_alternative<Value::n_fn_t>(ret_fn->v)) {
-						(*std::get<Value::n_fn_t>(ret_fn->v).get_ptr())(*f);
+						Value::n_fn_t &receiver = std::get<Value::n_fn_t>(ret_fn->v);
+						(*receiver->ptr)(*f);
 					} else {
-						this->freeze_running();
+						freeze_running();
 					}
 					break;
 				}

@@ -90,8 +90,9 @@ public:
 	bool eq_identity(const Value& other) const;
 	bool truthy() const;
 	inline Value* deref() {
-		return std::holds_alternative<Value::ref_t>(this->v)
-			? std::get<Value::ref_t>(this->v).get_ptr()
+		ref_t &receiver = std::get<Value::ref_t>(v);
+		return std::holds_alternative<Value::ref_t>(v)
+			? receiver->ptr
 			: this;
 	}
 

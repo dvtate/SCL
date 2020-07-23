@@ -37,6 +37,13 @@ public:
 	bool operator==(const Closure& other) const {
 		return this->body == other.body;
 	}
+
+	/// GC mark
+	void mark() {
+		for (auto& p : this->vars) {
+			p.second.mark();
+		}
+	}
 };
 
 #endif //DLANG_CLOSURE_HPP
