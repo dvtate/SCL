@@ -72,7 +72,23 @@ namespace GC {
 		} mark : 2;
 	} Usage;
 
-	// Unspecialzed === dont use GC as we don't have a segregated type for it...
+	// Tracing
+
+	/// Mark items that are in use... gets called by Handle<>.mark()
+	template<class T>
+	inline void mark(T ptr) {
+		((Usage*) (((char*) ptr) - 1))->mark = Usage::Color::GREY; // TODO tricolor
+	}
+
+	template<> mark<Handle<Value>>(Handle<Value> ptr);
+	template<> mark<Value&>(Value& ptr);
+
+
+
+
+
+
+
 	/// Construct GC'd object in place
 	template <class T, class... Args>
 	T* make(Args&&... args) {
@@ -88,15 +104,10 @@ namespace GC {
 		return p;
 	}
 
-	/// Mark items that are in use... gets called by Handle<>.mark()
-	template<class T>
-	inline void mark(T* ptr) {
-		((Usage*) (((char*) ptr) - 1))->mark = Usage::Color::GREY; // TODO tricolor
-	}
-
 	// Free items not in use
 	void sweep();
 
+	void do_gc();
 }
 
 

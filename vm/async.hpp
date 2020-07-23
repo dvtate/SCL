@@ -13,6 +13,7 @@
 
 /*
  * Async is of type :: (a -> b) -> (a -> (Empty -> b))
+ * tfw using functions instead of objects
  */
 
 /// Resumes execution of frame after async result received

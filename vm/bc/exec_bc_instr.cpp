@@ -167,7 +167,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 		case BCInstr::OPCode::DECL_ID: {
 			auto& v = f.closure.vars[cmd.i];
 			if (v->ptr == nullptr) // undefined
-				v.set_ptr(new Value());
+				v.ptr = new Value();
 			return;
 		};
 

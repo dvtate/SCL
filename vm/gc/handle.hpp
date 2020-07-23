@@ -5,11 +5,11 @@
 #ifndef DLANG_HANDLE_HPP
 #define DLANG_HANDLE_HPP
 
-/*
- * These are defined to help with the following
- * - GC tracing
- * - Size segregation? (potential optimization)
- * - Hiding the GC API's from the rest of the VM
+/* TODO remove this
+ * This class is pretty fucking useless...
+ * I would have just used normal pointers...
+ * But that wouldn't be as clear what's managed by GC
+ *
  */
 
 #include "gc.hpp"
@@ -19,23 +19,11 @@ class Handle {
 public:
 	T* ptr;
 	explicit Handle(T* p = nullptr): ptr(p) {}
-	Handle(const Handle& other) = default;
-	~Handle() = default;
 
 	// Note: expects ptr to be GC-allocated pointer
 	void set_ptr(T* ptr) {
 		this->ptr = ptr;
 	}
-
-	void mark() {
-		GC::mark(this->ptr);
-	}
 };
-
-class Value;
-class NativeFunction;
-template <> class Handle<NativeFunction>;
-template <> class Handle<Value>;
-
 
 #endif //DLANG_HANDLE_HPP

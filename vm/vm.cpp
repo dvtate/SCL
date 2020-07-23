@@ -51,11 +51,11 @@ VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv)
 	}
 
 	Handle<NativeFunction> exit_fn(new ExitProgramReturn());
-	main.vars[main.o_id].set_ptr(new Value(exit_fn));
+	main.vars[main.o_id].ptr = new Value(exit_fn);
 
 	// TODO: capture command-line args
 	Value argv_list{std::string("cmd args coming soon")};
-	main.vars[main.i_id].set_ptr(new Value(argv_list));
+	main.vars[main.i_id].ptr = new Value(argv_list);
 
 	// declare locals
 //	main.declare_empty_locals(entry.decl_ids);
