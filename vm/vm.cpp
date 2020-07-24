@@ -50,6 +50,7 @@ VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv)
 		main.vars[id] = get_global_id(id);
 	}
 
+	NativeFunction* exitFn = GC::malloc<NativeFunction>()
 	Handle<NativeFunction> exit_fn(new ExitProgramReturn());
 	main.vars[main.o_id].ptr = new Value(exit_fn);
 
@@ -100,7 +101,7 @@ void Runtime::run() {
 					Value* ret_fn = f->closure.vars[f->closure.o_id]->ptr;
 					if (std::holds_alternative<Value::n_fn_t>(ret_fn->v)) {
 						Value::n_fn_t &receiver = std::get<Value::n_fn_t>(ret_fn->v);
-						(*receiver->ptr)(*f);
+						(*receiver)(*f);
 					} else {
 						freeze_running();
 					}

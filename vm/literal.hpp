@@ -63,7 +63,7 @@ public:
 
 	void mark() {
 		if (this->type() == Ltype::VAL)
-			std::get<Value>(v).mark();
+			GC::mark(std::get<Value>(v));
 	}
 };
 

@@ -13,48 +13,52 @@
 #include "../lib/tsl/ordered_map.hpp"
 
 #include "gc/handle.hpp"
+#include "gc/gc.hpp"
+
 
 class Closure;
-
+class Value;
 
 // Native functions acessable to user
 class Frame;
 class NativeFunction {
 public:
 	virtual ~NativeFunction() = 0;
+	NativeFunction(const NativeFunction& other) = default;
 	// Invoke function
 	virtual void operator()(Frame& f) = 0;
 	//
 	virtual void mark() = 0;
+
 };
 
-class Value {
-public:
+namespace ValueTypes {
 	using empty_t	= std::monostate;
 	using int_t 	= int64_t;
 	using float_t 	= double;
 
 	using str_t 	= std::string;
-//	using str_ref	= Handle<std::string>;
-	using ref_t		= Handle<Value>;
-	using lam_t 	= Handle<Closure>;
-	using n_fn_t 	= Handle<NativeFunction>;
+//	using str_ref	= str_t*; // might as well use fuckin C-string
+	using ref_t		= Value*;
+
+	using lam = Closure;
+	using lam_t 	= Closure*;
+	using lam_ref 	= lam_t;
+	using n_fn_t 	= NativeFunction*;
+	using n_fn_ref 	= n_fn_t;
 
 	using list_t	= std::vector<Value>;
-	using list_ref	= Handle<std::vector<Value>>;
+	using list_ref	= list_t*;
 	using obj_t		= tsl::ordered_map<std::string, Value>;
-	using obj_ref	= Handle<tsl::ordered_map<std::string, Value>>;
+	using obj_ref	= obj_t*;
 
-	using bool_t 	= Value::int_t;
+	using bool_t 	= ValueTypes::int_t;
 
 	using variant_t = std::variant<
-			empty_t, float_t, int_t, str_t,
-			ref_t, lam_t, n_fn_t, obj_ref, list_ref>;
+		empty_t, float_t, int_t, str_t,
+		ref_t, lam_t, n_fn_t, obj_ref, list_ref>;
 
-	// only attribute... could simply extend variant_t...
-	variant_t v;
-
-	// Aligned with v.index
+	// Alligned with variant_t index
 	enum class VType {
 		EMPTY = 0,
 		FLOAT = 1,
@@ -66,23 +70,45 @@ public:
 		OBJ = 7,
 		LIST = 8,
 	};
+}
+
+class Value {
+public:
+	// TODO remove these typedefs
+	using empty_t	= ValueTypes::empty_t;
+	using int_t 	= ValueTypes::int_t;
+	using float_t 	= ValueTypes::float_t ;
+
+	using str_t 	= ValueTypes::str_t;
+	using ref_t		= ValueTypes::ref_t;
+	using lam_t 	= ValueTypes::lam_t;
+	using n_fn_t 	= ValueTypes::n_fn_t;
+
+	using list_t	= ValueTypes::list_t;
+	using list_ref	= ValueTypes::list_ref;
+	using obj_ref	= ValueTypes::obj_ref;
+
+	using VType = ValueTypes::VType;
+
+	// only attribute... could simply extend variant_t...
+	ValueTypes::variant_t v;
 
 	Value(){};
-	explicit Value(empty_t in): 			v(in) {}
-	explicit Value(float_t in): 			v(in) {}
-	explicit Value(const str_t& in): 		v(in) {}
-	explicit Value(int_t in): 				v(in) {}
-	explicit Value(const ref_t& in): 		v(in) {}
-	explicit Value(const lam_t& in): 		v(in) {}
-	explicit Value(const n_fn_t& in):		v(in) {}
-	explicit Value(const list_t& in):		v(list_ref(new list_t(in))) {}
-	explicit Value(const list_ref& in):		v(in) {}
-	explicit Value(const obj_t& in):		v(obj_ref(new obj_t(in))) {}
-	explicit Value(const obj_ref& in):		v(in) {}
-	explicit Value(const bool in):			v((int_t) in) {}
+	explicit Value(ValueTypes::empty_t in): 			v(in) {}
+	explicit Value(ValueTypes::float_t in): 			v(in) {}
+	explicit Value(const str_t& in): 					v(in) {}
+	explicit Value(ValueTypes::int_t in): 				v(in) {}
+	explicit Value(const ValueTypes::ref_t& in): 		v(in) {}
+	explicit Value(const ValueTypes::lam_t& in): 		v(in) {}
+	explicit Value(const ValueTypes::n_fn_t& in):		v(in) {}
+	explicit Value(const ValueTypes::list_t& in):		v(::new(GC::alloc<ValueTypes::list_t>()) ValueTypes::list_t(in)) {}
+	explicit Value(const ValueTypes::list_ref& in):		v(in) {}
+	explicit Value(const ValueTypes::obj_t& in):		v(GC::make<ValueTypes::obj_t>(in)) {}
+	explicit Value(const ValueTypes::obj_ref& in):		v(in) {}
+	explicit Value(const bool in):						v((ValueTypes::int_t) in) {}
 	Value(const Value& other) = default;
 
-	inline VType type() const {
+	inline ValueTypes::VType type() const {
 		return (VType) this->v.index();
 	}
 
@@ -90,37 +116,82 @@ public:
 	bool eq_identity(const Value& other) const;
 	bool truthy() const;
 	inline Value* deref() {
-		ref_t &receiver = std::get<Value::ref_t>(v);
-		return std::holds_alternative<Value::ref_t>(v)
-			? receiver->ptr
+		return std::holds_alternative<ValueTypes::ref_t>(v)
+			? std::get<ValueTypes::ref_t>(v)
 			: this;
 	}
 
 	std::string to_string(bool recursive = false) const;
+};
 
-	// Mark GC managed objects
-	void mark() {
-		switch (this->type()) {
-			case VType::LAM:
-				std::get<lam_t>(this->v).mark();
+// Tracing
+namespace GC {
+
+	void mark(Value& v);
+	void mark(Value* v);
+
+	inline void mark(ValueTypes::obj_t& obj) {
+		for (Value& p : obj) {
+			mark(p.second);
+		}
+	}
+	inline void mark(ValueTypes::obj_ref obj) {
+		mark((void*) obj);
+		mark(*obj);
+	}
+	inline void mark(ValueTypes::list_t& obj) {
+		for (auto& v : obj) {
+			mark(v);
+		}
+	}
+	inline void mark(ValueTypes::list_ref obj) {
+		mark((void*) obj);
+		mark(*obj);
+	}
+
+	inline void mark(NativeFunction& fn) {
+		fn.mark();
+	}
+	inline void mark(ValueTypes::n_fn_t fn) {
+		mark((void*) fn);
+		fn->mark();
+	}
+
+	// TODO switch to ValueTypes::lam_t
+	void mark(Closure& l);
+	inline void mark(ValueTypes::lam_ref l) {
+		mark((void*) l);
+		mark(*l);
+	}
+
+	inline void mark(Value& v) {
+		switch (v.type()) {
+			case ValueTypes::VType::LIST:
+				mark(std::get<ValueTypes::list_ref>(v.v));
 				return;
-			case VType::N_FN:
-				std::get<n_fn_t>(this->v).mark();
+			case ValueTypes::VType::OBJ:
+				mark(std::get<ValueTypes::obj_ref>(v.v));
 				return;
-			case VType::LIST:
-				std::get<list_ref>(this->v).mark();
+			case ValueTypes::VType::LAM:
+				mark(std::get<ValueTypes::lam_ref>(v.v));
 				return;
-			case VType::OBJ:
-				std::get<obj_ref>(this->v).mark();
+			case ValueTypes::VType::N_FN:
+				mark(std::get<ValueTypes::n_fn_ref>(v.v));
 				return;
-			case VType::REF:
-				std::get<ref_t>(this->v).mark();
+			case ValueTypes::VType::REF:
+				mark(std::get<ValueTypes::ref_t>(v.v));
 				return;
 			default:
 				return;
 		}
 	}
-};
+	inline void mark(Value* v) {
+		// Mark self
+		mark((void*) v);
 
+		// Mark children
+		mark(*v);
+	}
+}
 
 #endif //DLANG_VALUE_HPP

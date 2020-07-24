@@ -102,8 +102,7 @@ public:
 	}
 
 	void mark() override {
-		this->frame_target->mark();
-		this->stack_target->mark();
+		GC::mark(this->ret);
 		this->ret.mark();
 	}
 };

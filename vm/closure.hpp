@@ -23,7 +23,7 @@ public:
 	int64_t o_id;
 
 	// captured identifiers
-	std::unordered_map<int64_t, Handle<Value>> vars;
+	std::unordered_map<int64_t, Value*> vars;
 
 	// body points to implementation defined by relevant closureDef
 	std::vector<BCInstr>* body;
@@ -37,13 +37,13 @@ public:
 	bool operator==(const Closure& other) const {
 		return this->body == other.body;
 	}
-
-	/// GC mark
-	void mark() {
-		for (auto& p : this->vars) {
-			p.second.mark();
-		}
-	}
 };
 
+namespace GC {
+	/// GC mark
+	void mark(Closure& c) {
+		for (auto& p : c.vars)
+			mark(p.second);
+	}
+}
 #endif //DLANG_CLOSURE_HPP

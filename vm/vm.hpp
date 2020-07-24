@@ -37,8 +37,7 @@ public:
 
 // TODO
 class SyncCallStack : public std::vector<std::shared_ptr<Frame>> {
-public:
-	void mark();
+public: void mark();
 };
 
 
@@ -75,12 +74,16 @@ public:
 
 	// GC mark
 	void mark() {
-		this->closure.mark();
-		for (Value& v : this->eval_stack) {
-			v.mark();
-			if (this->error_handler)
-				this->error_handler->mark();
-		}
+		// Mark Definition
+		GC::mark(this->closure);
+
+		// Mark stack
+		for (Value& v : this->eval_stack)
+			GC::mark(v);
+
+		// Mark Error handler
+		if (this->error_handler)
+			GC::mark(this->error_handler);
 	}
 };
 
@@ -217,6 +220,7 @@ public:
 	void run();
 
 	void mark() {
+		// TODO these shouldn't have to be marked
 		for (auto& l : this->literals)
 			l.mark();
 		this->main_thread->mark();
@@ -225,7 +229,8 @@ public:
 	}
 };
 
-/*
+
+/* Original plan:
 	Making calls:
 	- on sync call, new Frame is pushed onto running.call_stack()
 	- on async call, new thread is created and pushed to top of active stack

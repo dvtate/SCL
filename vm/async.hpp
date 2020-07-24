@@ -66,7 +66,7 @@ public:
 /// typeof async(fn)(args)
 class AsyncFutureNativeFn : public virtual NativeFunction {
 public:
-	Handle<AsyncReturnNativeFn> ofn;
+	AsyncReturnNativeFn ofn;
 
 	explicit AsyncFutureNativeFn(const Handle<AsyncReturnNativeFn>& ofn): ofn(ofn) {}
 
@@ -128,15 +128,10 @@ public:
 			// just run it as tho it's sync lol
 			vm_util::invoke_value_sync(f, this->v, true);
 		}
-
-		// set o_id = AsyncReturnNativeFn
-		// push running onto active stack
-		// replace running with new SyncCallStack for call
-		std::shared_ptr<SyncCallStack> cs = f.rt->running;
 	}
 
 	void mark() override {
-		v.mark();
+		GC::mark(this->v);
 	}
 };
 

@@ -8,26 +8,25 @@
 #include "gc.hpp"
 
 namespace GC {
+
 // Declare tracking containers
-#define DLANG__GC_DECL(TYPE, NAME) \
+#define DLANG__GC_HEAP(TYPE, NAME) \
 	std::vector<TYPE*> heap_NAME; \
 	std::vector<TYPE*> recycle_bin_NAME;
 
 // Function template specializations for given type
 #define DLANG__GC_SPEC(TYPE, NAME) \
-	template<class... Args> \
-	TYPE* make<TYPE>(Args&& ...args) { \
+	template<> \
+	TYPE* alloc<TYPE>() { \
+		TYPE* p; \
 		if (recycle_bin_NAME.empty()) { \
-			TYPE* p = (TYPE*) malloc(sizeof(T) + 1) + 1; \
-			((Usage*) (((char*) ptr) - 1))->mark = Usage::Color::WHITE; \
-			::new(p) TYPE(std::forward<Args>(args)...); \
+			p = (TYPE*) (((char*) ::malloc(sizeof(T) + 1)) + 1); \
 			heap_NAME.emplace_back(p); \
-			return p; \
-		} \
-		TYPE* p = recycle_bin_NAME.back(); \
-		recycle_bin_NAME.pop_back(); \
+		} else { \
+			p = recycle_bin_NAME.back(); \
+			recycle_bin_NAME.pop_back(); \
+		}\
 		((Usage*) (((char*) p) - 1))->mark = Usage::Color::WHITE; \
-		::new(recycle_bin_NAME.back()) TYPE(std::forward<Args>(args)...); \
 		return p; \
 	} \
 	inline void destroy(TYPE* ptr) { \
@@ -42,7 +41,7 @@ namespace GC {
 		 	destroy(ptr); \
     }
 
-	DLANG__GC_DECL(Value, value);
+	DLANG__GC_HEAP(Value, value);
 	DLANG__GC_SPEC(Value, value);
 
 	// Free items not in use
@@ -58,7 +57,6 @@ namespace GC {
 			}
 		}
 
-		DLANG__GC_SWEEP(Handle<Value>, value);
+		DLANG__GC_SWEEP(Value, value);
 	}
-
 }
