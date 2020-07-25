@@ -28,12 +28,12 @@ namespace VM_ops {
 
 	void not_check_equality(Frame&f) {
 		check_equality(f);
-		auto& v = std::get<Value::bool_t>(f.eval_stack.back().v);
+		auto& v = std::get<ValueTypes::bool_t>(f.eval_stack.back().v);
 		v = !v;
 	}
 	void not_check_identity(Frame&f) {
 		check_identity(f);
-		auto& v = std::get<Value::bool_t>(f.eval_stack.back().v);
+		auto& v = std::get<ValueTypes::bool_t>(f.eval_stack.back().v);
 		v = !v;
 	}
 	

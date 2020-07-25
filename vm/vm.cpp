@@ -47,21 +47,18 @@ VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv)
 	for (const int64_t id : entry.capture_ids) {
 		DLANG_DEBUG_MSG("capture global id # " <<id <<std::endl);
 //		std::cout <<"cid" <<id <<std::endl;
-		main.vars[id] = get_global_id(id);
+		main.vars[id] = ::new(GC::alloc<Value>()) Value(get_global_id(id));
 	}
 
-	NativeFunction* exitFn = GC::malloc<NativeFunction>()
-	Handle<NativeFunction> exit_fn(new ExitProgramReturn());
-	main.vars[main.o_id].ptr = new Value(exit_fn);
+	main.vars[main.o_id] = ::new(GC::alloc<Value>()) Value(
+			::new(GC::alloc<NativeFunction>()) ExitProgramReturn());
 
 	// TODO: capture command-line args
 	Value argv_list{std::string("cmd args coming soon")};
-	main.vars[main.i_id].ptr = new Value(argv_list);
+	main.vars[main.i_id] = ::new(GC::alloc<Value>()) Value(argv_list);
 
 	// declare locals
 //	main.declare_empty_locals(entry.decl_ids);
-
-
 }
 
 void VM::run() {
@@ -98,9 +95,9 @@ void Runtime::run() {
 					// function ran out of instructions to run...
 					// 	implicitly return value on top of stack
 					std::shared_ptr<Frame>& f = running->back();
-					Value* ret_fn = f->closure.vars[f->closure.o_id]->ptr;
+					Value* ret_fn = f->closure.vars[f->closure.o_id];
 					if (std::holds_alternative<Value::n_fn_t>(ret_fn->v)) {
-						Value::n_fn_t &receiver = std::get<Value::n_fn_t>(ret_fn->v);
+						ValueTypes::n_fn_t receiver = std::get<Value::n_fn_t>(ret_fn->v);
 						(*receiver)(*f);
 					} else {
 						freeze_running();

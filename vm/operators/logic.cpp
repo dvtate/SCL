@@ -13,7 +13,4 @@ namespace VM_ops {
 
 	VMOperator logical_not{"Logical not (!)", not_act};
 
-	void or_act(Frame& f) {
-
-	}
 }

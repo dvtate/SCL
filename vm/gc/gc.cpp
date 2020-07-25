@@ -20,7 +20,7 @@ namespace GC {
 	TYPE* alloc<TYPE>() { \
 		TYPE* p; \
 		if (recycle_bin_NAME.empty()) { \
-			p = (TYPE*) (((char*) ::malloc(sizeof(T) + 1)) + 1); \
+			p = (TYPE*) (((char*) ::malloc(sizeof(TYPE) + 1)) + 1); \
 			heap_NAME.emplace_back(p); \
 		} else { \
 			p = recycle_bin_NAME.back(); \

@@ -10,24 +10,9 @@
 
 // aka operator == or operator ?=
 bool Value::eq_value(const Value& other) const {
-	Value* l, * r;
+	Value* l = this->deref(), * r = other.deref();
 
-	// de-ref
-	if (std::holds_alternative<ValueTypes::ref_t>(this->v)) {
-		ref_t &receiver = std::get<ValueTypes::ref_t>(v);
-		l = receiver->ptr;
-	} else {
-		l = (Value*) this;
-	}
-
-	if (std::holds_alternative<ValueTypes::ref_t>(other.v)) {
-		ref_t &receiver = std::get<ValueTypes::ref_t>(other.v);
-		r = receiver->ptr;
-	} else {
-		r = (Value*) &other;
-	}
-
-	// null == null
+	// maybe null == null
 	if (l == r)
 		return true;
 
@@ -44,14 +29,13 @@ bool Value::eq_value(const Value& other) const {
 
 	// could be different instances of same function
 	if (std::holds_alternative<ValueTypes::lam_t>(l->v)) {
-		lam_t &receiver = std::get<ValueTypes::lam_t>(r->v);
-		return (*std::get<ValueTypes::lam_t>(l->v).get_ptr()) == (*receiver->ptr);
+		return (*std::get<ValueTypes::lam_t>(l->v)) == (*std::get<ValueTypes::lam_t>(r->v));
 	}
 	if (std::holds_alternative<ValueTypes::empty_t>(l->v))
 		return true;
 	if (std::holds_alternative<ValueTypes::list_ref>(l->v)) {
-		auto& ll = *std::get<ValueTypes::list_ref>(l->v).ptr;
-		auto& rl = *std::get<ValueTypes::list_ref>(r->v).ptr;
+		auto& ll = *std::get<ValueTypes::list_ref>(l->v);
+		auto& rl = *std::get<ValueTypes::list_ref>(r->v);
 		if (ll.size() != rl.size())
 			return false;
 		for (size_t i = 0; i < ll.size(); i++)
@@ -61,11 +45,8 @@ bool Value::eq_value(const Value& other) const {
 	}
 
 	// native fns
-	if (std::holds_alternative<ValueTypes::n_fn_t>(l->v)) {
-		n_fn_t &receiver = std::get<ValueTypes::n_fn_t>(r->v);
-		return std::get<ValueTypes::n_fn_t>(l->v).get_ptr() ==
-			   receiver->ptr;
-	}
+	if (std::holds_alternative<ValueTypes::n_fn_t>(l->v))
+		return std::get<ValueTypes::n_fn_t>(l->v) == std::get<ValueTypes::n_fn_t>(r->v);
 
 	// todo check unhandled type...
 	std::cout <<"ERROR: Value::eq_value typerror: " <<l->v.index() <<" | " <<r->v.index() <<std::endl;
@@ -77,9 +58,7 @@ bool Value::eq_identity(const Value& other) const {
 	if (this->type() != other.type())
 		return false;
 	if (std::holds_alternative<ValueTypes::ref_t>(this->v)) {
-		ref_t &receiver = std::get<ValueTypes::ref_t>(other.v);
-		return std::get<ValueTypes::ref_t>(v).get_ptr() ==
-			   receiver->ptr;
+		return std::get<ValueTypes::ref_t>(v) == std::get<ValueTypes::ref_t>(other.v);
 	}
 
 	auto t = this->type();
@@ -93,8 +72,8 @@ bool Value::eq_identity(const Value& other) const {
 	if (t == ValueTypes::VType::EMPTY)
 		return true;
 	if (t == ValueTypes::VType::LIST) {
-		const auto& l = *std::get<ValueTypes::list_ref>(this->v).ptr;
-		const auto& r = *std::get<ValueTypes::list_ref>(other.v).ptr;
+		const auto& l = *std::get<ValueTypes::list_ref>(this->v);
+		const auto& r = *std::get<ValueTypes::list_ref>(other.v);
 		if (l.size() != r.size())
 			return false;
 		for (size_t i = 0; i < l.size(); i++)
@@ -103,13 +82,11 @@ bool Value::eq_identity(const Value& other) const {
 		return true;
 	}
 	if (t == Value::VType::N_FN) {
-		n_fn_t &receiver = std::get<ValueTypes::n_fn_t>(v);
-		return receiver->ptr == std::get<ValueTypes::n_fn_t>(other.v).ptr;
+		return std::get<ValueTypes::n_fn_t>(v) == std::get<ValueTypes::n_fn_t>(other.v);
 	}
 	// must be same instance of same function
 	if (t == Value::VType::LAM) {
-		lam_t &receiver = std::get<ValueTypes::lam_t>(v);
-		return receiver->ptr == std::get<ValueTypes::lam_t>(other.v).ptr;
+		return std::get<ValueTypes::lam_ref>(v) == std::get<ValueTypes::lam_ref>(other.v);
 	}
 
 	// todo check unhandled type...
@@ -122,20 +99,19 @@ bool Value::truthy() const {
 	auto* val = (Value*) this;
 	switch (val->type()) {
 		case VType::REF: {
-			ref_t &receiver = std::get<ValueTypes::ref_t>(v);
-			return receiver->ptr->truthy();
+			return std::get<ValueTypes::ref_t>(v)->truthy();
 		}
-		case VType::INT:
+		case ValueTypes::VType::INT:
 			return std::get<ValueTypes::int_t>(val->v);
-		case VType::FLOAT:
+		case ValueTypes::VType::FLOAT:
 			return std::get<ValueTypes::float_t>(val->v);
-		case VType::STR:
+		case ValueTypes::VType::STR:
 			return !std::get<ValueTypes::str_t>(val->v).empty();
-		case VType::LIST:
-			return !std::get<ValueTypes::list_ref>(val->v).ptr->empty();
-		case VType::LAM: case VType::N_FN:
+		case ValueTypes::VType::LIST:
+			return !std::get<ValueTypes::list_ref>(val->v)->empty();
+		case ValueTypes::VType::LAM: case VType::N_FN:
 			return true;
-		case VType::EMPTY:
+		case ValueTypes::VType::EMPTY:
 			return false;
 		default:
 			// todo: check unhandled type
@@ -165,12 +141,11 @@ std::string Value::to_string(bool recursive) const {
 		case VType::N_FN:
 			return "(: native )";
 		case VType::REF: {
-			ref_t &receiver = std::get<ValueTypes::ref_t>(v);
-			auto* p = receiver->ptr;
+			const auto p = std::get<ValueTypes::ref_t>(v);
 			return p != nullptr ? p->to_string(false) : "null";
 		};
 		case VType::LIST: {
-			auto& l = *std::get<ValueTypes::list_ref >(this->v).ptr;
+			auto& l = *std::get<ValueTypes::list_ref>(this->v);
 			std::string ret = "[ ";
 			if (!l.empty())
 				ret += l[0].to_string(true);

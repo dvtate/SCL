@@ -9,6 +9,6 @@
 #include "gc/handle.hpp"
 
 class Value;
-const Handle<Value>& get_global_id(int64_t id);
-
+const Value& get_global_id(int64_t id);
+extern unsigned short global_ids_count;
 #endif //DLANG_GLOBAL_IDS_HPP

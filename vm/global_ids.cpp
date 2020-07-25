@@ -4,7 +4,7 @@
 
 #include <iostream>
 #include <dlfcn.h>
-
+#include <cassert>
 #include "global_ids.hpp"
 
 #include "value.hpp"
@@ -26,19 +26,15 @@ public:
 		rt.active.emplace_back(cs);
 	}
 
-	void mark() override {
-		this->cs->mark();
-	}
+	void mark() override {}
 };
 
 // a -> a returns same as input
 class PrintFn : public virtual NativeFunction {
 public:
 	void operator()(Frame& f) override {
-		Value& msg = f.eval_stack.back();
-		std::cout <<msg.to_string() <<std::endl;
+		std::cout <<f.eval_stack.back().to_string() <<std::endl;
 	}
-
 	void mark() override {}
 };
 
@@ -81,9 +77,9 @@ class IfFn : public virtual NativeFunction {
 			return;
 
 		// get values
-		auto& params = *std::get<Value::list_ref>(i.v).ptr;
+		auto& params = *std::get<Value::list_ref>(i.v);
 
-		// pick velue
+		// pick value
 		const bool cond = params[0].truthy();
 		unsigned char ind = cond ? 1 : 2;
 		if (ind >= params.size())
@@ -118,32 +114,6 @@ class WhileFn : public virtual NativeFunction {
 class StrFn : public virtual NativeFunction {
 	void operator()(Frame& f) override {
 		f.eval_stack.back() = Value(f.eval_stack.back().to_string());
-	}
-
-	void mark() override {}
-};
-
-// Num -> Num
-class DelayFn : public virtual NativeFunction {
-	void operator()(Frame& f) override {
-		// Get sleep duration (arg)
-		using namespace std::chrono_literals;
-		auto dur = 1ms;
-		if (f.eval_stack.back().type() == Value::VType::FLOAT)
-			dur *= std::get<Value::float_t>(f.eval_stack.back().v);
-		else if (f.eval_stack.back().type() == Value::VType::INT)
-			dur *= std::get<Value::int_t>(f.eval_stack.back().v);
-
-		// freeze thread until delay expires (eloop can work on other stuff)
-		std::shared_ptr<SyncCallStack> cs_sp = f.rt->running;
-		f.rt->freeze_running();
-
-		std::thread([dur, cs_sp](){
-			std::this_thread::sleep_for(dur);
-
-			// unfreeze origin thread
-			cs_sp->back()->rt->recv_msg(new UnfreezeCallStack(cs_sp));
-		}).detach();
 	}
 
 	void mark() override {}
@@ -186,6 +156,7 @@ class NumFn : public virtual NativeFunction {
 			f.eval_stack.back() = Value();
 			return;
 		}
+
 		if (std::holds_alternative<Value::int_t>(in->v) ||
 			std::holds_alternative<Value::float_t>(in->v))
 			// already a Num
@@ -210,13 +181,14 @@ class NumFn : public virtual NativeFunction {
 	void mark() override {}
 };
 
+// Debug variables
 class VarsFn : public virtual NativeFunction {
 	void operator()(Frame& f) override {
 		for (const auto& scope : *f.rt->running) {
 			std::cout <<"Scope " <<scope <<std::endl;
 			for (const auto& vp : scope->closure.vars)
-				std::cout <<'\t' <<vp.first <<'\t' <<vp.second.get_ptr()->to_string()
-						  <<'\t' <<vp.second.get_ptr() <<std::endl;
+				std::cout <<'\t' <<vp.first <<'\t' <<vp.second->to_string()
+						  <<'\t' <<(void*) vp.second <<std::endl;
 
 		}
 	}
@@ -224,44 +196,56 @@ class VarsFn : public virtual NativeFunction {
 	void mark() override {}
 };
 
+// Create async wrapper for closure (see async.hpp)
 class AsyncFn : public virtual NativeFunction {
 	void operator()(Frame& f) override {
-		f.eval_stack.back() = Value(Handle<NativeFunction>(new AsyncWrapperNativeFn(f.eval_stack.back())));
+		f.eval_stack.back() = Value(
+				::new(GC::alloc<NativeFunction>())
+					AsyncWrapperNativeFn(f.eval_stack.back()));
 	}
-
 	void mark() override {}
 };
 
-class FreezeFn : public virtual NativeFunction {
-	void operator()(Frame& f) override {}
-	void mark() override {}
-};
-
-static Handle<Value> global_ids[] {
+// TODO due to recycling behavior, these should not be GC'd
+//  use normal values and copy them into GC'd Value*s as needed
+static Value global_ids[] {
 	// 0 - empty
-	Handle(new Value()),
+	Value(::new(GC::alloc<Value>()) Value()),
 	// 1 - print
-	Handle(new Value(Handle<NativeFunction>(new PrintFn()))),
+	Value(::new(GC::alloc<NativeFunction>()) PrintFn()),
 	// 2 - input
-	Handle(new Value(Handle<NativeFunction>(new InputFn()))),
+	Value(::new(GC::alloc<NativeFunction>()) InputFn()),
 	// 3 - if
-	Handle(new Value(Handle<NativeFunction>(new IfFn()))),
+	Value(::new(GC::alloc<NativeFunction>()) IfFn()),
 	// 4 - Str
-	Handle(new Value(Handle<NativeFunction>(new StrFn()))),
+	Value(::new(GC::alloc<NativeFunction>()) StrFn()),
 	// 5 - Num
-	Handle(new Value(Handle<NativeFunction>(new NumFn()))),
+	Value(::new(GC::alloc<NativeFunction>()) NumFn()),
 	// 6 - vars
-	Handle(new Value(Handle<NativeFunction>(new VarsFn()))),
+	Value(::new(GC::alloc<NativeFunction>()) VarsFn()),
 	// 7 - async
-	Handle(new Value(Handle<NativeFunction>(new AsyncFn()))),
+	Value(::new(GC::alloc<NativeFunction>()) AsyncFn()),
 	// 8 - import
-	Handle(new Value(Handle<NativeFunction>(new ImportFn()))),
+	Value(::new(GC::alloc<NativeFunction>()) ImportFn()),
 
 	// - range (need objects first...)
 	// - copy
-	// -
+	// - size
+	//
 };
 
-const Handle<Value>& get_global_id(int64_t id) {
+// Assert
+static_assert(sizeof(NativeFunction) == sizeof(PrintFn), "PrintFn wrong size");
+static_assert(sizeof(NativeFunction) == sizeof(InputFn), "InputFn wrong size");
+static_assert(sizeof(NativeFunction) == sizeof(IfFn), "IfFn wrong size");
+static_assert(sizeof(NativeFunction) == sizeof(StrFn), "StrFn wrong size");
+static_assert(sizeof(NativeFunction) == sizeof(NumFn), "NumFn wrong size");
+static_assert(sizeof(NativeFunction) == sizeof(VarsFn), "VarsFn wrong size");
+static_assert(sizeof(NativeFunction) == sizeof(AsyncFn), "AsyncFn wrong size");
+static_assert(sizeof(NativeFunction) == sizeof(ImportFn), "ImportFn wrong size");
+
+unsigned short global_ids_count = sizeof(global_ids);
+
+const Value& get_global_id(int64_t id) {
 	return global_ids[id];
 }

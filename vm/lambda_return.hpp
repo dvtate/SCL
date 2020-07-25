@@ -31,7 +31,6 @@
  * There is a lot of room for optimization here
  * - Noteably, reducing number of values stored
  * - Removing safety checks performed by compiler
- *
  */
 
 // executed by rt event loop
@@ -103,7 +102,6 @@ public:
 
 	void mark() override {
 		GC::mark(this->ret);
-		this->ret.mark();
 	}
 };
 
@@ -130,11 +128,7 @@ public:
 			this->rt->freeze_running();
 	}
 
-	void mark() override {
-		this->frame_target->mark();
-		this->stack_target->mark();
-		this->rt->mark();
-	}
+	void mark() override { }
 };
 
 #endif //DLANG_LAMBDA_RETURN_HPP

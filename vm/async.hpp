@@ -23,7 +23,7 @@ public:
 	std::shared_ptr<SyncCallStack> stack_target;
 
 	AsyncResultMsg(std::shared_ptr<Value> ret, std::shared_ptr<SyncCallStack> stack_target):
-		ret(std::move(ret)), stack_target(std::move(stack_target)) {}
+		ret(*ret), stack_target(std::move(stack_target)) {}
 
 	void action(Runtime& rt) override {
 		stack_target->back()->eval_stack.emplace_back(ret);
@@ -32,7 +32,7 @@ public:
 		rt.set_active(this->stack_target);
 	}
 	void mark() override {
-		ret.mark();
+		GC::mark(ret);
 	}
 };
 
@@ -44,6 +44,8 @@ public:
 
 	// this gets set when user invokes the future functor
 	std::shared_ptr<SyncCallStack> stack_target{nullptr}; //
+
+	// TODO mutex
 
 	AsyncReturnNativeFn() {}
 
@@ -59,28 +61,28 @@ public:
 
 	void mark() override {
 		if (ret)
-			ret->mark();
+			GC::mark(*ret);
 	}
 };
 
 /// typeof async(fn)(args)
 class AsyncFutureNativeFn : public virtual NativeFunction {
 public:
-	AsyncReturnNativeFn ofn;
+	AsyncReturnNativeFn* ofn;
 
-	explicit AsyncFutureNativeFn(const Handle<AsyncReturnNativeFn>& ofn): ofn(ofn) {}
+	explicit AsyncFutureNativeFn(AsyncReturnNativeFn* ofn): ofn(ofn) {}
 
 	void operator()(Frame& f) override {
-		*ofn.ptr->stack_target = f.rt->running;
-		if (ofn.ptr->ret != nullptr) {
-			f.eval_stack.emplace_back(*ofn.ptr->ret);
+		this->ofn->stack_target = f.rt->running;
+		if (this->ofn->ret != nullptr) {
+			f.eval_stack.emplace_back(*this->ofn->ret);
 		} else {
 			f.rt->freeze_running();
 		}
 	}
 
 	void mark() override {
-		ofn.mark();
+		ofn->mark();
 	}
 };
 
@@ -98,24 +100,21 @@ public:
 			// Make async lambda call
 
 			// Get lambda
-			Value::lam_t &receiver = std::get<Value::lam_t>(v.v);
-			auto& c = *receiver->ptr;
+			auto& c = *std::get<ValueTypes::lam_ref>(v.v);
 
 			// get input (pass by reference vs value
-			Value::ref_t &receiver1 = std::get<Value::ref_t>(f.eval_stack.back().v);
-			c.vars[c.i_id].set_ptr(f.eval_stack.back().type() == Value::VType::REF
-				? receiver1->ptr
-				: new Value(f.eval_stack.back()));
+			c.vars[c.i_id] =  f.eval_stack.back().type() == Value::VType::REF
+				? std::get<Value::ref_t>(f.eval_stack.back().v)
+				: ::new(GC::alloc<Value>()) Value(f.eval_stack.back());
 			f.eval_stack.pop_back();
 
 			// make output fn
-			auto* ofn = new AsyncReturnNativeFn();
-			auto* future = new AsyncFutureNativeFn(Handle<AsyncReturnNativeFn>(
-					Handle<AsyncReturnNativeFn>(ofn)));
-			c.vars[c.o_id].set_ptr(new Value(Handle<NativeFunction>(ofn)));
+			auto* ofn = ::new(GC::alloc<AsyncReturnNativeFn>()) AsyncReturnNativeFn();
+			auto* future = ::new(GC::alloc<AsyncFutureNativeFn>()) AsyncFutureNativeFn(ofn);
+			c.vars[c.o_id] = ::new(GC::alloc<Value>()) Value((NativeFunction*) ofn);
 
 			// return future functor
-			f.rt->running->back()->eval_stack.emplace_back(Value(Handle<NativeFunction>(future)));
+			f.rt->running->back()->eval_stack.emplace_back((NativeFunction*)future);
 
 			// context switch to other frame
 			auto rcs = f.rt->running;

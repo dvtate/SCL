@@ -13,7 +13,6 @@
 static void invoke(Frame& f) {
 	Value v = f.eval_stack.back();
 	f.eval_stack.pop_back();
-
 	vm_util::invoke_value_sync(f, v, false);
 }
 
@@ -45,7 +44,7 @@ void index(Frame& f) {
 	if (std::holds_alternative<Value::list_ref>(v->v)) {
 		auto l = std::get<Value::list_ref>(v->v);
 		try {
-			f.eval_stack.back() = l.ptr->at(ind);
+			f.eval_stack.back() = l->at(ind);
 		} catch (...) {
 			f.eval_stack.back() = Value();
 		}
@@ -54,10 +53,10 @@ void index(Frame& f) {
 	}
 }
 
-//
+// [ ... ]
 void make_list(Frame& f, uint32_t n) {
-	Value lv(Handle(new std::vector<Value>()));
-	auto& l = std::get<Value::list_ref>(lv.v).ptr;
+	Value lv(::new(GC::alloc<ValueTypes::list_t>()) ValueTypes::list_t());
+	auto* l = std::get<Value::list_ref>(lv.v);
 
 	// take items off stack and put them into lv -> l
 	l->reserve(n);
@@ -72,8 +71,7 @@ static void use_lit(Frame& f, const std::size_t litnum) {
 		f.eval_stack.emplace_back(std::get<Value>(lit.v));
 	} else {
 		auto &cd = std::get<ClosureDef>(lit.v);
-
-		auto *c = new Closure();
+		auto* c = ::new(GC::alloc<Closure>()) Closure();
 
 #ifdef DLANG_DEBUG
 		// capture lexical vars
@@ -99,7 +97,7 @@ static void use_lit(Frame& f, const std::size_t litnum) {
 		// literal index for declaring locals
 		c->lit = litnum;
 
-		f.eval_stack.emplace_back(Value(Handle<Closure>(c)));
+		f.eval_stack.emplace_back(c);
 	}
 }
 
@@ -113,7 +111,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 		case BCInstr::OPCode::USE_ID:
 #ifdef DLANG_DEBUG
 			try {
-				Value* v = f.closure.vars.at(cmd.i).get_ptr();
+				Value* v = f.closure.vars.at(cmd.i);
 				if (v) {
 					f.eval_stack.emplace_back(*v);
 				} else {
@@ -124,9 +122,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 				DLANG_DEBUG_MSG("Undefined var id: " <<cmd.i <<std::endl);
 			}
 #else
-		{
-			f.eval_stack.emplace_back(*f.closure.vars[cmd.i]->ptr);
-		}
+			f.eval_stack.emplace_back(*f.closure.vars[cmd.i]);
 #endif
 			return;
 
@@ -152,9 +148,8 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			use_lit(f, cmd.i);
 			return;
 
-
 		case BCInstr::OPCode::VAL_EMPTY:
-			f.eval_stack.emplace_back(Value());
+			f.eval_stack.emplace_back();
 			return;
 		case BCInstr::OPCode::CLEAR_STACK:
 			f.eval_stack.clear();
@@ -165,9 +160,9 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 
 		// declaring a mutable identifier
 		case BCInstr::OPCode::DECL_ID: {
-			auto& v = f.closure.vars[cmd.i];
-			if (v->ptr == nullptr) // undefined
-				v.ptr = new Value();
+			auto* v = f.closure.vars[cmd.i];
+			if (v == nullptr) // undefined
+				v = ::new(GC::alloc<Value>()) Value();
 			return;
 		};
 
@@ -183,9 +178,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 				DLANG_DEBUG_MSG("SET_ID(" <<cmd.i <<") failed\n");
 			}
 #else
-		{
-			*f.closure.vars[cmd.i]->ptr = f.eval_stack.back();
-		}
+			*f.closure.vars[cmd.i] = f.eval_stack.back();
 #endif
 			break;
 
@@ -194,6 +187,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			return;
 
 		case BCInstr::OPCode::SET_INDEX: {
+			// TODO bounds checking in debug mode
 			const Value v = f.eval_stack.back();
 			f.eval_stack.pop_back();
 			const Value ind_v = f.eval_stack.back();
@@ -210,7 +204,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 					return;
 			}
 			if (f.eval_stack.back().type() == Value::VType::LIST) {
-				(*std::get<Value::list_ref>(f.eval_stack.back().v).ptr)[ind] = v;
+				(*std::get<Value::list_ref>(f.eval_stack.back().v))[ind] = v;
 			} else {
 				// typerror
 			}
@@ -218,24 +212,24 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 
 		case BCInstr::OPCode::MK_OBJ:
 			if (cmd.i == 0) {
-				f.eval_stack.emplace_back(Value(Handle(new Value::obj_t())));
+				f.eval_stack.emplace_back(::new(GC::alloc<ValueTypes::obj_t>()) ValueTypes::obj_t());
 			} else {
+				// TODO add support object initializer lists
 				std::cerr <<"sry rn only support {} objects";
 			}
 			return;
 
 		case BCInstr::OPCode::USE_MEM_L:
 			try {
-				f.eval_stack.back() = (*std::get<Value::obj_ref>(f.eval_stack.back().v).ptr)
+				f.eval_stack.back() = (*std::get<Value::obj_ref>(f.eval_stack.back().v))
 					[std::get<Value::str_t>(std::get<Value>(f.rt->vm->literals[cmd.i].v).v)];
-
 			} catch (const std::bad_variant_access& e) {
-				// typeerror
+				// TODO typeerror
 			}
 			return;
 		case BCInstr::OPCode::SET_MEM_L:
 		{
-			Value& ref = (*std::get<Value::obj_ref>(f.eval_stack.back().v).ptr)
+			Value& ref = (*std::get<Value::obj_ref>(f.eval_stack.back().v))
 				[std::get<Value::str_t>(std::get<Value>(f.rt->vm->literals[cmd.i].v).v)];
 			f.eval_stack.pop_back();
 			ref = f.eval_stack.back();

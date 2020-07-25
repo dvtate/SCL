@@ -84,8 +84,14 @@ namespace GC {
 	/// Mark items that are in use...
 	/// Note: for complex types you should also call mark on it's children
 	/// 	This is best done by overloading the
-	inline void mark(void* ptr) {
-		((Usage *) (((char *) ptr) - 1))->mark = Usage::Color::GREY; // TODO tricolor
+	inline bool mark(void* ptr) {
+		auto* p = ((Usage *) (((char *) ptr) - 1));
+		if (p->mark != Usage::Color::GREY) {
+			p->mark = Usage::Color::GREY;
+			return true;
+		} else {
+			return false;
+		}
 	}
 
 	template <class T>
@@ -97,7 +103,7 @@ namespace GC {
 		generic_destructors.emplace_back();
 		const Destructor<T> destroy;
 		std::memcpy(&generic_destructors.back(), &destroy, sizeof(destroy));
-		return p;
+		return ret;
 	}
 
 #define DLANG__GC_DECLS(TYPE) \

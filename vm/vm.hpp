@@ -20,7 +20,7 @@
 #include "bc/exec_bc_instr.hpp"
 #include "literal.hpp"
 #include "value.hpp"
-
+#include "global_ids.hpp"
 
 class Frame;
 class Runtime;
@@ -192,18 +192,22 @@ public:
 	// Process entry point
 	void run();
 
-	//
-	void mark() {
-		this->running->mark();
-		for (auto sp : this->undead) {
-			sp->mark();
-		}
-	}
-
 private:
 	// mutex guards on r/w
 	// NOTE: treated as queue because all msgs read at once in FIFO order
 	std::vector<RTMessage*> _msg_queue;
+
+public:
+	//
+	void mark() {
+		this->running->mark();
+		for (auto sp : this->undead)
+			sp->mark();
+
+		std::lock_guard<std::mutex> m(this->msg_queue_mtx);
+		for (auto* msg : this->_msg_queue)
+			msg->mark();
+	}
 
 };
 
@@ -226,9 +230,21 @@ public:
 		this->main_thread->mark();
 		for (auto& sp : this->worker_threads)
 			sp->mark();
+		for (unsigned short i = 0; i < global_ids_count; i++)
+			GC::mark((Value&) get_global_id(i));
 	}
 };
 
+// GC tracing
+namespace GC {
+	void mark(RTMessage& msg) {
+		msg.mark();
+	}
+	void mark(RTMessage* msg) {
+		if (mark((void*) msg))
+			msg->mark();
+	}
+}
 
 /* Original plan:
 	Making calls:
