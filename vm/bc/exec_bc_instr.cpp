@@ -160,7 +160,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 
 		// declaring a mutable identifier
 		case BCInstr::OPCode::DECL_ID: {
-			auto* v = f.closure.vars[cmd.i];
+			auto*& v = f.closure.vars[cmd.i];
 			if (v == nullptr) // undefined
 				v = ::new(GC::alloc<Value>()) Value();
 			return;
