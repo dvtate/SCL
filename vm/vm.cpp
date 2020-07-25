@@ -5,6 +5,7 @@
 #include <iostream>
 #include <thread>
 #include <chrono>
+#include <cassert>
 
 #include "vm.hpp"
 #include "value.hpp"
@@ -29,7 +30,7 @@ public:
 	}
 	void mark() override {}
 };
-
+static_assert(sizeof(ExitProgramReturn) == sizeof(NativeFunction), "Should be same size for convenience");
 
 VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv)
 {

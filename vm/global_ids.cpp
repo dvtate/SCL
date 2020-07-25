@@ -199,8 +199,8 @@ class VarsFn : public virtual NativeFunction {
 // Create async wrapper for closure (see async.hpp)
 class AsyncFn : public virtual NativeFunction {
 	void operator()(Frame& f) override {
-		f.eval_stack.back() = Value(
-				::new(GC::alloc<NativeFunction>())
+		f.eval_stack.back() = Value((NativeFunction*)
+				::new(GC::alloc<AsyncWrapperNativeFn>())
 					AsyncWrapperNativeFn(f.eval_stack.back()));
 	}
 	void mark() override {}

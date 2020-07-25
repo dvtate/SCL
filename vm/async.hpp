@@ -52,9 +52,8 @@ public:
 	void operator()(Frame& f) override {
 		this->ret = std::make_shared<Value>(f.eval_stack.back());
 		f.rt->kill_running();
-		if (this->stack_target == nullptr) {
+		if (this->stack_target == nullptr)
 			return;
-		}
 		(*this->stack_target)[0]->rt->recv_msg(
 				new AsyncResultMsg(this->ret, this->stack_target));
 	}

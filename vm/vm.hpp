@@ -199,6 +199,7 @@ public:
 		for (auto sp : this->undead)
 			sp->mark();
 
+		// Some messages have gc'd properties even though they're not gc'd
 		std::lock_guard<std::mutex> m(this->msg_queue_mtx);
 		for (auto* msg : this->_msg_queue)
 			msg->mark();

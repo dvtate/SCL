@@ -41,8 +41,8 @@ namespace vm_util {
 
 			f.eval_stack.pop_back();
 
-			c.vars[c.o_id] = ::new(GC::alloc<Value>()) Value(
-					::new(GC::alloc<NativeFunction>()) LambdaReturnNativeFn(f));
+			c.vars[c.o_id] = ::new(GC::alloc<Value>()) Value((NativeFunction*)
+					::new(GC::alloc<LambdaReturnNativeFn>()) LambdaReturnNativeFn(f));
 
 			f.rt->running->emplace_back(std::make_shared<Frame>(f.rt, c));
 
