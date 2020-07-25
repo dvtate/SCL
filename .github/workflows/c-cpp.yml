@@ -1,0 +1,24 @@
+name: C/C++ CI
+
+on:
+  push:
+    branches: [ master ]
+  pull_request:
+    branches: [ master ]
+
+jobs:
+  build:
+
+    runs-on: ubuntu-latest
+
+    steps:
+    - uses: actions/checkout@v2
+    - name: build
+      run: |
+          mkdir build 
+          cd build
+          export CXX=g++-9
+          export CC=gcc-9
+          echo /usr/bin/g*
+          cmake ..
+          make -j `nproc`
