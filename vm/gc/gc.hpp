@@ -64,8 +64,8 @@ namespace GC {
 
 	// Track 3rd party types
 	// TODO paging, recycling, etc.
-	std::deque<void *> generic_ptrs;
-	std::deque<_Destructor> generic_destructors;
+	extern std::deque<void *> generic_ptrs;
+	extern std::deque<_Destructor> generic_destructors;
 
 
 	// tracking data

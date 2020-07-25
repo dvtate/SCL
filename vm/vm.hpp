@@ -30,7 +30,7 @@ class Value;
 // abstract type used for ITC/IPC/Synchronization
 class RTMessage {
 public:
-	virtual ~RTMessage() = 0;
+	virtual ~RTMessage(){};
 	virtual void action(Runtime&) = 0;
 	virtual void mark() = 0;
 };
@@ -86,11 +86,6 @@ public:
 			GC::mark(this->error_handler);
 	}
 };
-
-void SyncCallStack::mark() {
-	for (auto& f : *this)
-		f->mark();
-}
 
 // different threads running on same process
 class Runtime {
@@ -237,10 +232,10 @@ public:
 
 // GC tracing
 namespace GC {
-	void mark(RTMessage& msg) {
+	inline void mark(RTMessage& msg) {
 		msg.mark();
 	}
-	void mark(RTMessage* msg) {
+	inline void mark(RTMessage* msg) {
 		if (mark((void*) msg))
 			msg->mark();
 	}

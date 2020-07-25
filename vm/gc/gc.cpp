@@ -9,6 +9,8 @@
 
 namespace GC {
 
+	std::deque<void *> generic_ptrs;
+	std::deque<_Destructor> generic_destructors;
 // Declare tracking containers
 #define DLANG__GC_HEAP(TYPE, NAME) \
 	std::vector<TYPE*> heap_NAME; \

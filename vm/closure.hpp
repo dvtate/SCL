@@ -41,7 +41,7 @@ public:
 
 namespace GC {
 	/// GC mark
-	void mark(Closure& c) {
+	inline void mark(Closure& c) {
 		for (auto& p : c.vars)
 			mark(p.second);
 	}

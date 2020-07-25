@@ -11,6 +11,10 @@
 #include "bc/exec_bc_instr.hpp"
 #include "global_ids.hpp"
 
+void SyncCallStack::mark() {
+	for (auto& f : *this)
+		f->mark();
+}
 
 class ExitProgramReturn : public virtual NativeFunction {
 public:
