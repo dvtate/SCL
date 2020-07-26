@@ -21,13 +21,10 @@ void print_help_msg(){
 	   " -f : required input file\n";
 }
 
+VM* interpreter;
 
 
 int main(int argc, char** argv) {
-	bool run, out_bc, out_bct;
-	char* fname = nullptr;
-
-	run = out_bc = out_bct = false;
 	/* For now these are options
 	 * -c : compile
 	 * -r : run(let return right)
@@ -37,6 +34,9 @@ int main(int argc, char** argv) {
 	 * -f : required input file
 	 */
 
+	bool run, out_bc, out_bct;
+	run = out_bc = out_bct = false;
+	char* fname = nullptr;
 	int opt;
 	while ((opt = getopt(argc, argv, "croOf:"))) {
 		int b = false;
@@ -75,10 +75,11 @@ int main(int argc, char** argv) {
 #ifdef DLANG_DEBUG
 		std::cout <<"done\n";
 #endif
-		// TODO: capture argv...
-
-		VM interpreter{lits, { "argv not implemented" }};
-		interpreter.run();
+		std::vector<std::string> args(argc);
+		for (int i = 0; i < argc; i++)
+			args.emplace_back(argv[i]);
+		interpreter = new VM{lits, args};
+		interpreter->run();
 		return 0; // never gets called... (hopefully)
 	}
 	Program p;

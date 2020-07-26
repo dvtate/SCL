@@ -17,6 +17,7 @@ static void invoke(Frame& f) {
 }
 
 // ([])
+// TODO refactor
 void index(Frame& f) {
 	Value* v = f.eval_stack.back().deref();
 	if (v == nullptr) {
@@ -26,7 +27,12 @@ void index(Frame& f) {
 
 	uint64_t ind;
 	if (std::holds_alternative<Value::int_t>(v->v)) {
-		ind = std::get<Value::int_t>(v->v);
+		auto i = std::get<Value::int_t>(v->v);
+		if (i < 0) {
+			f.eval_stack.pop_back();
+			f.eval_stack.back() = Value();
+			return;
+		}
 	} else if (std::holds_alternative<Value::float_t>(v->v)) {
 		ind = (uint64_t) std::get<Value::float_t>(v->v);
 	} else {
@@ -45,6 +51,13 @@ void index(Frame& f) {
 		auto l = std::get<Value::list_ref>(v->v);
 		try {
 			f.eval_stack.back() = l->at(ind);
+		} catch (...) {
+			f.eval_stack.back() = Value();
+		}
+	} else if (std::holds_alternative<ValueTypes::str_t>(v->v)) {
+		auto s = std::get<ValueTypes::str_t>(v->v);
+		try {
+			f.eval_stack.back() = Value(std::string() + s.at(ind));
 		} catch (...) {
 			f.eval_stack.back() = Value();
 		}
@@ -169,11 +182,11 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 		case BCInstr::OPCode::SET_ID:
 #ifdef DLANG_DEBUG
 			try {
-				Value* p = f.closure.vars.at(cmd.i).get_ptr();
+				Value* p = f.closure.vars.at(cmd.i);
 				if (!p) {
 					DLANG_DEBUG_MSG("id " <<cmd.i <<" = null\n");
 				}
-				*f.closure.vars[cmd.i].get_ptr() = f.eval_stack.back();
+				*f.closure.vars[cmd.i] = f.eval_stack.back();
 			} catch (...) {
 				DLANG_DEBUG_MSG("SET_ID(" <<cmd.i <<") failed\n");
 			}
@@ -193,20 +206,29 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			const Value ind_v = f.eval_stack.back();
 			std::size_t ind;
 			switch (ind_v.type()) {
-				case Value::VType::INT:
+				case ValueTypes::VType::INT:
 					ind = std::get<Value::int_t>(ind_v.v);
 					break;
-				case Value::VType::FLOAT:
+				case ValueTypes::VType::FLOAT:
 					ind = (std::size_t) std::get<Value::float_t>(ind_v.v);
 					break;
 				default:
 					std::cout <<"SET_INDEX: type-error\n";
 					return;
 			}
-			if (f.eval_stack.back().type() == Value::VType::LIST) {
-				(*std::get<Value::list_ref>(f.eval_stack.back().v))[ind] = v;
-			} else {
-				// typerror
+			switch (f.eval_stack.back().type()) {
+				case ValueTypes::VType::LIST:
+					(*std::get<Value::list_ref>(f.eval_stack.back().v))[ind] = v;
+					break;
+				case ValueTypes::VType::STR:
+					try {
+						std::get<ValueTypes::str_t>(f.eval_stack.back().v)[ind] =
+						        std::get<ValueTypes::str_t>(v.v)[0];
+					} catch (...) {}
+					break;
+
+				// TODO object fast set
+				// TODO type error
 			}
 		};
 

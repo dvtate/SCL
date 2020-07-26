@@ -7,6 +7,7 @@
 #include <cassert>
 #include "global_ids.hpp"
 
+#include "value_types.hpp"
 #include "value.hpp"
 #include "vm.hpp"
 #include "operators/internal_tools.hpp"
@@ -206,6 +207,65 @@ class AsyncFn : public virtual NativeFunction {
 	void mark() override {}
 };
 
+class SizeFn : public virtual NativeFunction {
+	void operator()(Frame& f) override {
+		Value& v = f.eval_stack.back();
+		switch (v.type()) {
+			case ValueTypes::VType::STR:
+				v = Value((ValueTypes::int_t) std::get<ValueTypes::str_t>(v.v).size());
+				break;
+			case ValueTypes::VType::LIST:
+				v = Value((ValueTypes::int_t) std::get<ValueTypes::list_ref>(v.v)->size());
+				break;
+			case ValueTypes::VType::OBJ:
+				v = Value((ValueTypes::int_t) std::get<ValueTypes::obj_ref>(v.v)->size());
+				break;
+			default:
+				v = Value();
+				break;
+		}
+	}
+	void mark() override {}
+};
+
+class CopyFn : public virtual NativeFunction {
+	// TODO move this to Value class
+	Value copy_value(const Value& v) {
+		switch (v.type()) {
+			// non-reference types
+			case ValueTypes::VType::FLOAT:
+			case ValueTypes::VType::INT:
+			case ValueTypes::VType::EMPTY:
+			case ValueTypes::VType::STR:
+				return v;
+
+			case ValueTypes::VType::LIST: {
+				const auto* l = std::get<ValueTypes::list_ref>(v.v);
+				ValueTypes::list_ref ret = ::new(GC::alloc<ValueTypes::list_t>()) ValueTypes::list_t(l->size());
+				for (auto& e : *l)
+					ret->emplace_back(copy_value(e));
+				return Value(ret);
+			};
+			case ValueTypes::VType::OBJ: {
+				const auto* o = std::get<ValueTypes::obj_ref>(v.v);
+				ValueTypes::obj_ref ret = ::new(GC::alloc<ValueTypes::obj_t>()) ValueTypes::obj_t();
+				for (const auto& p : *o)
+					(*ret)[p.first] = copy_value(p.second);
+				return Value(ret);
+			};
+
+			// TODO closures, native functions:
+			case ValueTypes::VType::LAM: case ValueTypes::VType::N_FN:
+				return v;
+		}
+	}
+	void operator()(Frame& f) override {
+		f.eval_stack.back() = copy_value(f.eval_stack.back());
+	}
+	void mark() override {}
+};
+
+
 // TODO due to recycling behavior, these should not be GC'd
 //  use normal values and copy them into GC'd Value*s as needed
 static Value global_ids[] {
@@ -234,7 +294,7 @@ static Value global_ids[] {
 	//
 };
 
-// Assert
+// We want to use the more performant, segregated GC spaces
 static_assert(sizeof(NativeFunction) == sizeof(PrintFn), "PrintFn wrong size");
 static_assert(sizeof(NativeFunction) == sizeof(InputFn), "InputFn wrong size");
 static_assert(sizeof(NativeFunction) == sizeof(IfFn), "IfFn wrong size");

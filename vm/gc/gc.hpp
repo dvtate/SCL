@@ -13,6 +13,8 @@
 #include <cstdlib>
 #include <cstring> // memcpy
 
+#include "../value_types.hpp"
+
 /* TODO
  * Generic pointer types
  * Space tracking
@@ -38,7 +40,6 @@
  * -
  */
 
-class Value;
 
 //
 namespace GC {
@@ -106,14 +107,6 @@ namespace GC {
 		return ret;
 	}
 
-#define DLANG__GC_DECLS(TYPE) \
-	template<> TYPE* alloc<TYPE>(void); \
-	extern void mark(TYPE&); \
-	extern void mark(TYPE*);
-
-	DLANG__GC_DECLS(Value);
-
-
 	// Free items not in use
 	void sweep();
 
@@ -121,8 +114,23 @@ namespace GC {
 }
 
 
+// Specializations for common internal types
+class Value;
+class Closure;
 
+namespace GC {
 
+#define DLANG__GC_DECLS(TYPE) \
+	template<> TYPE* alloc<TYPE>(void); \
+	extern void mark(TYPE&); \
+	extern void mark(TYPE*);
 
+	DLANG__GC_DECLS(Value);
+//	DLANG__GC_DECLS(ValueTypes::list_t);
+//	DLANG__GC_DECLS(ValueTypes::obj_t);
+//	DLANG__GC_DECLS(NativeFunction);
+//	DLANG__GC_DECLS(Closure);
+
+}
 
 #endif //DLANG_GC_HPP

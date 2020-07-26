@@ -55,6 +55,13 @@ VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv)
 		main.vars[id] = ::new(GC::alloc<Value>()) Value(get_global_id(id));
 	}
 
+	// Load argv
+	ValueTypes::list_ref args = ::new(GC::alloc<ValueTypes::list_t>()) ValueTypes::list_t();
+	for (const std::string& s : argv)
+		args->emplace_back(Value(s));
+
+	main.vars[main.i_id] = ::new(GC::alloc<Value>()) Value(args);
+
 	main.vars[main.o_id] = ::new(GC::alloc<Value>()) Value(
 			::new(GC::alloc<NativeFunction>()) ExitProgramReturn());
 

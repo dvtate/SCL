@@ -30,7 +30,7 @@
 /*
  * There is a lot of room for optimization here
  * - Noteably, reducing number of values stored
- * - Removing safety checks performed by compiler
+ * - Removing runtime safety checks performed at compile time
  */
 
 // executed by rt event loop
@@ -123,6 +123,7 @@ public:
 				this->frame_target,
 				this->stack_target,
 				f.eval_stack.back()));
+
 		// prevent double-return
 		if (this->rt->running == this->stack_target)
 			this->rt->freeze_running();
