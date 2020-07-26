@@ -32,7 +32,7 @@ class RTMessage {
 public:
 	virtual ~RTMessage(){};
 	virtual void action(Runtime&) = 0;
-	virtual void mark() = 0;
+	virtual void mark() { };
 };
 
 // TODO
@@ -228,6 +228,16 @@ public:
 			sp->mark();
 		for (unsigned short i = 0; i < global_ids_count; i++)
 			GC::mark((Value&) get_global_id(i));
+	}
+
+	void do_gc() {
+		// Mark all values in use
+		std::cout <<"marking" <<std::endl;
+		this->mark();
+
+		// Free unused
+		std::cout <<"Sweeping" <<std::endl;
+		GC::sweep();
 	}
 };
 

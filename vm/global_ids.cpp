@@ -304,7 +304,6 @@ static_assert(sizeof(NativeFunction) == sizeof(VarsFn), "VarsFn wrong size");
 static_assert(sizeof(NativeFunction) == sizeof(AsyncFn), "AsyncFn wrong size");
 static_assert(sizeof(NativeFunction) == sizeof(ImportFn), "ImportFn wrong size");
 
-unsigned short global_ids_count = sizeof(global_ids);
 
 const Value& get_global_id(int64_t id) {
 	return global_ids[id];

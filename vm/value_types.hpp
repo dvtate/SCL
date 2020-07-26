@@ -22,7 +22,7 @@ public:
 	virtual ~NativeFunction(){};
 	// Invoke function
 	virtual void operator()(Frame& f) = 0;
-	virtual void mark() = 0;
+	virtual void mark() {};
 };
 
 namespace ValueTypes {

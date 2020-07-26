@@ -93,8 +93,13 @@ void Runtime::run() {
 		// make sure we have something to do
 		if (this->running == nullptr) {
 			if (this->active.empty()) {
-				using namespace std::chrono_literals;
-				std::this_thread::sleep_for(1ms);
+				if (GC::size() - GC::last_gc_size > GC::THRESHOLD) {
+					std::cout <<"DOGC!\n";
+					this->vm->do_gc();
+				} else {
+					using namespace std::chrono_literals;
+					std::this_thread::sleep_for(1ms);
+				}
 			} else {
 				DLANG_DEBUG_MSG("VM:RT:Pulled Stack from active\n");
 				this->running = this->active.back();

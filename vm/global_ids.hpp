@@ -10,6 +10,6 @@
 
 class Value;
 const Value& get_global_id(int64_t id);
-extern unsigned short global_ids_count;
+constexpr unsigned short global_ids_count = 9;
 
 #endif //DLANG_GLOBAL_IDS_HPP

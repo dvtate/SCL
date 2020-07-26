@@ -57,10 +57,9 @@ namespace GC {
 			obj->~T();
 		}
 	};
-
 	//generic finalizer that does nothing
 	struct _Destructor {
-		virtual void destroy(void *obj) const {}
+		virtual void destroy(void* obj) const {}
 	};
 
 	// Track 3rd party types
@@ -110,7 +109,17 @@ namespace GC {
 	// Free items not in use
 	void sweep();
 
+	// Mark + sweep
 	void do_gc();
+
+	// How big is heap?
+	unsigned long size();
+
+	// Threshold heap growth for GC
+	constexpr unsigned long THRESHOLD = 1024;
+
+	//
+	extern unsigned long last_gc_size;
 }
 
 
@@ -126,10 +135,10 @@ namespace GC {
 	extern void mark(TYPE*);
 
 	DLANG__GC_DECLS(Value);
-//	DLANG__GC_DECLS(ValueTypes::list_t);
-//	DLANG__GC_DECLS(ValueTypes::obj_t);
-//	DLANG__GC_DECLS(NativeFunction);
-//	DLANG__GC_DECLS(Closure);
+	DLANG__GC_DECLS(ValueTypes::list_t);
+	DLANG__GC_DECLS(ValueTypes::obj_t);
+	DLANG__GC_DECLS(NativeFunction);
+	DLANG__GC_DECLS(Closure);
 
 }
 

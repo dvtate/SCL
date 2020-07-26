@@ -135,6 +135,9 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 				DLANG_DEBUG_MSG("Undefined var id: " <<cmd.i <<std::endl);
 			}
 #else
+//			std::cout <<"vid:" <<cmd.i
+//				<<"\tptr: " <<(void*) f.closure.vars[cmd.i]
+//				<< "\tv: " <<f.closure.vars[cmd.i]->to_string() <<std::endl;
 			f.eval_stack.emplace_back(*f.closure.vars[cmd.i]);
 #endif
 			return;

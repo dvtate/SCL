@@ -8,43 +8,61 @@
 #include "gc.hpp"
 
 namespace GC {
+	unsigned long last_gc_size = 0;
 
 	std::deque<void *> generic_ptrs;
 	std::deque<_Destructor> generic_destructors;
+
 // Declare tracking containers
 #define DLANG__GC_HEAP(TYPE, NAME) \
-	std::vector<TYPE*> heap_NAME; \
-	std::vector<TYPE*> recycle_bin_NAME;
+	std::vector<TYPE*> heap_##NAME; \
+	std::vector<TYPE*> recycle_bin_##NAME;
 
 // Function template specializations for given type
 #define DLANG__GC_SPEC(TYPE, NAME) \
 	template<> \
 	TYPE* alloc<TYPE>() { \
 		TYPE* p; \
-		if (recycle_bin_NAME.empty()) { \
+		if (recycle_bin_##NAME.empty()) { \
 			p = (TYPE*) (((char*) ::malloc(sizeof(TYPE) + 1)) + 1); \
-			heap_NAME.emplace_back(p); \
+			heap_##NAME.emplace_back(p); \
 		} else { \
-			p = recycle_bin_NAME.back(); \
-			recycle_bin_NAME.pop_back(); \
+			p = recycle_bin_##NAME.back(); \
+			recycle_bin_##NAME.pop_back(); \
 		}\
 		((Usage*) (((char*) p) - 1))->mark = Usage::Color::WHITE; \
 		return p; \
 	} \
 	inline void destroy(TYPE* ptr) { \
 		((Usage*) (((char*) ptr) - 1))->mark = Usage::Color::FREE; \
-		recycle_bin_NAME.emplace_back(ptr); \
+		recycle_bin_##NAME.emplace_back(ptr); \
 		ptr->~TYPE(); \
 	}
 
-#define DLANG__GC_SWEEP(TYPE, NAME) \
-	for (auto* ptr : heap_NAME) { \
+#define DLANG__GC_HEAP_NAME(NAME) heap_##NAME
+
+#define DLANG__GC_SWEEP(NAME) \
+	for (auto* ptr : DLANG__GC_HEAP_NAME(NAME)) { \
 		 if (((Usage*) (((char*) ptr) - 1))->mark == Usage::Color::WHITE) \
 		 	destroy(ptr); \
     }
 
 	DLANG__GC_HEAP(Value, value);
 	DLANG__GC_SPEC(Value, value);
+
+	using ValueTypes::list_t;
+	using ValueTypes::obj_t;
+	DLANG__GC_HEAP(list_t, value_list);
+	DLANG__GC_SPEC(list_t, value_list);
+
+	DLANG__GC_HEAP(obj_t, value_obj);
+	DLANG__GC_SPEC(obj_t, value_obj);
+
+	DLANG__GC_HEAP(NativeFunction, value_nfn);
+	DLANG__GC_SPEC(NativeFunction, value_nfn);
+
+	DLANG__GC_HEAP(Closure, value_closure);
+	DLANG__GC_SPEC(Closure, value_closure);
 
 	// Free items not in use
 	void sweep() {
@@ -59,6 +77,20 @@ namespace GC {
 			}
 		}
 
-		DLANG__GC_SWEEP(Value, value);
+		// Sweep Segregated storage
+		DLANG__GC_SWEEP(value);
+		DLANG__GC_SWEEP(value_list);
+		DLANG__GC_SWEEP(value_obj);
+		DLANG__GC_SWEEP(value_nfn);
+		DLANG__GC_SWEEP(value_closure);
+	}
+
+	unsigned long size() {
+		return generic_ptrs.size();
+			+ DLANG__GC_HEAP_NAME(value).size()
+			+ DLANG__GC_HEAP_NAME(value_list).size()
+			+ DLANG__GC_HEAP_NAME(value_obj).size()
+			+ DLANG__GC_HEAP_NAME(value_nfn).size()
+			+ DLANG__GC_HEAP_NAME(value_closure).size();
 	}
 }
