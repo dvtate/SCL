@@ -28,23 +28,31 @@ namespace GC {
 			heap_##NAME.emplace_back(p); \
 		} else { \
 			p = recycle_bin_##NAME.back(); \
+			std::cout <<"recycled "<<#TYPE <<": " <<(void*) p <<std::endl; \
 			recycle_bin_##NAME.pop_back(); \
-		}\
+		} \
 		((Usage*) (((char*) p) - 1))->mark = Usage::Color::WHITE; \
 		return p; \
 	} \
 	inline void destroy(TYPE* ptr) { \
+		std::cout <<"destroy: " <<#TYPE #NAME <<(void*)ptr <<std::endl; \
 		((Usage*) (((char*) ptr) - 1))->mark = Usage::Color::FREE; \
+		std::cout <<'a' <<std::endl; \
 		recycle_bin_##NAME.emplace_back(ptr); \
+		std::cout <<'b' <<std::endl; \
 		ptr->~TYPE(); \
+		std::cout <<'c' <<std::endl; \
 	}
 
 #define DLANG__GC_HEAP_NAME(NAME) heap_##NAME
 
 #define DLANG__GC_SWEEP(NAME) \
 	for (auto* ptr : DLANG__GC_HEAP_NAME(NAME)) { \
-		 if (((Usage*) (((char*) ptr) - 1))->mark == Usage::Color::WHITE) \
+		auto* u = (Usage*) (((char*) ptr) - 1); \
+		if (u->mark == Usage::Color::WHITE) \
 		 	destroy(ptr); \
+		else \
+			u->mark = Usage::Color::WHITE;\
     }
 
 	DLANG__GC_HEAP(Value, value);
@@ -69,11 +77,15 @@ namespace GC {
 		// Sweep generic types
 		for (int i = (int) generic_ptrs.size() - 1; i >= 0; i--) {
 			Usage* u = (Usage*) (((char*) generic_ptrs[i]) - 1);
+//			std::cout <<"generic: color: " <<(int) u->mark <<std::endl;
 			if(u->mark == Usage::Color::WHITE) {
 				generic_destructors[i].destroy(generic_ptrs[i]);
+				std::cout <<"Destroy generic\n";
 				free(u);
 				generic_ptrs.erase(generic_ptrs.begin() + i);
 				generic_destructors.erase(generic_destructors.begin() + i);
+			} else {
+				u->mark = Usage::Color::WHITE;
 			}
 		}
 
@@ -86,11 +98,13 @@ namespace GC {
 	}
 
 	unsigned long size() {
-		return generic_ptrs.size();
+		const auto ret = generic_ptrs.size();
 			+ DLANG__GC_HEAP_NAME(value).size()
 			+ DLANG__GC_HEAP_NAME(value_list).size()
 			+ DLANG__GC_HEAP_NAME(value_obj).size()
 			+ DLANG__GC_HEAP_NAME(value_nfn).size()
 			+ DLANG__GC_HEAP_NAME(value_closure).size();
+//		std::cout <<ret <<std::endl;
+		return ret;
 	}
 }

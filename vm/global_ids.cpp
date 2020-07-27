@@ -71,7 +71,7 @@ public:
 class IfFn : public virtual NativeFunction {
 	void operator()(Frame& f) override {
 
-		Value i = f.eval_stack.back();
+		Value& i = f.eval_stack.back();
 		DLANG_DEBUG_MSG("if(" << i.to_string() <<") called");
 		// invalid arg
 		if (i.type() != Value::VType::LIST)
@@ -88,24 +88,6 @@ class IfFn : public virtual NativeFunction {
 
 		// call/push corresponding value
 		vm_util::invoke_value_sync(f, params[ind], true);
-	}
-
-	void mark() override {}
-};
-
-class WhileFn : public virtual NativeFunction {
-	// decrease f.pos
-	// place call to arg 2 onto call stack
-	// continue execution
-	void operator()(Frame& f) override {
-		const Value i = f.eval_stack.back();
-
-		// TODO
-		if (i.type() == Value::VType::LIST) {
-
-		} else { // yikes...
-
-		}
 	}
 
 	void mark() override {}
@@ -257,6 +239,8 @@ class CopyFn : public virtual NativeFunction {
 			// TODO closures, native functions:
 			case ValueTypes::VType::LAM: case ValueTypes::VType::N_FN:
 				return v;
+			default:
+				throw "????";
 		}
 	}
 	void operator()(Frame& f) override {
@@ -272,21 +256,25 @@ static Value global_ids[] {
 	// 0 - empty
 	Value(::new(GC::alloc<Value>()) Value()),
 	// 1 - print
-	Value(::new(GC::alloc<NativeFunction>()) PrintFn()),
+	Value(::new(GC::alloc<PrintFn>()) PrintFn()),
 	// 2 - input
-	Value(::new(GC::alloc<NativeFunction>()) InputFn()),
+	Value(::new(GC::alloc<InputFn>()) InputFn()),
 	// 3 - if
-	Value(::new(GC::alloc<NativeFunction>()) IfFn()),
+	Value(::new(GC::alloc<IfFn>()) IfFn()),
 	// 4 - Str
-	Value(::new(GC::alloc<NativeFunction>()) StrFn()),
+	Value(::new(GC::alloc<StrFn>()) StrFn()),
 	// 5 - Num
-	Value(::new(GC::alloc<NativeFunction>()) NumFn()),
+	Value(::new(GC::alloc<NumFn>()) NumFn()),
 	// 6 - vars
-	Value(::new(GC::alloc<NativeFunction>()) VarsFn()),
+	Value(::new(GC::alloc<VarsFn>()) VarsFn()),
 	// 7 - async
-	Value(::new(GC::alloc<NativeFunction>()) AsyncFn()),
+	Value(::new(GC::alloc<AsyncFn>()) AsyncFn()),
 	// 8 - import
-	Value(::new(GC::alloc<NativeFunction>()) ImportFn()),
+	Value(::new(GC::alloc<ImportFn>()) ImportFn()),
+	// 9 - size
+	Value(::new(GC::alloc<SizeFn>()) SizeFn()),
+	// 10 - copy
+	Value(::new(GC::alloc<CopyFn>()) CopyFn()),
 
 	// - range (need objects first...)
 	// - copy
@@ -303,6 +291,8 @@ static_assert(sizeof(NativeFunction) == sizeof(NumFn), "NumFn wrong size");
 static_assert(sizeof(NativeFunction) == sizeof(VarsFn), "VarsFn wrong size");
 static_assert(sizeof(NativeFunction) == sizeof(AsyncFn), "AsyncFn wrong size");
 static_assert(sizeof(NativeFunction) == sizeof(ImportFn), "ImportFn wrong size");
+static_assert(sizeof(NativeFunction) == sizeof(SizeFn), "SizeFn wrong size");
+static_assert(sizeof(NativeFunction) == sizeof(CopyFn), "CopyFn wrong size");
 
 
 const Value& get_global_id(int64_t id) {

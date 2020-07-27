@@ -317,7 +317,7 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 
 	// convert paren exprs
 	if (stack.back().type == AST::NodeType::PAREN_EXPR) {
-		auto& m = stack.back().members[0];
+		auto m = stack.back().members[0];
 		if (isOperand(m))
 			stack.back() = m;
 	}

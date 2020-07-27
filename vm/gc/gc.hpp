@@ -94,7 +94,7 @@ namespace GC {
 		}
 	}
 
-	template <class T>
+		 template <class T>
 	T* alloc() {
 		Usage* p = (Usage*) (((char*) ::malloc(sizeof(T) + 1)) + 1);
 		p->mark = Usage::Color::WHITE; // TODO tricolor

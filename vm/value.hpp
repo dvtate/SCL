@@ -11,7 +11,6 @@
 #include <vector>
 
 #include "value_types.hpp"
-#include "gc/handle.hpp"
 #include "gc/gc.hpp"
 
 class Value {
@@ -36,13 +35,13 @@ public:
 	ValueTypes::variant_t v;
 
 	Value(){};
-	explicit Value(ValueTypes::empty_t in): 			v(in) {}
-	explicit Value(ValueTypes::float_t in): 			v(in) {}
+	explicit Value(const ValueTypes::empty_t in):		v(in) {}
+	explicit Value(const ValueTypes::float_t in):		v(in) {}
 	explicit Value(const str_t& in): 					v(in) {}
-	explicit Value(ValueTypes::int_t in): 				v(in) {}
-	explicit Value(const ValueTypes::ref_t& in): 		v(in) {}
-	explicit Value(const ValueTypes::lam_t& in): 		v(in) {}
-	explicit Value(const ValueTypes::n_fn_t& in):		v(in) {}
+	explicit Value(const ValueTypes::int_t in): 		v(in) {}
+	explicit Value(ValueTypes::ref_t in): 				v(in) {}
+	explicit Value(ValueTypes::lam_t in): 				v(in) {}
+	explicit Value(ValueTypes::n_fn_t in):				v(in) {}
 	explicit Value(const ValueTypes::list_t& in):
 		v(::new(GC::alloc<ValueTypes::list_t>()) ValueTypes::list_t(in)) {}
 	explicit Value(const ValueTypes::list_ref& in):		v(in) {}

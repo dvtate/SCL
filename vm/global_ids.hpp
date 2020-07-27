@@ -6,10 +6,9 @@
 #define DLANG_GLOBAL_IDS_HPP
 
 #include <cinttypes>
-#include "gc/handle.hpp"
 
 class Value;
 const Value& get_global_id(int64_t id);
-constexpr unsigned short global_ids_count = 9;
+constexpr unsigned short global_ids_count = 11;
 
 #endif //DLANG_GLOBAL_IDS_HPP

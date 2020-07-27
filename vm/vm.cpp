@@ -90,23 +90,30 @@ void Runtime::run() {
 			}
 		}
 
+		// Maybe we need to GC
+		if ((GC::size() - GC::last_gc_size) > GC::THRESHOLD) {
+//			std::cout <<"DOGC!\n";
+			const auto start = GC::size();
+			this->vm->do_gc();
+			GC::last_gc_size = GC::size();
+			const auto diff = GC::last_gc_size - start;
+			if (diff)
+				std::cout <<"freed: " <<diff <<std::endl;
+		}
+
 		// make sure we have something to do
 		if (this->running == nullptr) {
 			if (this->active.empty()) {
-				if (GC::size() - GC::last_gc_size > GC::THRESHOLD) {
-					std::cout <<"DOGC!\n";
-					this->vm->do_gc();
-				} else {
-					using namespace std::chrono_literals;
-					std::this_thread::sleep_for(1ms);
-				}
+				using namespace std::chrono_literals;
+				std::this_thread::sleep_for(1ms);
+
 			} else {
 				DLANG_DEBUG_MSG("VM:RT:Pulled Stack from active\n");
 				this->running = this->active.back();
 				this->active.pop_back();
 			}
 		} else {
-			do {
+			for (int i = 10; i != 0 && this->running != nullptr; i--) {
 				if (this->running->back()->tick()) {
 					DLANG_DEBUG_MSG("VM:RT:Frame: ran out of instructions\n");
 					// function ran out of instructions to run...
@@ -121,7 +128,7 @@ void Runtime::run() {
 					}
 					break;
 				}
-			} while (this->running != nullptr);
+			}
 		}
 	}
 

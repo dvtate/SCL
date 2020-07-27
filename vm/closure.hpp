@@ -10,7 +10,6 @@
 #include <memory>
 #include <vector>
 
-#include "gc/handle.hpp"
 #include "bc/bc.hpp"
 #include "value.hpp"
 
@@ -27,11 +26,6 @@ public:
 
 	// body points to implementation defined by relevant closureDef
 	std::vector<BCInstr>* body;
-
-	// index for corresponding literal
-	uint32_t lit;
-
-	void declare_empty_locals(const std::vector<int64_t>& ids);
 
 	// rn this only shows if they came from same literal...
 	bool operator==(const Closure& other) const {

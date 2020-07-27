@@ -232,11 +232,11 @@ public:
 
 	void do_gc() {
 		// Mark all values in use
-		std::cout <<"marking" <<std::endl;
+//		std::cout <<"marking" <<std::endl;
 		this->mark();
 
 		// Free unused
-		std::cout <<"Sweeping" <<std::endl;
+//		std::cout <<"Sweeping" <<std::endl;
 		GC::sweep();
 	}
 };

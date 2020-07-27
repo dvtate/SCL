@@ -44,7 +44,7 @@ namespace VM_ops {
 	void FNAME(Frame& f) {\
 		Value rhs = f.eval_stack.back();\
 		f.eval_stack.pop_back();\
-		DLANG_DEBUG_MSG("CMP OP: " <<f.eval_stack.back().to_string() <<rhs.to_string()<<std::endl);\
+		DLANG_DEBUG_MSG("CMP OP: " <<f.eval_stack.back().to_string() <<#OP <<rhs.to_string()<<std::endl);\
 		Value* l = f.eval_stack.back().deref();\
 		Value* r = rhs.deref();\
 		\

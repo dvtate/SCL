@@ -515,6 +515,8 @@ MutilatedSymbol ParsedMacro::find_id(const std::string& name) {
 			{ "vars", MutilatedSymbol("vars", 6, MutilatedSymbol::SymbolType::CONSTANT) },
 			{ "async", MutilatedSymbol("async", 7, MutilatedSymbol::SymbolType::CONSTANT) },
 			{ "import", MutilatedSymbol("import", 8, MutilatedSymbol::SymbolType::CONSTANT) },
+			{ "size", MutilatedSymbol("size", 9, MutilatedSymbol::SymbolType::CONSTANT) },
+			{ "copy", MutilatedSymbol("copy", 10, MutilatedSymbol::SymbolType::CONSTANT) },
 	};
 
 	// if it's a global id use that instead...

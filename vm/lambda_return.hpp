@@ -117,6 +117,7 @@ public:
 		this->stack_target = f.rt->running;
 	}
 
+
 	void operator()(Frame& f) override {
 		DLANG_DEBUG_MSG("o() called\n");
 		this->rt->recv_msg(new LambdaReturnMsg(

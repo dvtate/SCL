@@ -13,6 +13,7 @@
 static void invoke(Frame& f) {
 	Value v = f.eval_stack.back();
 	f.eval_stack.pop_back();
+	std::cout <<"INVOKE(" <<v.to_string() <<")" <<std::endl;
 	vm_util::invoke_value_sync(f, v, false);
 }
 
@@ -107,9 +108,6 @@ static void use_lit(Frame& f, const std::size_t litnum) {
 		c->i_id = cd.i_id();
 		c->o_id = cd.o_id();
 
-		// literal index for declaring locals
-		c->lit = litnum;
-
 		f.eval_stack.emplace_back(c);
 	}
 }
@@ -165,7 +163,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			return;
 
 		case BCInstr::OPCode::VAL_EMPTY:
-			f.eval_stack.emplace_back();
+			f.eval_stack.emplace_back(Value());
 			return;
 		case BCInstr::OPCode::CLEAR_STACK:
 			f.eval_stack.clear();
