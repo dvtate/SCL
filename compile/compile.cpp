@@ -229,7 +229,7 @@ void ParsedMacro::read_assignment(AST& t) {
 
 		return;
 	} else if (t.members[0].type == AST::NodeType::INDEX) {
-		// list[index] = 5;
+		// list[index] = 5;  => <list> <index> <value> SET_INDEX
 
 		// put args on stack
 		for (auto &m : t.members[0].members)
@@ -239,12 +239,12 @@ void ParsedMacro::read_assignment(AST& t) {
 		this->body.emplace_back(Command(Command::OPCode::SET_INDEX));
 
 	} else if (t.members[0].type == AST::NodeType::OPERATION && t.members[0].token.token == ".") {
-		// obj.name = "steve";
+		// obj.name = value; => <value> <obj> SET_MEM_L(litnum(name))
 
 		// read value ("steve")
 		this->read_tree(t.members[1]);
 
-		// read member-request and convert to set_mem_l
+		// read member-request (USE_MEM_L) and convert to set_mem_l, other properties should be same
 		this->read_tree(t.members[0]);
 		this->body.back().instr = Command::OPCode::SET_MEM_L;
 

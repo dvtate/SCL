@@ -67,7 +67,9 @@ public:
 		VAL_TRUE,
 		VAL_FALSE,
 
-		INVOKE, USE_INDEX, SET_INDEX,
+		INVOKE,			// <i> <fn> INVOKE
+		USE_INDEX,		// <list> <idx> INVOKE
+		SET_INDEX,		// <list> <index> <value> SET_INDEX
 			// args come from stack only
 
 		// begin fault table
@@ -195,7 +197,8 @@ public:
 				return "\tUSE_MEM_Lit[" + std::to_string(std::get<int64_t>(this->arg)) + "]\n";
 			case OPCode::SET_MEM_L:
 				return "\tSET_MEM_Lit[" + std::to_string(std::get<int64_t>(this->arg)) + "]\n";
-
+			case OPCode::SET_INDEX:
+				return "\tSET_INDEX\n";
 
 				// fault table
 

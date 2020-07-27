@@ -96,7 +96,8 @@ void Runtime::run() {
 			const auto start = GC::size();
 			this->vm->do_gc();
 			GC::last_gc_size = GC::size();
-			const auto diff = GC::last_gc_size - start;
+			std::cout <<"before: " <<start <<" after: " <<GC::last_gc_size <<std::endl;
+			const auto diff = (int) GC::last_gc_size - (int) start;
 			if (diff)
 				std::cout <<"freed: " <<diff <<std::endl;
 		}
@@ -113,7 +114,7 @@ void Runtime::run() {
 				this->active.pop_back();
 			}
 		} else {
-			for (int i = 10; i != 0 && this->running != nullptr; i--) {
+			for (int i = 30; i != 0 && this->running != nullptr; i--) {
 				if (this->running->back()->tick()) {
 					DLANG_DEBUG_MSG("VM:RT:Frame: ran out of instructions\n");
 					// function ran out of instructions to run...

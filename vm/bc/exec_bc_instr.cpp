@@ -13,7 +13,6 @@
 static void invoke(Frame& f) {
 	Value v = f.eval_stack.back();
 	f.eval_stack.pop_back();
-	std::cout <<"INVOKE(" <<v.to_string() <<")" <<std::endl;
 	vm_util::invoke_value_sync(f, v, false);
 }
 
@@ -30,14 +29,16 @@ void index(Frame& f) {
 	if (std::holds_alternative<Value::int_t>(v->v)) {
 		auto i = std::get<Value::int_t>(v->v);
 		if (i < 0) {
+			std::cout <<"neg index";
 			f.eval_stack.pop_back();
 			f.eval_stack.back() = Value();
 			return;
 		}
+		ind = i;
 	} else if (std::holds_alternative<Value::float_t>(v->v)) {
 		ind = (uint64_t) std::get<Value::float_t>(v->v);
 	} else {
-		std::cout << "USE_INDEX[0] type-error..\n";
+		std::cout << "USE_INDEX wrong index type\n";
 		f.eval_stack.pop_back();
 		return;
 	}
@@ -63,7 +64,7 @@ void index(Frame& f) {
 			f.eval_stack.back() = Value();
 		}
 	} else {
-		std::cout <<"USE_INDEX[1] type-error..\n" <<v->to_string() <<std::endl;
+		std::cout <<"USE_INDEX wrong list type..\n" <<v->to_string() <<std::endl;
 	}
 }
 
@@ -205,6 +206,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			const Value v = f.eval_stack.back();
 			f.eval_stack.pop_back();
 			const Value ind_v = f.eval_stack.back();
+			f.eval_stack.pop_back();
 			std::size_t ind;
 			switch (ind_v.type()) {
 				case ValueTypes::VType::INT:
@@ -214,7 +216,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 					ind = (std::size_t) std::get<Value::float_t>(ind_v.v);
 					break;
 				default:
-					std::cout <<"SET_INDEX: type-error\n";
+					std::cout <<"SET_INDEX: type-error " <<(int) ind_v.type() <<" - " <<ind_v.to_string() <<std::endl;
 					return;
 			}
 			switch (f.eval_stack.back().type()) {

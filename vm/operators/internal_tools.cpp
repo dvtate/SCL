@@ -38,7 +38,6 @@ namespace vm_util {
 				c.vars[c.i_id] = std::get<Value::ref_t>(f.eval_stack.back().v);
 			else
 				c.vars[c.i_id] = ::new(GC::alloc<Value>()) Value(f.eval_stack.back());
-			std::cout <<"input: " <<c.vars[c.i_id]->to_string() <<std::endl;
 			f.eval_stack.pop_back();
 
 			c.vars[c.o_id] = ::new(GC::alloc<Value>()) Value((NativeFunction*)
@@ -54,7 +53,6 @@ namespace vm_util {
 		} else {
 			// trigger TypeError
 		}
-
 	}
 
 }

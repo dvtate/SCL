@@ -96,7 +96,7 @@ namespace GC {
 
 		 template <class T>
 	T* alloc() {
-		Usage* p = (Usage*) (((char*) ::malloc(sizeof(T) + 1)) + 1);
+		Usage* p = (Usage*) ((char*) ::malloc(sizeof(T) + 1));
 		p->mark = Usage::Color::WHITE; // TODO tricolor
 		T* ret = (T*)(((char*)p) + 1);
 		generic_ptrs.emplace_back(ret);
@@ -116,7 +116,7 @@ namespace GC {
 	unsigned long size();
 
 	// Threshold heap growth for GC
-	constexpr unsigned long THRESHOLD = 1024;
+	constexpr unsigned long THRESHOLD = 1 << 14;
 
 	//
 	extern unsigned long last_gc_size;
