@@ -29,7 +29,7 @@ void index(Frame& f) {
 	if (std::holds_alternative<Value::int_t>(v->v)) {
 		auto i = std::get<Value::int_t>(v->v);
 		if (i < 0) {
-			std::cout <<"neg index";
+//			std::cout <<"neg index";
 			f.eval_stack.pop_back();
 			f.eval_stack.back() = Value();
 			return;
@@ -57,14 +57,14 @@ void index(Frame& f) {
 			f.eval_stack.back() = Value();
 		}
 	} else if (std::holds_alternative<ValueTypes::str_t>(v->v)) {
-		auto s = std::get<ValueTypes::str_t>(v->v);
+		auto& s = std::get<ValueTypes::str_t>(v->v);
 		try {
 			f.eval_stack.back() = Value(std::string() + s.at(ind));
 		} catch (...) {
 			f.eval_stack.back() = Value();
 		}
 	} else {
-		std::cout <<"USE_INDEX wrong list type..\n" <<v->to_string() <<std::endl;
+		std::cout <<"USE_INDEX wrong list type.." <<(int) v->type() <<'\n' <<v->to_string() <<std::endl;
 	}
 }
 

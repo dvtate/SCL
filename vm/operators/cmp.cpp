@@ -36,7 +36,6 @@ namespace VM_ops {
 		auto& v = std::get<ValueTypes::bool_t>(f.eval_stack.back().v);
 		v = !v;
 	}
-	
 
 
 // template for comparison operators... will have to replace eventually...
@@ -44,37 +43,40 @@ namespace VM_ops {
 	void FNAME(Frame& f) {\
 		Value rhs = f.eval_stack.back();\
 		f.eval_stack.pop_back();\
-		DLANG_DEBUG_MSG("CMP OP: " <<f.eval_stack.back().to_string() <<#OP <<rhs.to_string()<<std::endl);\
 		Value* l = f.eval_stack.back().deref();\
 		Value* r = rhs.deref();\
+		DLANG_DEBUG_MSG("CMP OP: " <<f.eval_stack.back().to_string() <<#OP <<rhs.to_string()<<std::endl);\
 		\
 		if (l == nullptr || r == nullptr) {\
 			f.eval_stack.back() = Value(false);\
 			return;\
 		}\
+		DLANG_DEBUG_MSG("CMP OP TYPES: " <<(int) l->type() <<#OP <<(int) r->type()<<std::endl);\
 	\
 		const auto lt = l->type(), rt = r->type();\
-		if (lt == Value::VType::INT) {\
-			if (rt == Value::VType::INT)\
-				f.eval_stack.back() = Value(\
-						std::get<Value::int_t>(l->v) OP std::get<Value::int_t>(r->v));\
-			else if (rt == Value::VType::FLOAT)\
-				f.eval_stack.back() = Value(\
-						std::get<Value::int_t>(l->v) OP std::get<Value::float_t>(r->v));\
-			else\
-				f.eval_stack.back() = Value();\
-		} else if (lt == Value::VType::FLOAT) {\
-			if (rt == Value::VType::FLOAT)\
-				f.eval_stack.back() = Value(\
-						std::get<Value::float_t>(l->v) OP std::get<Value::float_t>(r->v));\
-			else if (rt == Value::VType::INT)\
-				f.eval_stack.back() = Value(\
-						std::get<Value::float_t>(l->v) OP std::get<Value::int_t>(r->v));\
-			else \
-				f.eval_stack.back() = Value();\
-		} else if (lt == Value::VType::STR && rt == Value::VType::STR) {\
-			f.eval_stack.back() = Value(\
-					std::get<Value::str_t>(l->v) OP std::get<Value::str_t>(l->v));\
+		if (lt == ValueTypes::VType::INT) {\
+			if (rt == ValueTypes::VType::INT)\
+				f.eval_stack.back() = Value((ValueTypes::int_t) \
+						(std::get<ValueTypes::int_t>(l->v) OP std::get<ValueTypes::int_t>(r->v)));\
+			else if (rt == ValueTypes::VType::FLOAT)\
+				f.eval_stack.back() = Value((ValueTypes::int_t) \
+						(std::get<ValueTypes::int_t>(l->v) OP std::get<ValueTypes::float_t>(r->v)));\
+			else {\
+                f.eval_stack.back() = Value();\
+                }\
+		} else if (lt == ValueTypes::VType::FLOAT) {\
+			if (rt == ValueTypes::VType::FLOAT)\
+				f.eval_stack.back() = Value((ValueTypes::int_t) \
+						std::get<ValueTypes::float_t>(l->v) OP std::get<ValueTypes::float_t>(r->v));\
+			else if (rt == ValueTypes::VType::INT)\
+				f.eval_stack.back() = Value((ValueTypes::int_t) \
+						(std::get<ValueTypes::float_t>(l->v) OP std::get<ValueTypes::int_t>(r->v)));\
+			else  {\
+                f.eval_stack.back() = Value(); \
+			}\
+		} else if (lt == ValueTypes::VType::STR && rt == ValueTypes::VType::STR) {\
+			f.eval_stack.back() = Value((ValueTypes::int_t)\
+					(std::get<ValueTypes::str_t>(l->v) OP std::get<ValueTypes::str_t>(l->v)));\
 		} else {\
 			f.eval_stack.back() = Value();\
 		}\

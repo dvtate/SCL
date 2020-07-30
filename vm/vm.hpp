@@ -36,8 +36,10 @@ public:
 };
 
 // TODO
-class SyncCallStack : public std::vector<std::shared_ptr<Frame>> {
-public: void mark();
+class SyncCallStack  {
+public:
+	std::vector<std::shared_ptr<Frame>> stack;
+	void mark();
 };
 
 
@@ -56,7 +58,7 @@ public:
 	std::vector<Value> eval_stack;
 
 	Frame(Runtime* rt, Closure body, unsigned int pos = 0, std::vector<Value> eval_stack = {}):
-			rt(rt), closure(std::move(body)), pos(pos), eval_stack(std::move(eval_stack))
+			rt(rt), closure(body), pos(pos), eval_stack(std::move(eval_stack))
 		{}
 
 	~Frame(){
@@ -195,9 +197,12 @@ private:
 public:
 	//
 	void mark() {
-		this->running->mark();
-		for (auto sp : this->undead)
+		if (this->running) {
+			this->running->mark();
+		}
+		for (auto sp : this->undead) {
 			sp->mark();
+		}
 
 		// Some messages have gc'd properties even though they're not gc'd
 		std::lock_guard<std::mutex> m(this->msg_queue_mtx);
@@ -226,8 +231,6 @@ public:
 		this->main_thread->mark();
 		for (auto& sp : this->worker_threads)
 			sp->mark();
-		for (unsigned short i = 0; i < global_ids_count; i++)
-			GC::mark((Value&) get_global_id(i));
 	}
 
 	void do_gc() {
@@ -238,6 +241,8 @@ public:
 		// Free unused
 //		std::cout <<"Sweeping" <<std::endl;
 		GC::sweep();
+
+		GC::print_summary();
 	}
 };
 

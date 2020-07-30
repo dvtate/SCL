@@ -160,3 +160,9 @@ std::string Value::to_string(bool recursive) const {
 			return "unknown";
 	}
 }
+
+namespace GC {
+	void mark(NativeFunction& fn) {
+		fn.mark();
+	}
+}

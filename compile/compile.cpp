@@ -20,8 +20,8 @@ const static std::unordered_map<std::string, Command> keyword_values = {
 };
 
 
-// maybe later want first 10 symbol ids to be reserved
-int64_t MutilatedSymbol::_uid = 10;
+// First few symbol ids are reserved
+int64_t MutilatedSymbol::_uid = 20;
 
 // ParsedMacro::read_* : recursively convert the AST of the macro into a list of commands and populate structures
 

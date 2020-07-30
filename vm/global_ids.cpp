@@ -58,9 +58,9 @@ public:
 			}
 
 			// return value
-			cs->back()->eval_stack.emplace_back(Value(inp));
+			cs->stack.back()->eval_stack.emplace_back(Value(inp));
 			// unfreeze origin thread
-			cs->back()->rt->recv_msg(new UnfreezeCallStack(cs));
+			cs->stack.back()->rt->recv_msg(new UnfreezeCallStack(cs));
 			// die
 		}, cs_sp).detach();
 	}
@@ -167,10 +167,10 @@ class NumFn : public virtual NativeFunction {
 // Debug variables
 class VarsFn : public virtual NativeFunction {
 	void operator()(Frame& f) override {
-		for (const auto& scope : *f.rt->running) {
+		for (const auto& scope : f.rt->running->stack) {
 			std::cout <<"Scope " <<scope <<std::endl;
 			for (const auto& vp : scope->closure.vars)
-				std::cout <<'\t' <<vp.first <<'\t' <<vp.second->to_string()
+				std::cout <<'\t' <<vp.first <<'\t' <<vp.second->to_string(true)
 						  <<'\t' <<(void*) vp.second <<std::endl;
 
 		}
@@ -223,7 +223,7 @@ class CopyFn : public virtual NativeFunction {
 
 			case ValueTypes::VType::LIST: {
 				const auto* l = std::get<ValueTypes::list_ref>(v.v);
-				ValueTypes::list_ref ret = ::new(GC::alloc<ValueTypes::list_t>()) ValueTypes::list_t(l->size());
+				ValueTypes::list_ref ret = ::new(GC::alloc<ValueTypes::list_t>()) ValueTypes::list_t();
 				for (auto& e : *l)
 					ret->emplace_back(copy_value(e));
 				return Value(ret);
@@ -244,7 +244,8 @@ class CopyFn : public virtual NativeFunction {
 		}
 	}
 	void operator()(Frame& f) override {
-		f.eval_stack.back() = copy_value(f.eval_stack.back());
+		auto ret = copy_value(f.eval_stack.back());
+		f.eval_stack.back() = ret;
 	}
 	void mark() override {}
 };
@@ -254,27 +255,27 @@ class CopyFn : public virtual NativeFunction {
 //  use normal values and copy them into GC'd Value*s as needed
 static Value global_ids[] {
 	// 0 - empty
-	Value(::new(GC::alloc<Value>()) Value()),
+	Value(),
 	// 1 - print
-	Value(::new(GC::alloc<PrintFn>()) PrintFn()),
+	Value((NativeFunction*)::new(GC::static_alloc<PrintFn>()) PrintFn()),
 	// 2 - input
-	Value(::new(GC::alloc<InputFn>()) InputFn()),
+	Value((NativeFunction*)::new(GC::static_alloc<InputFn>()) InputFn()),
 	// 3 - if
-	Value(::new(GC::alloc<IfFn>()) IfFn()),
+	Value((NativeFunction*)::new(GC::static_alloc<IfFn>()) IfFn()),
 	// 4 - Str
-	Value(::new(GC::alloc<StrFn>()) StrFn()),
+	Value((NativeFunction*)::new(GC::static_alloc<StrFn>()) StrFn()),
 	// 5 - Num
-	Value(::new(GC::alloc<NumFn>()) NumFn()),
+	Value((NativeFunction*)::new(GC::static_alloc<NumFn>()) NumFn()),
 	// 6 - vars
-	Value(::new(GC::alloc<VarsFn>()) VarsFn()),
+	Value((NativeFunction*)::new(GC::static_alloc<VarsFn>()) VarsFn()),
 	// 7 - async
-	Value(::new(GC::alloc<AsyncFn>()) AsyncFn()),
+	Value((NativeFunction*)::new(GC::static_alloc<AsyncFn>()) AsyncFn()),
 	// 8 - import
-	Value(::new(GC::alloc<ImportFn>()) ImportFn()),
+	Value((NativeFunction*)::new(GC::static_alloc<ImportFn>()) ImportFn()),
 	// 9 - size
-	Value(::new(GC::alloc<SizeFn>()) SizeFn()),
+	Value((NativeFunction*)::new(GC::static_alloc<SizeFn>()) SizeFn()),
 	// 10 - copy
-	Value(::new(GC::alloc<CopyFn>()) CopyFn()),
+	Value((NativeFunction*)::new(GC::static_alloc<CopyFn>()) CopyFn()),
 
 	// - range (need objects first...)
 	// - copy

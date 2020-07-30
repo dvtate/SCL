@@ -13,7 +13,7 @@
 #include "global_ids.hpp"
 
 void SyncCallStack::mark() {
-	for (auto& f : *this)
+	for (auto& f : this->stack)
 		f->mark();
 }
 
@@ -38,10 +38,10 @@ VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv)
 
 	this->main_thread = std::make_shared<Runtime>(this);
 	this->main_thread->running = std::make_shared<SyncCallStack>();
-	this->main_thread->running->emplace_back(std::make_shared<Frame>(
+	this->main_thread->running->stack.emplace_back(std::make_shared<Frame>(
 			&*this->main_thread, Closure{}));
 	this->main_thread->undead.emplace_back(this->main_thread->running);
-	Closure& main = this->main_thread->running->back()->closure;
+	Closure& main = this->main_thread->running->stack.back()->closure;
 
 	auto& entry = std::get<ClosureDef>(this->literals.back().v);
 	main.body = &entry.body;
@@ -93,11 +93,11 @@ void Runtime::run() {
 		// Maybe we need to GC
 		if ((GC::size() - GC::last_gc_size) > GC::THRESHOLD) {
 //			std::cout <<"DOGC!\n";
-			const auto start = GC::size();
+			const int start = GC::size();
 			this->vm->do_gc();
 			GC::last_gc_size = GC::size();
 			std::cout <<"before: " <<start <<" after: " <<GC::last_gc_size <<std::endl;
-			const auto diff = (int) GC::last_gc_size - (int) start;
+			const auto diff = (int) start - (int) GC::last_gc_size;
 			if (diff)
 				std::cout <<"freed: " <<diff <<std::endl;
 		}
@@ -114,12 +114,12 @@ void Runtime::run() {
 				this->active.pop_back();
 			}
 		} else {
-			for (int i = 30; i != 0 && this->running != nullptr; i--) {
-				if (this->running->back()->tick()) {
+			for (int i = 100; i != 0 && this->running != nullptr; i--) {
+				if (this->running->stack.back()->tick()) {
 					DLANG_DEBUG_MSG("VM:RT:Frame: ran out of instructions\n");
 					// function ran out of instructions to run...
 					// 	implicitly return value on top of stack
-					std::shared_ptr<Frame>& f = running->back();
+					std::shared_ptr<Frame>& f = running->stack.back();
 					Value* ret_fn = f->closure.vars[f->closure.o_id];
 					if (std::holds_alternative<Value::n_fn_t>(ret_fn->v)) {
 						ValueTypes::n_fn_t receiver = std::get<Value::n_fn_t>(ret_fn->v);

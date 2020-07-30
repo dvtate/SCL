@@ -12,6 +12,7 @@
 
 #include <cstdlib>
 #include <cstring> // memcpy
+#include <cassert>
 
 #include "../value_types.hpp"
 
@@ -21,6 +22,8 @@
  * Load factor
  * Tricolor tracing
  * Concurrent tracing
+ * Thread safety (multiple writers to stl containers)
+ *
  *
  * DONE
  * - naive marking
@@ -61,12 +64,14 @@ namespace GC {
 	struct _Destructor {
 		virtual void destroy(void* obj) const {}
 	};
+	static_assert(sizeof(Destructor<ValueTypes::obj_t>) == sizeof(_Destructor), "Destructor wrong size");
+	static_assert(sizeof(Destructor<ValueTypes::list_t>) == sizeof(_Destructor), "Destructor wrong size");
 
 	// Track 3rd party types
 	// TODO paging, recycling, etc.
 	extern std::deque<void *> generic_ptrs;
 	extern std::deque<_Destructor> generic_destructors;
-
+	extern std::vector<void*> static_objects;
 
 	// tracking data
 	typedef struct Usage {
@@ -76,7 +81,7 @@ namespace GC {
 			GREY,            // Not a candidate for GC
 			BLACK,            // TODO: tricolor tracing
 			FREE,            // This object is in recycle bin
-		} mark: 2;
+		} mark : 2;
 	} Usage;
 
 	// Tracing
@@ -94,15 +99,27 @@ namespace GC {
 		}
 	}
 
-		 template <class T>
+	// Allocate a garbage collected object
+	template <class T>
 	T* alloc() {
 		Usage* p = (Usage*) ((char*) ::malloc(sizeof(T) + 1));
 		p->mark = Usage::Color::WHITE; // TODO tricolor
 		T* ret = (T*)(((char*)p) + 1);
 		generic_ptrs.emplace_back(ret);
 		generic_destructors.emplace_back();
+		// TODO this works but there should be a less ghetto way to do this...
 		const Destructor<T> destroy;
-		std::memcpy(&generic_destructors.back(), &destroy, sizeof(destroy));
+		std::memcpy(&generic_destructors.back(), &destroy, sizeof(_Destructor));
+		return ret;
+	}
+
+	// Allocate an object that isn't garbage collected or tracked
+	template <class T>
+	T* static_alloc() {
+		auto* p = (Usage*) ((char*) ::malloc(sizeof(T) + 1));
+		p->mark = Usage::Color::GREY;
+		T* ret = (T*)(((char*)p) + 1);
+		static_objects.emplace_back(ret);
 		return ret;
 	}
 
@@ -120,12 +137,17 @@ namespace GC {
 
 	//
 	extern unsigned long last_gc_size;
+
+	void print_summary();
+
+	// TODO condense heap: empty recycle bins when HEAPSIZE < RBSIZE
 }
 
 
 // Specializations for common internal types
 class Value;
 class Closure;
+class LambdaReturnNativeFn;
 
 namespace GC {
 
@@ -139,7 +161,7 @@ namespace GC {
 	DLANG__GC_DECLS(ValueTypes::obj_t);
 	DLANG__GC_DECLS(NativeFunction);
 	DLANG__GC_DECLS(Closure);
-
+	DLANG__GC_DECLS(LambdaReturnNativeFn);
 }
 
 #endif //DLANG_GC_HPP

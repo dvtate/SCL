@@ -26,7 +26,7 @@ public:
 		ret(*ret), stack_target(std::move(stack_target)) {}
 
 	void action(Runtime& rt) override {
-		stack_target->back()->eval_stack.emplace_back(ret);
+		stack_target->stack.back()->eval_stack.emplace_back(ret);
 
 		// run it again bc should have been stopped when the Future was invoked
 		rt.set_active(this->stack_target);
@@ -54,7 +54,7 @@ public:
 		f.rt->kill_running();
 		if (this->stack_target == nullptr)
 			return;
-		(*this->stack_target)[0]->rt->recv_msg(
+		this->stack_target->stack[0]->rt->recv_msg(
 				new AsyncResultMsg(this->ret, this->stack_target));
 	}
 
@@ -113,12 +113,12 @@ public:
 			c.vars[c.o_id] = ::new(GC::alloc<Value>()) Value((NativeFunction*) ofn);
 
 			// return future functor
-			f.rt->running->back()->eval_stack.emplace_back((NativeFunction*)future);
+			f.rt->running->stack.back()->eval_stack.emplace_back((NativeFunction*)future);
 
 			// context switch to other frame
 			auto rcs = f.rt->running;
 			f.rt->spawn_thread();
-			f.rt->running->emplace_back(std::make_shared<Frame>(f.rt, c));
+			f.rt->running->stack.emplace_back(std::make_shared<Frame>(f.rt, c));
 		} else {
 			std::cerr <<"async only accepts closures for now :/\n";
 			// todo: typerror

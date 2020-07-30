@@ -57,15 +57,15 @@ public:
 		}
 
 		//
-		while (this->stack_target->back() != this->frame_target && !this->stack_target->empty())
-			this->stack_target->pop_back();
+		while (this->stack_target->stack.back() != this->frame_target && !this->stack_target->stack.empty())
+			this->stack_target->stack.pop_back();
 
-		if (this->stack_target->empty()) {
+		if (this->stack_target->stack.empty()) {
 			std::cout <<"o() called out of frame???\n";
 			return;
 		}
 
-		this->stack_target->back()->eval_stack.push_back(this->ret);
+		this->stack_target->stack.back()->eval_stack.push_back(this->ret);
 		// if stack target not in active stacks, put there
 		rt.set_active(this->stack_target);
 
@@ -113,7 +113,7 @@ class LambdaReturnNativeFn : public virtual NativeFunction {
 public:
 	explicit LambdaReturnNativeFn(Frame& f) {
 		this->rt = f.rt->vm->main_thread; // TODO: detect thread/convert rt to weak_ptr
-		this->frame_target = f.rt->running->back();
+		this->frame_target = f.rt->running->stack.back();
 		this->stack_target = f.rt->running;
 	}
 

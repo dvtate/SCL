@@ -22,7 +22,7 @@ public:
 	virtual ~NativeFunction(){};
 	// Invoke function
 	virtual void operator()(Frame& f) = 0;
-	virtual void mark() {};
+	virtual void mark() = 0;
 };
 
 namespace ValueTypes {
@@ -42,7 +42,7 @@ namespace ValueTypes {
 
 	using list_t	= std::vector<Value>;
 	using list_ref	= list_t*;
-	using obj_t		= tsl::ordered_map<std::string, Value>;
+	using obj_t		= std::unordered_map<std::string, Value>;
 	using obj_ref	= obj_t*;
 
 	using bool_t 	= ValueTypes::int_t;

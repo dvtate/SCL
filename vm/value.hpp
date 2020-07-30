@@ -51,6 +51,10 @@ public:
 	explicit Value(const bool in):						v((ValueTypes::int_t) in) {}
 	Value(const Value& other) = default;
 
+	~Value(){
+		this->v = ValueTypes::variant_t();
+	}
+
 	inline ValueTypes::VType type() const {
 		return (VType) this->v.index();
 	}
@@ -92,12 +96,11 @@ namespace GC {
 			mark(*obj);
 	}
 
-	inline void mark(NativeFunction& fn) {
-		fn.mark();
-	}
+	void mark(NativeFunction& fn);
 	inline void mark(ValueTypes::n_fn_t fn) {
-		if (mark((void*) fn))
-			fn->mark();
+		if (mark((void*) fn)) {
+			mark(*fn);
+		};
 	}
 
 	// TODO switch to ValueTypes::lam_t
