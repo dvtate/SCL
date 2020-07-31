@@ -17,7 +17,7 @@
 //TODO: split this into multiple files...
 
 
-class UnfreezeCallStack : public virtual RTMessage {
+class UnfreezeCallStack : public RTMessage {
 public:
 	std::shared_ptr<SyncCallStack> cs;
 	explicit UnfreezeCallStack(std::shared_ptr<SyncCallStack> cs):
@@ -31,7 +31,7 @@ public:
 };
 
 // a -> a returns same as input
-class PrintFn : public virtual NativeFunction {
+class PrintFn : public NativeFunction {
 public:
 	void operator()(Frame& f) override {
 		std::cout <<f.eval_stack.back().to_string() <<std::endl;
@@ -40,7 +40,7 @@ public:
 };
 
 // Empty -> Str
-class InputFn : public virtual NativeFunction {
+class InputFn : public NativeFunction {
 public:
 	void operator()(Frame& f) override {
 		// ignore inp, should be empty
@@ -68,10 +68,11 @@ public:
 	void mark() override {}
 };
 
-class IfFn : public virtual NativeFunction {
+class IfFn : public NativeFunction {
 	void operator()(Frame& f) override {
 
-		Value& i = f.eval_stack.back();
+		Value i = f.eval_stack.back();
+		f.eval_stack.back() = Value();
 		DLANG_DEBUG_MSG("if(" << i.to_string() <<") called");
 		// invalid arg
 		if (i.type() != Value::VType::LIST)
@@ -94,7 +95,7 @@ class IfFn : public virtual NativeFunction {
 };
 
 // Any -> Str
-class StrFn : public virtual NativeFunction {
+class StrFn : public NativeFunction {
 	void operator()(Frame& f) override {
 		f.eval_stack.back() = Value(f.eval_stack.back().to_string());
 	}
@@ -102,7 +103,7 @@ class StrFn : public virtual NativeFunction {
 	void mark() override {}
 };
 
-class ImportFn : public virtual NativeFunction {
+class ImportFn : public NativeFunction {
 public:
 	void operator()(Frame& f) override {
 		const std::string path = std::get<Value::str_t>(f.eval_stack.back().v);
@@ -130,7 +131,7 @@ public:
 };
 
 // Any -> Int | Float | Empty
-class NumFn : public virtual NativeFunction {
+class NumFn : public NativeFunction {
 
 	void operator()(Frame& f) override {
 		Value i = f.eval_stack.back();
@@ -165,7 +166,7 @@ class NumFn : public virtual NativeFunction {
 };
 
 // Debug variables
-class VarsFn : public virtual NativeFunction {
+class VarsFn : public NativeFunction {
 	void operator()(Frame& f) override {
 		for (const auto& scope : f.rt->running->stack) {
 			std::cout <<"Scope " <<scope <<std::endl;
@@ -180,7 +181,7 @@ class VarsFn : public virtual NativeFunction {
 };
 
 // Create async wrapper for closure (see async.hpp)
-class AsyncFn : public virtual NativeFunction {
+class AsyncFn : public NativeFunction {
 	void operator()(Frame& f) override {
 		f.eval_stack.back() = Value((NativeFunction*)
 				::new(GC::alloc<AsyncWrapperNativeFn>())
@@ -189,7 +190,7 @@ class AsyncFn : public virtual NativeFunction {
 	void mark() override {}
 };
 
-class SizeFn : public virtual NativeFunction {
+class SizeFn : public NativeFunction {
 	void operator()(Frame& f) override {
 		Value& v = f.eval_stack.back();
 		switch (v.type()) {
@@ -210,7 +211,7 @@ class SizeFn : public virtual NativeFunction {
 	void mark() override {}
 };
 
-class CopyFn : public virtual NativeFunction {
+class CopyFn : public NativeFunction {
 	// TODO move this to Value class
 	Value copy_value(const Value& v) {
 		switch (v.type()) {
@@ -294,7 +295,7 @@ static_assert(sizeof(NativeFunction) == sizeof(AsyncFn), "AsyncFn wrong size");
 static_assert(sizeof(NativeFunction) == sizeof(ImportFn), "ImportFn wrong size");
 static_assert(sizeof(NativeFunction) == sizeof(SizeFn), "SizeFn wrong size");
 static_assert(sizeof(NativeFunction) == sizeof(CopyFn), "CopyFn wrong size");
-
+static_assert(sizeof(GC::Destructor<NumFn>) == sizeof(GC::_Destructor), "Destructor wrong size");
 
 const Value& get_global_id(int64_t id) {
 	return global_ids[id];

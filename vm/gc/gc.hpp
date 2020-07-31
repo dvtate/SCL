@@ -156,12 +156,12 @@ namespace GC {
 	extern void mark(TYPE&); \
 	extern void mark(TYPE*);
 
-	DLANG__GC_DECLS(Value);
-	DLANG__GC_DECLS(ValueTypes::list_t);
-	DLANG__GC_DECLS(ValueTypes::obj_t);
-	DLANG__GC_DECLS(NativeFunction);
-	DLANG__GC_DECLS(Closure);
-	DLANG__GC_DECLS(LambdaReturnNativeFn);
+//	DLANG__GC_DECLS(Value);
+//	DLANG__GC_DECLS(ValueTypes::list_t);
+//	DLANG__GC_DECLS(ValueTypes::obj_t);
+//	DLANG__GC_DECLS(NativeFunction);
+//	DLANG__GC_DECLS(Closure);
+//	DLANG__GC_DECLS(LambdaReturnNativeFn);
 }
 
 #endif //DLANG_GC_HPP

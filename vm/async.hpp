@@ -17,7 +17,7 @@
  */
 
 /// Resumes execution of frame after async result received
-class AsyncResultMsg : public virtual RTMessage {
+class AsyncResultMsg : public RTMessage {
 public:
 	Value ret;
 	std::shared_ptr<SyncCallStack> stack_target;
@@ -37,7 +37,7 @@ public:
 };
 
 /// typeof o within async call
-class AsyncReturnNativeFn : public virtual NativeFunction {
+class AsyncReturnNativeFn : public NativeFunction {
 public:
 	// store return value if frame_target not set
 	std::shared_ptr<Value> ret{nullptr};
@@ -65,7 +65,7 @@ public:
 };
 
 /// typeof async(fn)(args)
-class AsyncFutureNativeFn : public virtual NativeFunction {
+class AsyncFutureNativeFn : public NativeFunction {
 public:
 	AsyncReturnNativeFn* ofn;
 
@@ -86,7 +86,7 @@ public:
 };
 
 /// typeof async(fn)
-class AsyncWrapperNativeFn : public virtual NativeFunction {
+class AsyncWrapperNativeFn : public NativeFunction {
 public:
 	Value v;
 	explicit AsyncWrapperNativeFn(const Value& callable): v(callable) {}

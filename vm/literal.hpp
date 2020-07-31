@@ -16,6 +16,7 @@
 #include "bc/bc.hpp"
 #include "value.hpp"
 
+
 class ClosureDef {
 public:
 
@@ -26,7 +27,7 @@ public:
 	std::vector<int64_t> decl_ids;
 
 	// instruction code
-	std::vector<BCInstr> body;
+	std::vector<BCInstr>* body;
 
 	ClosureDef(
 			std::vector<int64_t> capture_ids,
@@ -34,14 +35,21 @@ public:
 			std::vector<BCInstr> body):
 		capture_ids(std::move(capture_ids)),
 		decl_ids(std::move(decl_ids)),
-		body(std::move(body))
+		body(new std::vector<BCInstr>(body))
 		{}
 	ClosureDef() = default;
+	~ClosureDef() {
+		// NOTE need to manually delete body
+	}
 
 	[[nodiscard]] inline int64_t i_id()
 		const noexcept { return this->decl_ids[0]; }
 	[[nodiscard]] inline int64_t o_id()
 		const noexcept { return this->decl_ids[1]; }
+
+	void destroy() {
+		delete(this->body);
+	}
 };
 
 class Literal {
@@ -64,6 +72,11 @@ public:
 	void mark() {
 		if (this->type() == Ltype::VAL)
 			GC::mark(std::get<Value>(v));
+	}
+
+	void destroy() {
+		if (std::holds_alternative<ClosureDef>(this->v))
+			std::get<ClosureDef>(this->v).destroy();
 	}
 };
 

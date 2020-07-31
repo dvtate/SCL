@@ -44,7 +44,7 @@ VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv)
 	Closure& main = this->main_thread->running->stack.back()->closure;
 
 	auto& entry = std::get<ClosureDef>(this->literals.back().v);
-	main.body = &entry.body;
+	main.body = entry.body;
 	main.i_id = entry.i_id();
 	main.o_id = entry.o_id();
 

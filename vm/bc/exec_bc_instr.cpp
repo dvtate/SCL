@@ -103,7 +103,7 @@ static void use_lit(Frame& f, const std::size_t litnum) {
 			c->vars[cid] = f.closure.vars[cid];
 #endif
 		// reference body bytecodes
-		c->body = &cd.body;
+		c->body = cd.body;
 
 		// label input and output ids
 		c->i_id = cd.i_id();

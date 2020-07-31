@@ -19,7 +19,7 @@ class Value;
 class Frame;
 class NativeFunction {
 public:
-	virtual ~NativeFunction(){};
+	virtual ~NativeFunction() = default;
 	// Invoke function
 	virtual void operator()(Frame& f) = 0;
 	virtual void mark() = 0;

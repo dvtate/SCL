@@ -57,7 +57,7 @@ static inline Literal capture_closure(std::istream& is,
 					decl_ids.begin(), decl_ids.end(),
 					std::inserter(capture_ids, capture_ids.begin()));
 
-			return Literal(ClosureDef(capture_ids, decl_ids, body));
+			return Literal(ClosureDef(capture_ids, decl_ids, std::move(body)));
 		}
 
 		if (c == BCInstr::OPCode::DECL_ID) {

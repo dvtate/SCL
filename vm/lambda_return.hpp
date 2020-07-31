@@ -106,7 +106,7 @@ public:
 };
 
 // user-callable
-class LambdaReturnNativeFn : public virtual NativeFunction {
+class LambdaReturnNativeFn : public NativeFunction {
 	std::shared_ptr<Frame> frame_target;
 	std::shared_ptr<SyncCallStack> stack_target;
 	std::shared_ptr<Runtime> rt;
