@@ -91,7 +91,7 @@ void Runtime::run() {
 		}
 
 		// Maybe we need to GC
-		if ((GC::size() - GC::last_gc_size) > GC::THRESHOLD) {
+		if (false && (GC::size() - GC::last_gc_size) > GC::THRESHOLD) {
 //			std::cout <<"DOGC!\n";
 			const int start = GC::size();
 			this->vm->do_gc();
