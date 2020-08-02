@@ -84,6 +84,8 @@ These are likely to change. All of these values are reassignable and can be refe
 - `vars`: debugging tool
 - `async`: run closure in async context (see section)
 - `import`: Load a native function or module
+- `size`: Gives size of given value, equivalent to `len` in Python
+- `copy`: Deep-copies given value
 
 
 ### Declaration
