@@ -22,7 +22,7 @@ Currently more focused on language stuff than main program, sorry this is ugly f
 #### Bytecode Text
 Useful for debugging compiler. Also prints compile errors.
 ```
-$ echo 'print("Hi")' > test.s && ./dlang -ftest.s -o
+$ echo 'print("Hi")' > test.s && ./dlang -ftest.s -O
 # Literal 0:
 String: "Hi"
 # Literal 1:
@@ -56,12 +56,13 @@ $
 
 # Basic Syntax
 Note these are
-- 1. Mostly not implemented yet: building things in phases starting with basic functionality
+- 1. Some features aren't yet implemented
 - 2. Not set in stone: if you have an opinion, send a PR and we can make a better language together.
+- 3. Potentially out of date...
 
 ## Language Structure
 - Statements end with semicolons (`;`)
-    - ASI exists but untrustworthy
+    - Automatic Semicolon Insertion: semicolons areoptional, but can help to add meaning
 - Not whitespace dependent
 
 ## Comments
@@ -73,21 +74,28 @@ These get ignored (maybe switch to `#` ?)
 
 ### Builtin Global Variables
 These are likely to change. All of these values are reassignable and can be referenced and called within other scopes. 
-- `print`: write values to terminal (ie: `print("Hello, world!")`)
-- `input`: read values from terminal
 - `i`: command line arguments (Note: only at global scope, see macros section)
-- `o`: leave current scope with return value provided as argument (ie: `o(-1)`)
+- `o`: leave current scope with return value provided as argument (this is known as the return operator in most other langauges)
+- `print`: write values to terminal (ie: `print("Hello, world!")`)
+- `input`: read values from terminal as a string (ie: `age = Num(input())`)
+- `if`: performs functionality of ternary and ifstatements
+- `Str`: converts given value to a string representation
+- `Num`: Parses a number (output is either Int or Float)
+- `vars`: debugging tool
+- `async`: run closure in async context (see section)
+- `import`: Load a native function or module
+
 
 ### Declaration
-You can declare a variable using the let operator. 
+Variables are declared and defined with similar syntax to JavaScript and references behave in a similar way to Java. Not a huge fan of either of these langauges but decided to make something that was predictable and reasonably performant unlike what I made for YodaScript.
 ```
 let name = "John Smith";
 let age = 30, vehicle;
 vehicle = "Hot rod"; 
 ```
 
-### Referencing
-It's important to note that all variables are actually references, (more on this later). To copy a variable by value instead of by reference use `$`/`copy`. To create a reference for a value use `ref`.
+### WiP: metaprogramming
+You can define macros that expand to larger expressions 
 
 ## Values
 Supports any valid JSON data. Note there are a number of functions 
@@ -98,13 +106,13 @@ Supports any valid JSON data. Note there are a number of functions
 |<ul><li>[x] </li></ul>|`Float`|`1.2`| 64bit floating point numbers |
 |<ul><li>[x] </li></ul>|`a -> b`|`(: i + 2 )` | first-class functions, alternatives to blocks|
 |<ul><li>[x] </li></ul>|`List`|`[1, 2.5, 'cat']`| Hold series of values |
-|<ul><li>[ ] </li></ul>|`Obj`|`{ temp: 98.6 }`| Holds associative |
+|<ul><li>[x] </li></ul>|`Obj`|`{ temp: 98.6 }`| Similar javascript objects |
 
-## Macros/Lambdas
-Macros/Lambdas are like first-class functions except they only have one input and one output.
+## Closures
+Closures are first class functions and additionally serve the same functions as code blocks in other languages.
 
-### Making a Macro
-- Macro literals are enclosed in `(:` `)`
+### Defining a Closure
+- Closure literals are enclosed in `(:` `)`
 - Variables can reference macros just like any other data, however code cannot modify their internals
 ```
 let name = input();
@@ -125,11 +133,29 @@ let greeting = (:
 print(greeting(input()))
 ```
 
+### Everything is a Closure
+Because of the increased tools for control flow, in this langauge, everything is a closure. Where other langauges use operators like `if`, `return`, `await`, etc, this language can just use closures (often even with user-level implementations). Further, this langauge doesn't have blocks (usually in curly braces), because closures can serve the same purpose as them.
+### What does this mean?
+To emphasize this point further, it can be thought that program files are wrapped in `(:` `)` by the compiler. Command line arguments are passed as the closure's input (`i`) and it's output (`o`) is eqivalent to `sys.exit`. So a simple echo program can be written as such
+```
+// Echo command line arguments
+print(i)
+// Exit success
+o(0)
+```
+This concept also applies to modules, exporting a value is as simple as
+```
+o(3.14159286)
+
+```
+
 ## Control Flow
-These are currently defined as builtin globals, but in the future they will likely be converted to proper operators. 
+These are currently defined as builtins/standard library functions, but in the future they might be converted to operators.
 
 ### Conditionals
-Might change syntax for this later to make `if` an operator but for now it's just a function. Note: comma separated arguments implicitly converted to list
+For now `if` is just a function.
+- comma separated arguments implicitly converted to list
+- 
 ```
 let gpa = Num(input()); // 3.86
 
@@ -153,28 +179,38 @@ while ((: n < 5 ), (:
     print(n);
 ));
 ```
-Also note that you can implement `while` on your own like this:
+You can implement `while` on your own like shown below. This will be required while I add conditional jumps to the VM bytecode.
 ```
 let while = (:
-    using args = i, break = o;
+    let args = i, break = o
     if (args[0](break), (:
-        args[1](break);
-        while(args);
-    ));
-);
+        args[1](break)
+        while(args)
+    ))
+)
 ```
 - Calling `i()` from body or condition will break out of the loop
 - Calling `o()` from the body will skip to next cycle
 - Calling `i(true)` will make `while(...)` return `true` when you break out
 
 #### Range Based For
-Given increased user tools for control flow (no confusion with return/await/break/continue/etc. being operators), I don't think this language needs a C-Style For loop. As an alternative Collections have their own implementations of for_each, map, filter, etc. as members.
-
+The following definitions (among others) will eventually be included in the standard library. In the near future I'll add `range` with similar functionality to python's version but without iterators. 
 ```
-range(0, 5).for_each((:
-    print(i); // 012345
-));
+let foreach = (:
+	let list = i[0], action = i[1]
+	let index = 0, end = size(list)
+	while((: index < end), (:
+		action(list[index], index, i)
+		index = index + 1	
+	))
+)
+let map = (:
+	let list = i[0], fn = i[1]
+	list = copy(i[0])
+	let ret = foreach(i[0], (: list[i[1]] = fn(i) ))
+	if(ret == empty, list, ret)
+)
 ```
 
 ## More coming soon
-Some of these features already aren't in this rough draft of software, 
+Most of these features are at least working, but some may be half baked. There are some things that are implemented haven't made their way into this guide and even more that I haven't implemented but have planned. If there's anything you want to see added, lmk
