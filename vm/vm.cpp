@@ -91,15 +91,15 @@ void Runtime::run() {
 		}
 
 		// Maybe we need to GC
-		if (false && (GC::size() - GC::last_gc_size) > GC::THRESHOLD) {
+		if ((GC::size() - GC::last_gc_size) > GC::THRESHOLD) {
 //			std::cout <<"DOGC!\n";
 			const int start = GC::size();
 			this->vm->do_gc();
 			GC::last_gc_size = GC::size();
-			std::cout <<"before: " <<start <<" after: " <<GC::last_gc_size <<std::endl;
+//			std::cout <<"before: " <<start <<" after: " <<GC::last_gc_size <<std::endl;
 			const auto diff = (int) start - (int) GC::last_gc_size;
-			if (diff)
-				std::cout <<"freed: " <<diff <<std::endl;
+//			if (diff)
+//				std::cout <<"freed: " <<diff <<std::endl;
 		}
 
 		// make sure we have something to do

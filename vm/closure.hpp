@@ -25,7 +25,7 @@ public:
 	std::unordered_map<int64_t, Value*> vars;
 
 	// body points to implementation defined by relevant closureDef
-	std::vector<BCInstr>* body;
+	std::vector<BCInstr>* body{nullptr};
 
 	// rn this only shows if they came from same literal...
 	bool operator==(const Closure& other) const {

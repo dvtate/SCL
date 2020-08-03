@@ -34,7 +34,7 @@
  */
 
 // executed by rt event loop
-class LambdaReturnMsg : public virtual RTMessage {
+class LambdaReturnMsg : public RTMessage {
 public:
 	std::shared_ptr<Frame> frame_target;
 	std::shared_ptr<SyncCallStack> stack_target;

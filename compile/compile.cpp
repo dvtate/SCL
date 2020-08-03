@@ -173,6 +173,17 @@ void ParsedMacro::read_decl(AST& tree) {
 void ParsedMacro::read_id(AST& tree) {
 	DLANG_DEBUG_MSG("read_id\n");
 
+	if (tree.token.token == "true") {
+		this->body.emplace_back(Command::OPCode::VAL_TRUE);
+		return;
+	} if (tree.token.token == "false") {
+		this->body.emplace_back(Command::OPCode::VAL_FALSE);
+		return;
+	}  if (tree.token.token == "empty") {
+		this->body.emplace_back(Command::OPCode::VAL_EMPTY);
+		return;
+	}
+
 	const MutilatedSymbol id = this->find_id(tree.token.token);
 	if (id.id < 0) {
 		this->errors.emplace_back(SemanticError(

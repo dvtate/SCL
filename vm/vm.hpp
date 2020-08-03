@@ -242,7 +242,7 @@ public:
 //		std::cout <<"Sweeping" <<std::endl;
 		GC::sweep();
 
-		GC::print_summary();
+//		GC::print_summary();
 	}
 };
 
