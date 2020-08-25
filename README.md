@@ -1,7 +1,8 @@
 # dlang20
-New language I'm working on. 
+This language was my attempt to solve some of the pains I experienced writing async javascript and python software. 
 
 ## Build
+The only system requirements should be a modern C++ compiler as I've only used things in the standard library. 
 ```
 $ mkdir build
 $ cd build
