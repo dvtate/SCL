@@ -1,9 +1,10 @@
-# Simple Callback Langauge
-This language was my attempt to solve some of the pains I experienced writing internet facing JavaScript and Python software.
+# SCL - Simple Callback Language
+This language was my attempt to solve some of the pains I experienced writing internet facing JavaScript and Python software. The acronym and file extension is SCL so the language can also be pronounced like 'Sickle'.
 
 ### Big ideas
 - Don't add operators or syntax features when you can use builtin-functions instead
-- 
+- Use the same tools for more things instead of adding more
+- Don't force opinions on the user
 
 ## Build
 The only system requirements should be a modern C++ compiler as I've only used things in the standard library. 
@@ -58,7 +59,6 @@ Hi
 $
 ```
 
-
 # Basic Syntax
 Note these are
 - 1. Some features aren't yet implemented
@@ -67,7 +67,7 @@ Note these are
 
 ## Language Structure
 - Statements end with semicolons (`;`)
-    - Automatic Semicolon Insertion: semicolons areoptional, but can help to add meaning
+    - Automatic Semicolon Insertion: semicolons are optional, but can help to add meaning
 - Not whitespace dependent
 
 ## Comments
@@ -281,5 +281,12 @@ let delay3 = (: set_timeout(i, o)() )
 STUB
 
 
+## Hopefully not an issue
+### Garbage Collection
+The language features a stop the world, tracing garbage collector. In addition to being terribly optimized and just a rough draft, uses malloc and several other standard library features instead of directly managing the heap so the performance is pretty atrocious for now. Some small improvements can easily double the performance of the GC.
+
+### Parser
+I used a custom shift-reduce parser that works for most programs, however because I didn't write a fully speccd out language grammer or use a compiler compiler, there are likely some edge cases that I did't cosider and performance could be better.
+
 ## More coming soon
-Most of these features are at least working, but some may be half baked. There are some things that are implemented haven't made their way into this guide and even more that I haven't implemented but have planned. If there's anything you want to see added, lmk
+Most of these features are at least working. There are some things that are implemented haven't made their way into this guide and even more that I haven't implemented but [have planned](https://docs.google.com/spreadsheets/d/1HZEsRAPhoAOnP-zT70_9bgLTrJVC9NmNyxKYWxsTT8Q/edit?usp=sharing). If there's anything you want to see added, lmk.
