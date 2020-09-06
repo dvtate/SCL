@@ -1,5 +1,9 @@
-# dlang20
-This language was my attempt to solve some of the pains I experienced writing async javascript and python software. 
+# Simple Callback Langauge
+This language was my attempt to solve some of the pains I experienced writing internet facing JavaScript and Python software.
+
+### Big ideas
+- Don't add operators or syntax features when you can use builtin-functions instead
+- 
 
 ## Build
 The only system requirements should be a modern C++ compiler as I've only used things in the standard library. 
@@ -214,6 +218,68 @@ let map = (:
 	if(ret == empty, list, ret)
 )
 ```
+
+## Async
+This for me was the main reason I made this language, javascript, python, C#, and most other languages featuring eventloops require you to change your logic depending on whether the code is running in a sync vs async environment and doing so adds excess language features that ultimately aren't user friendly. Instead I've added async to this language by simply adding a single builtin global `async`. And the user can use other langauge features to get equivalent functionality.
+
+### Runnin code in a new thread
+```
+// Imagine request is a function that takes a url and fetches
+// it's content from the internet
+let request = import('request.so')
+
+// We can call request just like any other function
+// And the vm will work on background tasks while we wait for it to download
+let text = request('http://x.com')
+
+// To run it in a new thread we can do
+let eventual = async(request)('http://x.com')
+
+// So that we can do other things while we wait on the download
+print('waiting...')
+
+// And then we can simply invoke the eventual to get the same behavior as before
+print(eventual()) // x
+```
+
+### Callbacks
+See [async demo](https://github.com/dvtate/simple-callback-language/blob/master/examples/async_demo.s) to see how easy it is to convert between functions that return promises and functions with callbacks
+
+### Hanging
+By default functions will implicitly return when they reach the end, however this behavior can be overridden by changing the value of `o`.
+##### Notes
+- This is dangerous because the thread won't return unless you already passed `o` to something that can explicitly call it. 
+- This may be removed in future
+
+```
+// Function that freezes thread for given duration
+let delay = import(delay)
+
+// This is equivalent to JavaScript's window.setTimeout
+let set_timeout = (:
+	let duration = i[0], action = i[1], arg = i[2]
+	async((:
+		delay(duration)
+		action(arg)
+	))()
+)
+
+// This function does same thing as `delay`
+let delay2 = (:
+	// After i ms, set_timeout will call o
+	set_timeout(i, o)
+	
+	// Prevent implicit return
+	o = 0
+)
+
+// Note that in this example, it's reccomended to simply do
+let delay3 = (: set_timeout(i, o)() )
+```
+
+### Yielding
+STUB
+
 
 ## More coming soon
 Most of these features are at least working, but some may be half baked. There are some things that are implemented haven't made their way into this guide and even more that I haven't implemented but have planned. If there's anything you want to see added, lmk
