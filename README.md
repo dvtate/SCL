@@ -1,11 +1,6 @@
 # SCL - Simple Callback Language
 This language was my attempt to solve some of the pains I experienced writing internet facing JavaScript and Python software. The acronym and file extension is SCL so the language can also be pronounced like 'Sickle'.
 
-### Big ideas
-- Don't add operators or syntax features when you can use builtin-functions instead
-- Use the same tools for more things instead of adding more
-- Don't force opinions on the user
-
 ## Build
 The only system requirements should be a modern C++ compiler as I've only used things in the standard library. 
 ```
@@ -22,11 +17,15 @@ Currently more focused on language stuff than main program, sorry this is ugly f
 - [x] `-o` : compile and output compressed bytecode
 - [x] `-r` : run compressed bytecode
 - [x] `-h` : print help msg
-- [ ] No args : run REPL
 
 ### Compile
 #### Bytecode Text
-Useful for debugging compiler. Also prints compile errors.
+Useful for debugging compiler. Also prints compile errors/warnings.
+<details>
+	<summary>See demo</summary>
+
+The following example shows the bytecode text for `print("Hi")`
+	
 ```
 $ echo 'print("Hi")' > test.s && ./dlang -ftest.s -O
 # Literal 0:
@@ -49,6 +48,8 @@ Compiled Line#3 came from Source Pos#6
 Compiled Line#4 came from Source Pos#0
 ```
 
+</details>
+
 #### Bytecode bin
 The following command will compile  `print("Hi")` in test.s. If it doesn't have any syntax errors it will output a file `o.bin` which you can run with the `-r` flag
 ```
@@ -69,16 +70,14 @@ Note these are
 - Statements end with semicolons (`;`)
     - Automatic Semicolon Insertion: semicolons are optional, but can help to add meaning
 - Not whitespace dependent
-
-## Comments
-These get ignored (maybe switch to `#` ?)
-- `//` line comments
-- `/* ... */` multi-line comments
+- Comments: `//` and `/* ... */`
 
 ## Variables/References
 
-### Builtin Global Variables
-These are likely to change. All of these values are reassignable and can be referenced and called within other scopes. 
+<details>
+  <summary>Builtin Global Variables</summary>
+	
+All of these values are reassignable and can be referenced and called within other scopes. 
 - `i`: command line arguments (Note: only at global scope, see macros section)
 - `o`: leave current scope with return value provided as argument (this is known as the return operator in most other langauges)
 - `print`: write values to terminal (ie: `print("Hello, world!")`)
@@ -91,10 +90,11 @@ These are likely to change. All of these values are reassignable and can be refe
 - `import`: Load a native function or module
 - `size`: Gives size of given value, equivalent to `len` in Python
 - `copy`: Deep-copies given value
-
+	
+</details>
 
 ### Declaration
-Variables are declared and defined with similar syntax to JavaScript and references behave in a similar way to Java. Not a huge fan of either of these langauges but decided to make something that was predictable and reasonably performant unlike what I made for YodaScript.
+Variables are declared with the let operator which has similar syntax to JavaScript. References also behave as you would expect from JavaScript.
 ```
 let name = "John Smith";
 let age = 30, vehicle;
@@ -105,7 +105,7 @@ vehicle = "Hot rod";
 You can define macros that expand to larger expressions 
 
 ## Values
-Supports any valid JSON data. Note there are a number of functions 
+Supports any valid JSON data 
 |Ready|Type|Literal| Use
 |---|---|---|---|
 |<ul><li>[x] </li></ul>|`Str`|`"Hello, world!"`| Holds character sequences|
@@ -116,21 +116,23 @@ Supports any valid JSON data. Note there are a number of functions
 |<ul><li>[x] </li></ul>|`Obj`|`{ temp: 98.6 }`| Similar javascript objects |
 
 ## Closures
-Closures are first class functions and additionally serve the same functions as code blocks in other languages.
+Closures are first class functions but more important here as they're used to replace code blocks.
 
 ### Defining a Closure
 - Closure literals are enclosed in `(:` `)`
 - Variables can reference macros just like any other data, however code cannot modify their internals
 ```
-let name = input();
 let say_hello = (:
-    print("hello, " + input);
+    print("hello, " + i);
 );
-say_hello(); // greets user
+
+print("what's your name?");
+let name = input();
+say_hello(name); // greets user
 ```
 
 ### Input and Output
-Input is accessible via the local variable i. Use the local variable o to return a value. Although you can use i and o themselves, declaring variables (`let`) or aliases (`using`) for them can improve clarity and is required if they get shadowed by a previous scope.
+Input is accessible via the local variable `i`. Use the local variable `o` to return a value. Although you can use i and o themselves, declaring variables (`let`) or aliases (`using`) for them can improve clarity and is required when they get shadowed by a previous scope.
 ```
 let greeting = (:
     let name = i;
@@ -147,13 +149,13 @@ To emphasize this point further, it can be thought that program files are wrappe
 ```
 // Echo command line arguments
 print(i)
+
 // Exit success
 o(0)
 ```
-This concept also applies to modules, exporting a value is as simple as
+This simplicity also applies to modules. There's no reason to have special operator for exports.
 ```
 o(3.14159286)
-
 ```
 
 ## Control Flow
@@ -161,7 +163,7 @@ These are currently defined as builtins/standard library functions, but in the f
 
 ### Conditionals
 For now `if` is just a function.
-- comma separated arguments implicitly converted to list
+- Note: comma separated arguments implicitly converted to list
 - 
 ```
 let gpa = Num(input()); // 3.86
@@ -176,6 +178,12 @@ if (gpa > 4 || gpa < 0, (:
 // PASS
 ```
 
+You could also implement a less useful `if` like so
+```
+let tern =  (: i[1 + Int(i[0] != 0)] );
+let if = (: tern(i)() );
+```
+
 ### Looping
 #### While Loops
 Pretty standard apart from it not being an operator.
@@ -186,7 +194,7 @@ while ((: n < 5 ), (:
     print(n);
 ));
 ```
-You can implement `while` on your own like shown below. This will be required while I add conditional jumps to the VM bytecode.
+You can implement `while` on your own like shown below. This will be required until conditional jumps get added to the VM bytecode.
 ```
 let while = (:
     let args = i, break = o
@@ -196,8 +204,8 @@ let while = (:
     ))
 )
 ```
-- Calling `i()` from body or condition will break out of the loop
 - Calling `o()` from the body will skip to next cycle
+- Calling `i()` from body or condition will break out of the loop
 - Calling `i(true)` will make `while(...)` return `true` when you break out
 
 #### Range Based For
@@ -222,17 +230,18 @@ let map = (:
 ## Async
 This for me was the main reason I made this language, javascript, python, C#, and most other languages featuring eventloops require you to change your logic depending on whether the code is running in a sync vs async environment and doing so adds excess language features that ultimately aren't user friendly. Instead I've added async to this language by simply adding a single builtin global `async`. And the user can use other langauge features to get equivalent functionality.
 
-### Runnin code in a new thread
+### Running code in a new thread
 ```
 // Imagine request is a function that takes a url and fetches
 // it's content from the internet
 let request = import('request.so')
 
 // We can call request just like any other function
-// And the vm will work on background tasks while we wait for it to download
+// The VM will put this thread on hold and do other tasks while wait
 let text = request('http://x.com')
+print(text); // x
 
-// To run it in a new thread we can do
+// Alternatively we can make the request in a new thread
 let eventual = async(request)('http://x.com')
 
 // So that we can do other things while we wait on the download
@@ -249,7 +258,7 @@ See [async demo](https://github.com/dvtate/simple-callback-language/blob/master/
 By default functions will implicitly return when they reach the end, however this behavior can be overridden by changing the value of `o`.
 ##### Notes
 - This is dangerous because the thread won't return unless you already passed `o` to something that can explicitly call it. 
-- This may be removed in future
+- Feature may be removed in future implementation and is usually wrong to use
 
 ```
 // Function that freezes thread for given duration
@@ -278,15 +287,22 @@ let delay3 = (: set_timeout(i, o)() )
 ```
 
 ### Yielding
-STUB
+TODO
 
+### Core values
+- Unclear operators should be avoided, use functions instead
+	- ie - `return`, `break`, `continue`, `export`, `import`, etc.
+- No redundant language features
+	- User should be able to create their own tools to improve clarity or use those from a standard library
+- Don't force opinions on the user
 
-## Hopefully not an issue
+## Duct Tape and Bubble Gum
+Targets for refactoring
 ### Garbage Collection
-The language features a stop the world, tracing garbage collector. In addition to being terribly optimized and just a rough draft, uses malloc and several other standard library features instead of directly managing the heap so the performance is pretty atrocious for now. Some small improvements can easily double the performance of the GC.
+The language features a stop the world, tracing garbage collector. Because my goal was to make a cool language and not an impressive GC, the current implementation is a pretty bad rough draft. Eventually I'd like to make it directly manage the heap instead of using `malloc`/`free` and there's some other gross things going on. I think I could easily double the performance of this rough draft but it's not a high priority at the moment.
 
 ### Parser
-I used a custom shift-reduce parser that works for most programs, however because I didn't write a fully speccd out language grammer or use a compiler compiler, there are likely some edge cases that I did't cosider and performance could be better.
+I made a custom shift-reduce parser that works for most programs, however because I didn't write a fully speccd out language grammer or use a compiler-compiler, there are likely some edge cases that I did't consider and performance could be better.
 
 ## More coming soon
 Most of these features are at least working. There are some things that are implemented haven't made their way into this guide and even more that I haven't implemented but [have planned](https://docs.google.com/spreadsheets/d/1HZEsRAPhoAOnP-zT70_9bgLTrJVC9NmNyxKYWxsTT8Q/edit?usp=sharing). If there's anything you want to see added, lmk.
