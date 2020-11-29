@@ -228,7 +228,7 @@ let map = (:
 ```
 
 ## Async
-This for me was the main reason I made this language, javascript, python, C#, and most other languages featuring eventloops require you to change your logic depending on whether the code is running in a sync vs async environment and doing so adds excess language features that ultimately aren't user friendly. Instead I've added async to this language by simply adding a single builtin global `async`. And the user can use other langauge features to get equivalent functionality.
+This was the main reason I made this language. JavaScript, Python, C· and most other languages featuring the most popular async/await syntax require you to change your program depending on sync/async context and in doing so adds excess and/or confusing features. In this language I only needed to add a single built-in global `async` in order to provide equivalent functionality.
 
 ### Running code in a new thread
 ```
@@ -256,6 +256,7 @@ See [async demo](https://github.com/dvtate/simple-callback-language/blob/master/
 
 ### Hanging
 By default functions will implicitly return when they reach the end, however this behavior can be overridden by changing the value of `o`.
+
 ##### Notes
 - This is dangerous because the thread won't return unless you already passed `o` to something that can explicitly call it. 
 - Feature may be removed in future implementation and is usually wrong to use
