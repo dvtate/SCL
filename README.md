@@ -12,11 +12,11 @@ $ make -j `nproc`
 
 ## Run
 Currently more focused on language stuff than main program, sorry this is ugly for now (feel free to send pr). Notice the separated compile and run operations.
-- [x] `-f` : required input file
-- [x] `-O` : compile and output bytecode text
-- [x] `-o` : compile and output compressed bytecode
-- [x] `-r` : run compressed bytecode
-- [x] `-h` : print help msg
+- `-f` : required input file
+- `-O` : compile and output bytecode text
+- `-o` : compile and output compressed bytecode
+- `-r` : run compressed bytecode
+- `-h` : print help msg
 
 ### Compile
 #### Bytecode Text
@@ -60,12 +60,6 @@ Hi
 $
 ```
 
-# Basic Syntax
-Note these are
-- 1. Some features aren't yet implemented
-- 2. Not set in stone: if you have an opinion, send a PR and we can make a better language together.
-- 3. Potentially out of date...
-
 ## Language Structure
 - Statements end with semicolons (`;`)
     - Automatic Semicolon Insertion: semicolons are optional, but can help to add meaning
@@ -106,14 +100,14 @@ You can define macros that expand to larger expressions
 
 ## Values
 Supports any valid JSON data 
-|Ready|Type|Literal| Use
-|---|---|---|---|
-|<ul><li>[x] </li></ul>|`Str`|`"Hello, world!"`| Holds character sequences|
-|<ul><li>[x] </li></ul>|`Int`|`10`| Holds whole numbers (64 bits) |
-|<ul><li>[x] </li></ul>|`Float`|`1.2`| 64bit floating point numbers |
-|<ul><li>[x] </li></ul>|`a -> b`|`(: i + 2 )` | first-class functions, alternatives to blocks|
-|<ul><li>[x] </li></ul>|`List`|`[1, 2.5, 'cat']`| Hold series of values |
-|<ul><li>[x] </li></ul>|`Obj`|`{ temp: 98.6 }`| Similar javascript objects |
+|Type|Literal| Use
+|---|---|---|
+|`Str`|`"Hello, world!"`| Holds character sequences|
+|`Int`|`10`| Holds whole numbers (64 bits) |
+|`Float`|`1.2`| 64bit floating point numbers |
+|`a -> b`|`(: i + 2 )` | first-class functions, alternatives to blocks|
+|`List`|`[1, 2.5, 'cat']`| Hold series of values |
+|`Obj`|`{ temp: 98.6 }`| Dictionary with strings as keys |
 
 ## Closures
 Closures are first class functions but more important here as they're used to replace code blocks.
