@@ -63,6 +63,7 @@ int main(int argc, char** argv) {
 	// they want a shell
 	if (fname == nullptr || !(run || out_bc || out_bct)) {
 		print_help_msg();
+		return 1;
 	}
 
 	if (run) {
@@ -82,6 +83,7 @@ int main(int argc, char** argv) {
 		interpreter->run();
 		return 0; // never gets called... (hopefully)
 	}
+
 	Program p;
 	try {
 		p = Program(fname);
