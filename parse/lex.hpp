@@ -28,10 +28,10 @@ public:
 	unsigned long long int pos;
 
 
-	Token(const t _type, std::string&& _token):
-			type(_type), token(_token), pos(0) {}
-	Token(const t _type, std::string&& _token, unsigned long long int _pos):
-			type(_type), token(_token), pos(_pos) {}
+	Token(const t type, std::string&& token):
+			type(type), token(token), pos(0) {}
+	Token(const t type, std::string&& token, unsigned long long int pos):
+			type(type), token(token), pos(pos) {}
 	Token() = default;
 	Token(const Token& other) = default;
 };
