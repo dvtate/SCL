@@ -10,6 +10,7 @@
 
 #include "../debug.hpp"
 
+// Lexical Tokens
 class Token {
 public:
 	enum t {
@@ -34,8 +35,8 @@ public:
 	Token() = default;
 	Token(const Token& other) = default;
 };
-typedef struct Token Token;
 
-std::vector<struct Token> tokenize_stream(std::istream& in);
+// Lexer
+std::vector<Token> tokenize_stream(std::istream& in);
 
 #endif //DLANG_LEX_HPP
