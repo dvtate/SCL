@@ -11,33 +11,40 @@
 
 #include "lex.hpp"
 
+// TODO this should probably use regex instead
 
+// Returns true if char c is contained in sring s and false otherwise
 static inline constexpr bool strcont(const char* s, const char c) {
 	while (*s && *s != c)
 		s++;
 	return *s;
 }
+
+// Is the given quote escaped with backslashes?
 template <class T>
 static inline bool quote_escaped(const T& buff, size_t offset) {
 	unsigned char bs = 0;
-	while (buff[offset--] == '\\' /* && offset */)
+	while (offset && buff[offset--] == '\\')
 		bs++;
 	return bs % 2;
 }
 
-
+// Find the end of the string
 template <class T, typename F>
 static inline bool end_str(T& buff, size_t& i, const F read, const char start_c = '"') {
-
+	// Keep reading file until the end of the string is found
 	do {
-		while (++i < buff.size()) {
-			if (buff[i] == start_c && !quote_escaped(buff, i)) {
+		// For each char in buffer
+		while (++i < buff.size())
+			// If the char is the ending character and not escaped we found it
+			if (buff[i] == start_c && !quote_escaped(buff, i))
 				return true;
-			}
-		}
+		
 		// didnt find end of string... fetch next line...
 		read();
 	} while (!read() && i < buff.size());
+	
+	// Syntax error unterminated string literal
 	return false;
 }
 
@@ -73,10 +80,11 @@ end_multi_comment(const T& buff,
 		// if not eof, scan again
 	} while (!read() && i < buff.size());
 
-	// !! syntax error unterminated multi-comment
+	// Syntax error unterminated multi-comment
 	return false;
 }
 
+// Find the end of a number literal
 template <class T> static inline bool
 end_num(const T& buff, size_t& i) {
 	size_t start = i;
@@ -85,26 +93,27 @@ end_num(const T& buff, size_t& i) {
 		i++;
 		if (i == buff.size())
 			return true;
-		// hex
 		if (buff[i] == 'x' || buff[i] == 'X') {
+			// hex
 			i++;
 			while (i < buff.size() && strcont("012345789abcdef", buff[i]))
 				i++;
 			return true;
-			// bin
+		
 		} else if (buff[i] == 'b' || buff[i] == 'B') {
+			// bin
 			i++;
 			while (i < buff.size() && (buff[i] == '1' || buff[i] == '0'))
 				i++;
 			return true;
-			// oct
 		} else if (strcont("01234567", buff[i])) {
-
+			// oct
 			i++;
 			while (i < buff.size() && strcont("01234567", buff[i]))
 				i++;
 
 			// dummy started dec number with a zero :thonk:
+			// try again knowing that it's decimal
 			if (buff[i] == '8' || buff[i] == '9') {
 				i = start;
 			} else
@@ -114,30 +123,34 @@ end_num(const T& buff, size_t& i) {
 	}
 	// dec
 
-	// check integer part 123*.456e789
+	// Check integer part 123*.456e789
 	while (i < buff.size() && strcont("0123456789", buff[i]))
 		i++;
 
-	// end of number
+	// Integer literal
 	if (buff[i] != 'e' && buff[i] != '.')
 		return true;
+
+	// Is there a decimal?
 	const bool only_int = buff[i] == 'e';
 	i++;
-	// next digit-sequence
+
+	// Next digit-sequence
 	while (i < buff.size() && strcont("0123456789", buff[i]))
 		i++;
 
+	// Prev digit seq was either exponent or decimal place for non 'e' notation number
 	if (only_int || buff[i] != 'e')
 		return true;
 
-	// exponent number
+	// Exponent number
 	while (i < buff.size() && strcont("0123456789", buff[i]))
 		i++;
 
 	return true;
 }
 
-
+// Lex identifier token
 template <class T>
 static inline void end_id(const T& buff, size_t& i) {
 	static const char terminators[] = " .:(){}[]/*&|=^%$#@!~+-;?<>,\t\n\r\\";
@@ -145,6 +158,7 @@ static inline void end_id(const T& buff, size_t& i) {
 		i++;
 }
 
+// Generic function that returns a string consisting of a section of a stl contianer
 template <class T>
 static inline std::string stl_substr(const T& buff, size_t start, const size_t end) {
 	std::string ret;
@@ -154,20 +168,24 @@ static inline std::string stl_substr(const T& buff, size_t start, const size_t e
 	return ret;
 }
 
+// Tokenizer
 template <class T, class F>
 Token get_token(const T& buff, size_t& i, const F read) {
 	// skip spaces
 	while (i < buff.size() && isspace(buff[i]))
 		i++;
 
+	// End of buffer
 	if (i == buff.size())
 		return Token( Token::t::END, "" );
 
+	// Get starting char
 	const char c = buff[i];
 
+	// Starts with /
 	if (c == '/') {
-		i++;
 		// eof
+		i++;
 		if (i == buff.size())
 			return Token(Token::t::OPERATOR, "/" );
 
@@ -178,6 +196,7 @@ Token get_token(const T& buff, size_t& i, const F read) {
 			return get_token(buff, i, read);
 		}
 
+		// Multi-line comment
 		if (buff[i] == '*') {
 			i++;
 			if (end_multi_comment(buff, i, read))
@@ -222,8 +241,10 @@ Token get_token(const T& buff, size_t& i, const F read) {
 
 // buffered read and tokenize on a line-by-line basis
 std::vector<Token> tokenize_stream(std::istream& in) {
+	// Temporary read buffer
 	std::deque<char> buff;
-
+	
+	// Used to track token position
 	unsigned long long chars_read = 0;
 
 	// fetch next line from stream
@@ -238,26 +259,34 @@ std::vector<Token> tokenize_stream(std::istream& in) {
 		return ret;
 	};
 
+	// Return a list of tokens
 	std::vector<Token> ret;
 
+	// Current token
 	Token t;
 
-	size_t i = 0; // working index for lex
-	size_t pos = 0; // used for getting line numbers for error messages
+	// Working index for lexer
+	size_t i = 0;
+	
+	// Later can be used to get line numbers for error messages
+	size_t pos = 0;
 
 	for (; ;) {
+		// Get token
+		// IIRC weird math here because of behavior when read() is called
 		const size_t prev_i = i;
 		t = get_token(buff, i, read);
 		t.pos = chars_read - (i - prev_i);// pos;
 		pos += i > prev_i ? (i - prev_i) : 0;
 
-
 		if (t.type == Token::t::END) {
-
+			// End of buffer
+			
 			// try to read next line
 			buff.clear();
 			i = 0;
 
+			// EOF
 			if (read()) {
 				ret.emplace_back(Token(Token::t::OPERATOR, "eof"));
 				ret.back().pos = pos;
@@ -265,8 +294,10 @@ std::vector<Token> tokenize_stream(std::istream& in) {
 			}
 
 		} else if (t.type == Token::t::ERROR) {
+			// Lex failed
 			return std::vector<Token>({ t });
 		} else {
+			// Next token
 #ifdef DLANG_DEBUG
 			std::cout <<"new tok: " <<t.type <<':' <<t.token <<':' <<t.pos << '/' <<i <<std::endl;
 #endif
@@ -277,7 +308,5 @@ std::vector<Token> tokenize_stream(std::istream& in) {
 
 
 //std::vector<struct Token> tokenize_string(const std::string& in) {
-//	// no more input to fetch
-//	const auto read = [](){};
-//
+// TODO std::stringstream
 //}
