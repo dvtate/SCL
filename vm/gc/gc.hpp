@@ -43,7 +43,6 @@
  * -
  */
 
-
 //
 namespace GC {
 
@@ -56,13 +55,15 @@ namespace GC {
 		 *
 		 * @param obj - pointer to object to destroy
 		 */
-		virtual void destroy(T *obj) const {
+		virtual void destroy(T* obj) const {
 			obj->~T();
 		}
 	};
-	//generic finalizer that does nothing
+	// generic finalizer that does nothing
 	struct _Destructor {
-		virtual void destroy(void* obj) const {}
+		virtual void destroy(void* obj) const {
+			(void)(obj); // Suppress unused parameter warning
+		}
 	};
 	static_assert(sizeof(Destructor<ValueTypes::obj_t>) == sizeof(_Destructor), "Destructor wrong size");
 	static_assert(sizeof(Destructor<ValueTypes::list_t>) == sizeof(_Destructor), "Destructor wrong size");
@@ -90,7 +91,7 @@ namespace GC {
 	/// Note: for complex types you should also call mark on it's children
 	/// 	This is best done by overloading the
 	inline bool mark(void* ptr) {
-		auto* p = ((Usage *) (((char *) ptr) - 1));
+		auto* p = ((Usage*) (((char*) ptr) - 1));
 		if (p->mark != Usage::Color::GREY) {
 			p->mark = Usage::Color::GREY;
 			return true;
