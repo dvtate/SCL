@@ -112,7 +112,7 @@ public:
 	void recv_msg(RTMessage* msg) {
 		std::lock_guard<std::mutex> m(this->msg_queue_mtx);
 		this->_msg_queue.emplace_back(msg);
-		DLANG_DEBUG_MSG("VM:RT: msg received\n");
+		SCL_DEBUG_MSG("VM:RT: msg received\n");
 	}
 
 	// clears msg queue and returns old contents
@@ -121,7 +121,7 @@ public:
 		std::vector<RTMessage*> cpy = {};
 		std::lock_guard<std::mutex> m(this->msg_queue_mtx);
 		std::swap(cpy, this->_msg_queue);
-		DLANG_DEBUG_MSG("VM:RT: cleared msg queue\n");
+		SCL_DEBUG_MSG("VM:RT: cleared msg queue\n");
 		return cpy;
 	}
 
@@ -144,7 +144,7 @@ public:
 		}
 		this->running = this->active.back();
 		this->active.pop_back();
-		DLANG_DEBUG_MSG("VM:RT: froze running CallStack\n");
+		SCL_DEBUG_MSG("VM:RT: froze running CallStack\n");
 	}
 
 	//
@@ -155,7 +155,7 @@ public:
 				return;
 			}
 
-		DLANG_DEBUG_MSG("VM:RT: froze pending CallStack\n");
+		SCL_DEBUG_MSG("VM:RT: froze pending CallStack\n");
 	}
 
 	// removes call stack from undead tracker
@@ -166,7 +166,7 @@ public:
 				this->undead.erase(it);
 				return;
 			}
-		DLANG_DEBUG_MSG("VM:RT: killed CallStack\n");
+		SCL_DEBUG_MSG("VM:RT: killed CallStack\n");
 	}
 
 	void kill_running(){
@@ -181,7 +181,7 @@ public:
 			// TODO replace this->active with a set or sth
 			std::find(this->active.begin(), this->active.end(), cs) == this->active.end()) \
 		{
-			DLANG_DEBUG_MSG("VM:RT: queued stack..\n");
+			SCL_DEBUG_MSG("VM:RT: queued stack..\n");
 			this->active.emplace_back(cs);
 		}
 	}

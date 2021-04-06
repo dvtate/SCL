@@ -2,8 +2,8 @@
 // Created by tate on 23-05-20.
 //
 
-#ifndef DLANG_GLOBAL_IDS_HPP
-#define DLANG_GLOBAL_IDS_HPP
+#ifndef SCL_GLOBAL_IDS_HPP
+#define SCL_GLOBAL_IDS_HPP
 
 #include <cinttypes>
 
@@ -11,4 +11,4 @@ class Value;
 const Value& get_global_id(int64_t id);
 constexpr unsigned short global_ids_count = 11;
 
-#endif //DLANG_GLOBAL_IDS_HPP
+#endif //SCL_GLOBAL_IDS_HPP

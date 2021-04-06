@@ -50,7 +50,7 @@ VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv)
 
 	// capture global variables
 	for (const int64_t id : entry.capture_ids) {
-		DLANG_DEBUG_MSG("capture global id # " <<id <<std::endl);
+		SCL_DEBUG_MSG("capture global id # " << id << std::endl);
 //		std::cout <<"cid" <<id <<std::endl;
 		main.vars[id] = ::new(GC::alloc<Value>()) Value(get_global_id(id));
 	}
@@ -109,14 +109,14 @@ void Runtime::run() {
 				std::this_thread::sleep_for(1ms);
 
 			} else {
-				DLANG_DEBUG_MSG("VM:RT:Pulled Stack from active\n");
+				SCL_DEBUG_MSG("VM:RT:Pulled Stack from active\n");
 				this->running = this->active.back();
 				this->active.pop_back();
 			}
 		} else {
 			for (int i = 100; i != 0 && this->running != nullptr; i--) {
 				if (this->running->stack.back()->tick()) {
-					DLANG_DEBUG_MSG("VM:RT:Frame: ran out of instructions\n");
+					SCL_DEBUG_MSG("VM:RT:Frame: ran out of instructions\n");
 					// function ran out of instructions to run...
 					// 	implicitly return value on top of stack
 					std::shared_ptr<Frame>& f = running->stack.back();

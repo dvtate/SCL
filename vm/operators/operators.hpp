@@ -2,8 +2,8 @@
 // Created by tate on 22-05-20.
 //
 
-#ifndef DLANG_OPERATORS_HPP
-#define DLANG_OPERATORS_HPP
+#ifndef SCL_OPERATORS_HPP
+#define SCL_OPERATORS_HPP
 
 #include <vector>
 #include <functional>
@@ -26,4 +26,4 @@ public:
 extern std::vector<VMOperator*> builtin_operators;
 
 
-#endif //DLANG_OPERATORS_HPP
+#endif //SCL_OPERATORS_HPP

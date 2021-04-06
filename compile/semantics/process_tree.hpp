@@ -2,15 +2,13 @@
 // Created by tate on 02-05-20.
 //
 
-#ifndef DLANG_PROCESS_TREE_HPP
-#define DLANG_PROCESS_TREE_HPP
-
+#ifndef SCL_PROCESS_TREE_HPP
+#define SCL_PROCESS_TREE_HPP
 
 #include <cinttypes>
 #include <string>
 #include <unordered_map>
 #include <vector>
-
 
 #include "../../parse/parse.hpp"
 
@@ -38,7 +36,6 @@
  * - replace object member requests with index operation (compile-time IC)
  */
 
-
 class SemanticError {
 public:
 	std::string msg;
@@ -49,7 +46,6 @@ public:
 			msg(message), pos(position), file(fname), is_warn(is_warning) {}
 };
 
-
 std::vector<SemanticError> process_tree(AST&, std::string);
 
-#endif //DLANG_PROCESS_TREE_HPP
+#endif //SCL_PROCESS_TREE_HPP

@@ -2,8 +2,8 @@
 // Created by tate on 27-04-20.
 //
 
-#ifndef DLANG_LEX_HPP
-#define DLANG_LEX_HPP
+#ifndef SCL_LEX_HPP
+#define SCL_LEX_HPP
 
 #include <string>
 #include <vector>
@@ -39,4 +39,4 @@ public:
 // Lexer
 std::vector<Token> tokenize_stream(std::istream& in);
 
-#endif //DLANG_LEX_HPP
+#endif //SCL_LEX_HPP

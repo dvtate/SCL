@@ -73,7 +73,7 @@ class IfFn : public NativeFunction {
 
 		Value i = f.eval_stack.back();
 		f.eval_stack.back() = Value();
-		DLANG_DEBUG_MSG("if(" << i.to_string() <<") called");
+		SCL_DEBUG_MSG("if(" << i.to_string() << ") called");
 		// invalid arg
 		if (i.type() != Value::VType::LIST)
 			return;

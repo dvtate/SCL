@@ -2,8 +2,8 @@
 // Created by tate on 28-04-20.
 //
 
-#ifndef DLANG_VALUE_HPP
-#define DLANG_VALUE_HPP
+#ifndef SCL_VALUE_HPP
+#define SCL_VALUE_HPP
 
 #include <cinttypes>
 #include <variant>
@@ -137,4 +137,4 @@ namespace GC {
 	}
 }
 
-#endif //DLANG_VALUE_HPP
+#endif //SCL_VALUE_HPP

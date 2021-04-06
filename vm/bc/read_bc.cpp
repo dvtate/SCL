@@ -111,9 +111,9 @@ static std::vector<int64_t> generate_capture_ids(int64_t entry, std::unordered_m
 		return {};
 	auto& cd = std::get<ClosureDef>(lits[entry].v);
 
-	DLANG_DEBUG_MSG("generate_capture_ids(" <<entry <<"):\n");
+	SCL_DEBUG_MSG("generate_capture_ids(" << entry << "):\n");
 	auto& ret = cd.capture_ids;
-#ifdef DLANG_DEBUG
+#ifdef SCL_DEBUG
 	std::cout <<"cap: ";
 	for (auto e : ret)
 		std::cout <<e <<", ";
@@ -122,7 +122,7 @@ static std::vector<int64_t> generate_capture_ids(int64_t entry, std::unordered_m
 #endif
 //	 Note: these are sorted
 	auto& decl_ids = cd.decl_ids;
-#ifdef DLANG_DEBUG
+#ifdef SCL_DEBUG
 	for (auto e : decl_ids)
 		std::cout <<e <<", ";
 
@@ -136,7 +136,7 @@ static std::vector<int64_t> generate_capture_ids(int64_t entry, std::unordered_m
 //		});
 	}
 	std::sort(ret.begin(), ret.end());
-#ifdef DLANG_DEBUG
+#ifdef SCL_DEBUG
 	std::cout <<")\nret: ";
 	for (auto e: ret)
 		std::cout <<e <<", ";
@@ -166,11 +166,11 @@ std::vector<Literal> read_lit_header(std::istream& is) {
 
 			ret.emplace_back(Literal(parse_str(strlit)));
 
-			DLANG_DEBUG_MSG("Read String Lit : " << ret.size() <<std::endl);
+			SCL_DEBUG_MSG("Read String Lit : " << ret.size() << std::endl);
 		} else if (instr == BCInstr::OPCode::START_LIT_MACRO){
 
 			ret.emplace_back(capture_closure(is, nested_closures, ret.size()));
-			DLANG_DEBUG_MSG("Read Macro Lit : " << ret.size() <<std::endl);
+			SCL_DEBUG_MSG("Read Macro Lit : " << ret.size() << std::endl);
 		}
 
 		//std::cout <<instr <<" : " <<(int)instr <<std::endl;

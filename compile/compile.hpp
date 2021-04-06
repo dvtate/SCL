@@ -2,8 +2,8 @@
 // Created by tate on 02-05-20.
 //
 
-#ifndef DLANG_COMPILE_HPP
-#define DLANG_COMPILE_HPP
+#ifndef SCL_COMPILE_HPP
+#define SCL_COMPILE_HPP
 
 #include <cinttypes>
 #include <string>
@@ -178,4 +178,4 @@ public:
 };
 
 
-#endif //DLANG_COMPILE_HPP
+#endif //SCL_COMPILE_HPP

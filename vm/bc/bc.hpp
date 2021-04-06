@@ -2,8 +2,8 @@
 // Created by tate on 24-05-20.
 //
 
-#ifndef DLANG_BC_HPP
-#define DLANG_BC_HPP
+#ifndef SCL_BC_HPP
+#define SCL_BC_HPP
 
 #include "../../compile/command.hpp"
 
@@ -20,7 +20,7 @@ public:
 	BCInstr(OPCode cmd, int64_t i): instr(cmd), i(i) {}
 	BCInstr(OPCode cmd, double f): instr(cmd), v(f) {}
 
-	std::string repr(){
+	std::string repr() {
 		std::string ret = Command::cmd_name(this->instr);
 		auto at = Command::arg_type(this->instr);
 		if (at == Command::ArgType::NO_ARG)
@@ -34,4 +34,4 @@ public:
 	}
 };
 
-#endif //DLANG_BC_HPP
+#endif //SCL_BC_HPP

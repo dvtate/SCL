@@ -2,8 +2,8 @@
 // Created by tate on 25-05-20.
 //
 
-#ifndef DLANG_REFS_HPP
-#define DLANG_REFS_HPP
+#ifndef SCL_REFS_HPP
+#define SCL_REFS_HPP
 
 #include "operators.hpp"
 
@@ -16,4 +16,4 @@ namespace VM_ops {
 }
 
 
-#endif //DLANG_REFS_HPP
+#endif //SCL_REFS_HPP

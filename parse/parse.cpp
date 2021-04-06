@@ -324,7 +324,7 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 
 	// invalid operand
 	if (!isOperand(stack.back())) {
-#ifdef DLANG_DEBUG
+#ifdef SCL_DEBUG
 		std::cout <<"\nnot an operand: `" <<stack.back().token.token <<"::" <<stack.back().short_type_name()
 		<<"` n=`" <<n.token.token <<"::" <<n.short_type_name() <<"`\n";
 #endif
@@ -385,7 +385,7 @@ static inline bool reduce_operators(std::vector<struct AST>& stack, const AST& n
 		if (prec_n <= prec_p || stack[i].token.token == ";") {
 			// NOTE reduction can fail in normal course of parse ://///
 			const auto ret = reduce_operator(stack, i);
-			DLANG_DEBUG_MSG("Parser reduce operator(" <<stack[i].token.token <<"): " <<(ret ? ret : "null") <<std::endl);
+			SCL_DEBUG_MSG("Parser reduce operator(" << stack[i].token.token << "): " << (ret ? ret : "null") << std::endl);
 
 			return !ret;
 		} else {
@@ -406,7 +406,7 @@ static inline bool reduce_operators(std::vector<struct AST>& stack, const AST& n
 
 		// try to reduce it
 		const auto ret = reduce_operator(stack, p_op_i);
-		DLANG_DEBUG_MSG("Parser ASI reduce operator(" <<stack[p_op_i].token.token <<"): " <<(ret ? ret : "null") <<std::endl);
+		SCL_DEBUG_MSG("Parser ASI reduce operator(" << stack[p_op_i].token.token << "): " << (ret ? ret : "null") << std::endl);
 		return !ret;
 	}
 
@@ -641,7 +641,7 @@ AST parse(const std::vector<Token>& tokens) {
 	while (i < tokens.size()) {
 		// get lookahead
 		AST tok = next_node(tokens, i, stack);
-#ifdef DLANG_DEBUG
+#ifdef SCL_DEBUG
 		std::cout <<"Lookahead: " << debug_AST(tok) <<std::endl;
 		do {
 			std::cout <<"Stack: ";
@@ -657,7 +657,7 @@ AST parse(const std::vector<Token>& tokens) {
 		if (can_shift(tok))
 			stack.emplace_back(tok);
 	}
-#ifdef DLANG_DEBUG
+#ifdef SCL_DEBUG
 	std::cout <<"\nStack: ";
 	for (const AST& n : stack)
 		std::cout <<debug_AST(n) << "   ";

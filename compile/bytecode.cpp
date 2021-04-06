@@ -19,7 +19,6 @@ std::string compile_text(std::vector<Command> cmds)
 }
 
 // convert to compressed binary format
-// return number of bytes stored in ret
 std::vector<char> compile_bin(std::vector<Command> cmds)
 {
 	std::vector<char> ret;
@@ -30,6 +29,5 @@ std::vector<char> compile_bin(std::vector<Command> cmds)
 		for (int i = 0; i < n; i++)
 			ret.push_back(buff[i]);
 	}
-
 	return ret;
 }

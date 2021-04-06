@@ -2,8 +2,8 @@
 // Created by tate on 17-05-20.
 //
 
-#ifndef DLANG_LITERAL_HPP
-#define DLANG_LITERAL_HPP
+#ifndef SCL_LITERAL_HPP
+#define SCL_LITERAL_HPP
 
 #include <cinttypes>
 #include <variant>
@@ -81,4 +81,4 @@ public:
 };
 
 
-#endif //DLANG_LITERAL_HPP
+#endif //SCL_LITERAL_HPP

@@ -2,8 +2,8 @@
 // Created by tate on 25-07-20.
 //
 
-#ifndef DLANG_VALUE_TYPES_HPP
-#define DLANG_VALUE_TYPES_HPP
+#ifndef SCL_VALUE_TYPES_HPP
+#define SCL_VALUE_TYPES_HPP
 
 #include <cinttypes>
 #include <variant>
@@ -65,4 +65,4 @@ namespace ValueTypes {
 	};
 }
 
-#endif //DLANG_VALUE_TYPES_HPP
+#endif //SCL_VALUE_TYPES_HPP

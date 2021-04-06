@@ -2,8 +2,8 @@
 // Created by tate on 07-06-20.
 //
 
-#ifndef DLANG_CMP_HPP
-#define DLANG_CMP_HPP
+#ifndef SCL_CMP_HPP
+#define SCL_CMP_HPP
 
 #include "operators.hpp"
 
@@ -28,4 +28,4 @@ namespace VM_ops {
 }
 
 
-#endif //DLANG_CMP_HPP
+#endif //SCL_CMP_HPP

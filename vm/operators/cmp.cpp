@@ -26,12 +26,12 @@ namespace VM_ops {
 		f.eval_stack.back() = Value(l.eq_identity(r));
 	}
 
-	void not_check_equality(Frame&f) {
+	void not_check_equality(Frame& f) {
 		check_equality(f);
 		auto& v = std::get<ValueTypes::bool_t>(f.eval_stack.back().v);
 		v = !v;
 	}
-	void not_check_identity(Frame&f) {
+	void not_check_identity(Frame& f) {
 		check_identity(f);
 		auto& v = std::get<ValueTypes::bool_t>(f.eval_stack.back().v);
 		v = !v;
@@ -39,19 +39,19 @@ namespace VM_ops {
 
 
 // template for comparison operators... will have to replace eventually...
-#define DLANG_CMP_FN_DEF(FNAME, OP) \
+#define SCL_CMP_FN_DEF(FNAME, OP) \
 	void FNAME(Frame& f) {\
 		Value rhs = f.eval_stack.back();\
 		f.eval_stack.pop_back();\
 		Value* l = f.eval_stack.back().deref();\
 		Value* r = rhs.deref();\
-		DLANG_DEBUG_MSG("CMP OP: " <<f.eval_stack.back().to_string() <<#OP <<rhs.to_string()<<std::endl);\
+		SCL_DEBUG_MSG("CMP OP: " <<f.eval_stack.back().to_string() <<#OP <<rhs.to_string()<<std::endl);\
 		\
 		if (l == nullptr || r == nullptr) {\
 			f.eval_stack.back() = Value(false);\
 			return;\
 		}\
-		DLANG_DEBUG_MSG("CMP OP TYPES: " <<(int) l->type() <<#OP <<(int) r->type()<<std::endl);\
+		SCL_DEBUG_MSG("CMP OP TYPES: " <<(int) l->type() <<#OP <<(int) r->type()<<std::endl);\
 	\
 		const auto lt = l->type(), rt = r->type();\
 		if (lt == ValueTypes::VType::INT) {\
@@ -83,10 +83,10 @@ namespace VM_ops {
 	}
 
 	// create operators from template
-	DLANG_CMP_FN_DEF(lt_act, <)
-	DLANG_CMP_FN_DEF(gt_act, >)
-	DLANG_CMP_FN_DEF(le_act, <=)
-	DLANG_CMP_FN_DEF(ge_act, >=)
+	SCL_CMP_FN_DEF(lt_act, <)
+	SCL_CMP_FN_DEF(gt_act, >)
+	SCL_CMP_FN_DEF(le_act, <=)
+	SCL_CMP_FN_DEF(ge_act, >=)
 
 	// check equality
 	VMOperator dobule_equals{"compare: equality operator (==)", check_equality};

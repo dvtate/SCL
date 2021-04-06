@@ -2,8 +2,8 @@
 // Created by tate on 29-04-20.
 //
 
-#ifndef DLANG_COMMAND_HPP
-#define DLANG_COMMAND_HPP
+#ifndef SCL_COMMAND_HPP
+#define SCL_COMMAND_HPP
 
 #include <cinttypes>
 #include <cstdlib>
@@ -337,4 +337,4 @@ public:
 };
 
 
-#endif //DLANG_COMMAND_HPP
+#endif //SCL_COMMAND_HPP

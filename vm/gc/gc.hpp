@@ -2,8 +2,8 @@
 //// Created by tate on 30-04-20.
 ////
 
-#ifndef DLANG_GC_HPP
-#define DLANG_GC_HPP
+#ifndef SCL_GC_HPP
+#define SCL_GC_HPP
 
 #include <atomic>
 #include <vector>
@@ -151,17 +151,17 @@ class LambdaReturnNativeFn;
 
 namespace GC {
 
-#define DLANG__GC_DECLS(TYPE) \
+#define SCL__GC_DECLS(TYPE) \
 	template<> TYPE* alloc<TYPE>(void); \
 	extern void mark(TYPE&); \
 	extern void mark(TYPE*);
 
-	DLANG__GC_DECLS(Value);
-	DLANG__GC_DECLS(ValueTypes::list_t);
-	DLANG__GC_DECLS(ValueTypes::obj_t);
-	DLANG__GC_DECLS(NativeFunction);
-	DLANG__GC_DECLS(Closure);
-	DLANG__GC_DECLS(LambdaReturnNativeFn);
+	SCL__GC_DECLS(Value);
+	SCL__GC_DECLS(ValueTypes::list_t);
+	SCL__GC_DECLS(ValueTypes::obj_t);
+	SCL__GC_DECLS(NativeFunction);
+	SCL__GC_DECLS(Closure);
+	SCL__GC_DECLS(LambdaReturnNativeFn);
 }
 
-#endif //DLANG_GC_HPP
+#endif //SCL_GC_HPP

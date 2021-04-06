@@ -10,7 +10,7 @@
 #include "vm/vm.hpp"
 #include "vm/bc/read_bc.hpp"
 
-// dlang <cmd> <in> options
+// scl <cmd> <in> options
 
 void print_help_msg(){
 	std::cout <<"For now these are options:\n"
@@ -68,12 +68,12 @@ int main(int argc, char** argv) {
 
 	if (run) {
 		std::ifstream bc_src = std::ifstream(fname);
-#ifdef DLANG_DEBUG
+#ifdef SCL_DEBUG
 		std::cout <<"reading lit header... ";
 #endif
 		std::vector<Literal>&& lits = read_lit_header(bc_src);
 
-#ifdef DLANG_DEBUG
+#ifdef SCL_DEBUG
 		std::cout <<"done\n";
 #endif
 		std::vector<std::string> args(argc);

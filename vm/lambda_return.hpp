@@ -92,7 +92,7 @@ public:
 //			// if stack target not in active stacks, put there
 //			if (rt.running != this->stack_target &&
 //					std::find(rt.active.begin(), rt.active.end(), this->stack_target) == rt.active.end()) {
-//				DLANG_DEBUG_MSG("LAM_RET: queued stack..\n");
+//				SCL_DEBUG_MSG("LAM_RET: queued stack..\n");
 //				rt.active.emplace_back(this->stack_target);
 //			}
 //
@@ -119,7 +119,7 @@ public:
 
 
 	void operator()(Frame& f) override {
-		DLANG_DEBUG_MSG("o() called\n");
+		SCL_DEBUG_MSG("o() called\n");
 		this->rt->recv_msg(new LambdaReturnMsg(
 				this->frame_target,
 				this->stack_target,

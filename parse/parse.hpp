@@ -2,8 +2,8 @@
 // Created by tate on 27-04-20.
 //
 
-#ifndef DLANG_PARSE_HPP
-#define DLANG_PARSE_HPP
+#ifndef SCL_PARSE_HPP
+#define SCL_PARSE_HPP
 
 #include <algorithm>
 #include <iostream>
@@ -16,7 +16,7 @@ class AST {
 public:
 	enum NodeType {
 		//
-		STATEMENTS=0, // semicolon delineated
+		STATEMENTS = 0, // semicolon delineated
 
 		// result of a let expr
 		DECLARATION,
@@ -146,4 +146,4 @@ AST parse(const std::vector<Token>& tokens);
 // Lisp representation
 std::string debug_AST(const AST& tree);
 
-#endif //DLANG_PARSE_HPP
+#endif //SCL_PARSE_HPP

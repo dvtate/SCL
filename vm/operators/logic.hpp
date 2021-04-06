@@ -2,8 +2,8 @@
 // Created by tate on 07-06-20.
 //
 
-#ifndef DLANG_LOGIC_HPP
-#define DLANG_LOGIC_HPP
+#ifndef SCL_LOGIC_HPP
+#define SCL_LOGIC_HPP
 
 #include "operators.hpp"
 
@@ -12,4 +12,4 @@ namespace VM_ops {
 }
 
 
-#endif //DLANG_LOGIC_HPP
+#endif //SCL_LOGIC_HPP

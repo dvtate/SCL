@@ -2,8 +2,8 @@
 // Created by tate on 18-05-20.
 //
 
-#ifndef DLANG_READ_BC_HPP
-#define DLANG_READ_BC_HPP
+#ifndef SCL_READ_BC_HPP
+#define SCL_READ_BC_HPP
 
 
 #include <istream>
@@ -16,4 +16,4 @@ std::vector<Literal> read_lit_header(std::istream& is);
 // TODO: read fault table... (bottom)
 // TODO: metadata section   (top)
 
-#endif //DLANG_READ_BC_HPP
+#endif //SCL_READ_BC_HPP

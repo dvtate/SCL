@@ -2,8 +2,8 @@
 // Created by tate on 05-07-20.
 //
 
-#ifndef DLANG_ASYNC_HPP
-#define DLANG_ASYNC_HPP
+#ifndef SCL_ASYNC_HPP
+#define SCL_ASYNC_HPP
 
 #include <iostream>
 #include "../debug.hpp"
@@ -93,7 +93,7 @@ public:
 
 	// Async await invoke
 	void operator()(Frame& f) override {
-		DLANG_DEBUG_MSG("invoked async wrapper");
+		SCL_DEBUG_MSG("invoked async wrapper");
 
 		if (this->v.type() == Value::VType::LAM) {
 			// Make async lambda call
@@ -134,4 +134,4 @@ public:
 };
 
 
-#endif //DLANG_ASYNC_HPP
+#endif //SCL_ASYNC_HPP

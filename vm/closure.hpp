@@ -2,8 +2,8 @@
 // Created by tate on 17-05-20.
 //
 
-#ifndef DLANG_CLOSURE_HPP
-#define DLANG_CLOSURE_HPP
+#ifndef SCL_CLOSURE_HPP
+#define SCL_CLOSURE_HPP
 
 #include <cinttypes>
 #include <unordered_map>
@@ -40,4 +40,4 @@ namespace GC {
 			mark(p.second);
 	}
 }
-#endif //DLANG_CLOSURE_HPP
+#endif //SCL_CLOSURE_HPP

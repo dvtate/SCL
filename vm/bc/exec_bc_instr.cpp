@@ -88,13 +88,13 @@ static void use_lit(Frame& f, const std::size_t litnum) {
 		auto &cd = std::get<ClosureDef>(lit.v);
 		auto* c = ::new(GC::alloc<Closure>()) Closure();
 
-#ifdef DLANG_DEBUG
+#ifdef SCL_DEBUG
 		// capture lexical vars
 		for (const int64_t cid : cd.capture_ids) {
 			try {
 				c->vars[cid] = f.closure.vars.at(cid);
 			} catch (...) {
-				DLANG_DEBUG_MSG("USE_LIT: unable to capture id# " << cid << std::endl);
+				SCL_DEBUG_MSG("USE_LIT: unable to capture id# " << cid << std::endl);
 			}
 		}
 #else
@@ -115,23 +115,23 @@ static void use_lit(Frame& f, const std::size_t litnum) {
 
 
 void exec_bc_instr(Frame& f, BCInstr cmd) {
-	DLANG_DEBUG_MSG(cmd.repr() <<std::endl);
+	SCL_DEBUG_MSG(cmd.repr() << std::endl);
 	// OPTIMIZE: use jump table
 
 	switch (cmd.instr) {
 		// push id ref onto stack
 		case BCInstr::OPCode::USE_ID:
-#ifdef DLANG_DEBUG
+#ifdef SCL_DEBUG
 			try {
 				Value* v = f.closure.vars.at(cmd.i);
 				if (v) {
 					f.eval_stack.emplace_back(*v);
 				} else {
-					DLANG_DEBUG_MSG("var initialized to null wtf\n");
+					SCL_DEBUG_MSG("var initialized to null wtf\n");
 					exit(1);
 				}
 			} catch (...) {
-				DLANG_DEBUG_MSG("Undefined var id: " <<cmd.i <<std::endl);
+				SCL_DEBUG_MSG("Undefined var id: " << cmd.i << std::endl);
 			}
 #else
 //			std::cout <<"vid:" <<cmd.i
@@ -187,15 +187,15 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 		};
 
 		case BCInstr::OPCode::SET_ID:
-#ifdef DLANG_DEBUG
+#ifdef SCL_DEBUG
 			try {
 				Value* p = f.closure.vars.at(cmd.i);
 				if (!p) {
-					DLANG_DEBUG_MSG("id " <<cmd.i <<" = null\n");
+					SCL_DEBUG_MSG("id " << cmd.i << " = null\n");
 				}
 				*f.closure.vars[cmd.i] = f.eval_stack.back();
 			} catch (...) {
-				DLANG_DEBUG_MSG("SET_ID(" <<cmd.i <<") failed\n");
+				SCL_DEBUG_MSG("SET_ID(" << cmd.i << ") failed\n");
 			}
 #else
 			*f.closure.vars[cmd.i] = f.eval_stack.back();
@@ -266,7 +266,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			return;
 		}
 		default:
-			DLANG_DEBUG_MSG("... not implemented" <<cmd.repr() <<std::endl);
+			SCL_DEBUG_MSG("... not implemented" << cmd.repr() << std::endl);
 			return;
 	}
 }

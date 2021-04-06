@@ -26,7 +26,7 @@ int64_t MutilatedSymbol::_uid = 20;
 // ParsedMacro::read_* : recursively convert the AST of the macro into a list of commands and populate structures
 
 void ParsedMacro::read_num_lit(AST& tree) {
-	DLANG_DEBUG_MSG("read_num_lit\n");
+	SCL_DEBUG_MSG("read_num_lit\n");
 	try { // try to parse int first
 		// sigh...
 		int64_t v;
@@ -64,7 +64,7 @@ void ParsedMacro::read_num_lit(AST& tree) {
 }
 
 void ParsedMacro::read_string_lit(AST& tree) {
-	DLANG_DEBUG_MSG("read_string_lit\n");
+	SCL_DEBUG_MSG("read_string_lit\n");
 
 	// get string text
 	std::string v = tree.token.token;
@@ -82,7 +82,7 @@ void ParsedMacro::read_string_lit(AST& tree) {
 }
 
 void ParsedMacro::read_dot_op(AST& tree) {
-	DLANG_DEBUG_MSG("read_dot_op");
+	SCL_DEBUG_MSG("read_dot_op");
 
 	auto& obj = tree.members[0];
 	auto& mem = tree.members[1];
@@ -122,7 +122,7 @@ void ParsedMacro::read_index_op(AST& tree){
 }
 
 void ParsedMacro::read_decl(AST& tree) {
-	DLANG_DEBUG_MSG("read_decl\n");
+	SCL_DEBUG_MSG("read_decl\n");
 	if (tree.members.empty()) {
 		this->errors.emplace_back(SemanticError(
 				"empty declaration", tree.token.pos, this->file_name));
@@ -134,7 +134,7 @@ void ParsedMacro::read_decl(AST& tree) {
 		tree.members = tree.members[0].members;
 
 	for (auto& d : tree.members) {
-		DLANG_DEBUG_MSG("read_decl:" <<debug_AST(d) <<std::endl);
+		SCL_DEBUG_MSG("read_decl:" << debug_AST(d) << std::endl);
 		if (d.type == AST::NodeType::IDENTIFIER) {
 			if (keyword_values.find(d.token.token) != keyword_values.end()) {
 				this->errors.emplace_back(SemanticError(
@@ -155,7 +155,7 @@ void ParsedMacro::read_decl(AST& tree) {
 				const auto idid = this->declare_id(d.members[0].token.token);
 				this->body.emplace_back(Command(Command::OPCode::DECL_ID, idid));
 				this->read_tree(d);
-				DLANG_DEBUG_MSG("read_decl: "<<d.members[0].token.token <<" = " <<idid <<std::endl);
+				SCL_DEBUG_MSG("read_decl: " << d.members[0].token.token << " = " << idid << std::endl);
 			} else {
 				this->errors.emplace_back(SemanticError(
 						"invalid assignment, expected identifier, got: " + (
@@ -171,7 +171,7 @@ void ParsedMacro::read_decl(AST& tree) {
 }
 
 void ParsedMacro::read_id(AST& tree) {
-	DLANG_DEBUG_MSG("read_id\n");
+	SCL_DEBUG_MSG("read_id\n");
 
 	if (tree.token.token == "true") {
 		this->body.emplace_back(Command::OPCode::VAL_TRUE);
@@ -202,7 +202,7 @@ void ParsedMacro::read_id(AST& tree) {
 
 //
 void ParsedMacro::read_assignment(AST& t) {
-	DLANG_DEBUG_MSG("read_assignment\n");
+	SCL_DEBUG_MSG("read_assignment\n");
 
 	// a = 123
 	if (t.members[0].type == AST::NodeType::IDENTIFIER) {
@@ -279,7 +279,7 @@ void ParsedMacro::read_assignment(AST& t) {
 
 // operators defined only for convenience
 void ParsedMacro::read_operation(AST& t){
-	DLANG_DEBUG_MSG("read_operation\n");
+	SCL_DEBUG_MSG("read_operation\n");
 	// TODO: replace with actual operator ID's from VM
 	std::unordered_map<std::string, uint16_t> op_ids {
 			{ "+",		0 },
@@ -320,7 +320,7 @@ void ParsedMacro::read_operation(AST& t){
 }
 
 void ParsedMacro::read_macro_invoke(AST& t) {
-	DLANG_DEBUG_MSG("read_macro_invoke\n");
+	SCL_DEBUG_MSG("read_macro_invoke\n");
 
 	if (t.members.size() < 1) {
 		this->errors.emplace_back(SemanticError(
@@ -345,7 +345,7 @@ void ParsedMacro::read_macro_invoke(AST& t) {
 }
 
 void ParsedMacro::read_macro_lit(AST& tree) {
-	DLANG_DEBUG_MSG("read_macro_lit\n");
+	SCL_DEBUG_MSG("read_macro_lit\n");
 
 	// compile macro
 	std::vector<ParsedMacro*> pps = this->parents;
@@ -365,7 +365,7 @@ void ParsedMacro::read_macro_lit(AST& tree) {
 }
 
 void ParsedMacro::read_list_lit(AST& tree) {
-	DLANG_DEBUG_MSG("read_list_lit\n");
+	SCL_DEBUG_MSG("read_list_lit\n");
 	// put elements onto stack
 	for (auto& m : tree.members)
 		read_tree(m);
@@ -374,7 +374,7 @@ void ParsedMacro::read_list_lit(AST& tree) {
 }
 
 void ParsedMacro::read_statements(AST& tree) {
-	DLANG_DEBUG_MSG("read_statements\n");
+	SCL_DEBUG_MSG("read_statements\n");
 	for (AST& statement : tree.members) {
 		read_tree(statement);
 		this->body.emplace_back(Command(Command::OPCode::CLEAR_STACK));
@@ -387,7 +387,7 @@ void ParsedMacro::read_statements(AST& tree) {
 }
 
 void ParsedMacro::read_obj_lit(AST& tree) {
-	DLANG_DEBUG_MSG("read_obj_lit");
+	SCL_DEBUG_MSG("read_obj_lit");
 
 	// Handle {}
 	if (tree.members.empty()) {
@@ -412,7 +412,7 @@ void ParsedMacro::read_obj_lit(AST& tree) {
 }
 
 void ParsedMacro::read_tree(AST& tree) {
-	DLANG_DEBUG_MSG("read_tree: " <<tree.type_name() <<std::endl);
+	SCL_DEBUG_MSG("read_tree: " << tree.type_name() << std::endl);
 	switch (tree.type) {
 		case AST::NodeType::STATEMENTS:
 			read_statements(tree);
@@ -570,20 +570,20 @@ void Program::load_file(const std::string& fname) {
 
 //	std::cout <<"tokenizing...";
 
-	DLANG_DEBUG_MSG("tokenizing...");
+	SCL_DEBUG_MSG("tokenizing...");
 	const auto toks = tokenize_stream(file);
-	DLANG_DEBUG_MSG("done\n");
+	SCL_DEBUG_MSG("done\n");
 
 
-	DLANG_DEBUG_MSG("parsing...");
+	SCL_DEBUG_MSG("parsing...");
 //	std::cout <<"parsing...";
 	AST main = parse(toks);
 //	std::cout <<"done\n";
-	DLANG_DEBUG_MSG("done\n");
+	SCL_DEBUG_MSG("done\n");
 
 	// semantic analysis
 	std::vector<SemanticError> errs = process_tree(main, fname);
-	DLANG_DEBUG_MSG("After Semantics: " <<debug_AST(main) <<std::endl);
+	SCL_DEBUG_MSG("After Semantics: " << debug_AST(main) << std::endl);
 
 	// implicit main macro
 	ParsedMacro entry(main, fname,

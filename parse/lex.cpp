@@ -298,7 +298,7 @@ std::vector<Token> tokenize_stream(std::istream& in) {
 			return std::vector<Token>({ t });
 		} else {
 			// Next token
-#ifdef DLANG_DEBUG
+#ifdef SCL_DEBUG
 			std::cout <<"new tok: " <<t.type <<':' <<t.token <<':' <<t.pos << '/' <<i <<std::endl;
 #endif
 			ret.emplace_back(t);
