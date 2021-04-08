@@ -176,7 +176,7 @@ static inline AST next_node(const std::vector<Token>& tokens, size_t& i, std::ve
 static inline int prev_matching_container_index(std::vector<AST>& stack, const AST& nn) {
 	if (nn.type != AST::NodeType::CONT_CLOSE)
 		return -1;
-	std::size_t ret = stack.size();
+	ssize_t ret = stack.size();
 
 	// Find macro/paren_expr open
 	if (nn.token.token[0] == ')')
@@ -323,7 +323,7 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 	}
 
 	// invalid operand
-	if (!isOperand(stack.back())) {
+	if (!isOperand(stack.back()) && !(stack.back().type == AST::NodeType::KV_PAIR && n.token.token == ",")) {
 #ifdef SCL_DEBUG
 		std::cout <<"\nnot an operand: `" <<stack.back().token.token <<"::" <<stack.back().short_type_name()
 		<<"` n=`" <<n.token.token <<"::" <<n.short_type_name() <<"`\n";
@@ -422,7 +422,7 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 	// Need to see a container close to be able to reduce
 	if (!stack.empty() && stack.back().type == AST::NodeType::CONT_CLOSE) {
 		// find nearest opener
-		int i = (int) stack.size();
+		long i = (long) stack.size();
 		while (--i >= 0)
 			if (stack[i].type == AST::NodeType::LIST_OPEN ||
 				stack[i].type == AST::NodeType::MACRO_OPEN ||
@@ -444,22 +444,23 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 					SyntaxError(stack.back().token,
 					std::string("unexpected `") + stack.back().token.token + '`'),
 				};
+
 			// Should only be one node in container
 			if (stack.size() - i > 3)
 				throw std::vector<SyntaxError>{SyntaxError(stack[i].token, "invalid expression in list")};
 
-			stack.pop_back(); // pop close
-			AST n = stack.back();
-			stack.pop_back(); // pop inside
-
-			// list.members = comma separated values
-			if ((n.type == AST::NodeType::OPERATION && n.token.token == ",") || n.type == AST::NodeType::COMMA_SERIES)
-				n.type = AST::NodeType::LIST;
-			else
-				n = AST(AST::NodeType::LIST, stack.back().token, std::vector<AST>({n}));
-
-			// replace start of container with new container node
-			stack.back() = n;
+			// pop closer
+			stack.pop_back();
+			if ((long) stack.size() - 2 == i) {
+				// has expression to capture
+				const AST e = stack.back();
+				stack.pop_back();
+				stack.back().type = AST::NodeType::LIST;
+				stack.back().members.emplace_back(e);
+			} else {
+				// [] empty list
+				stack.back().type = AST::NodeType::LIST;
+			}
 			return true;
 		}
 
@@ -523,11 +524,11 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 				};
 
 			if (stack.size() - i > 3)
-				throw std::vector<SyntaxError>{SyntaxError(stack[i].token, "invalid expression in parens")};
+				throw std::vector<SyntaxError>{SyntaxError(stack[i].token, "invalid expression in object literal")};
 
 			// pop closer
 			stack.pop_back();
-			if ( (long int) stack.size() - 2 == i) {
+			if ((long) stack.size() - 2 == i) {
 				// has expression to capture
 				const AST e = stack.back();
 				stack.pop_back();
@@ -572,6 +573,7 @@ static inline bool reduce_invocations(std::vector<AST>& stack) {
 				throw std::vector<SyntaxError>{SyntaxError(arg.token, "Invalid parenthesised expression")};
 
 			stack.back() = AST(AST::NodeType::INVOKE, Token(Token::t::OPERATOR, "@"), children);
+			return true;
 		}
 	}
 
@@ -585,6 +587,7 @@ static inline bool reduce_invocations(std::vector<AST>& stack) {
 			ind.members.emplace_back(stack.back().members.back()); // expr inside brackets
 			stack.pop_back();
 			stack.back() = ind;
+			return true;
 		}
 	}
 
@@ -613,6 +616,27 @@ static inline bool reduce_asi(std::vector<AST>& stack, const AST& n) {
 static inline bool reduce(const std::vector<Token>& tokens, size_t& i, std::vector<AST>& stack, const AST& n) {
 	if (stack.empty())
 		return false;
+
+#ifdef SCL_DEBUG
+	if (reduce_invocations(stack)) {
+		std::cout <<"reduced invocation\n";
+		return true;
+	}
+	if (reduce_operators(stack, n)) {
+		std::cout <<"reduced operator\n";
+		return true;
+	}
+	if (reduce_containers(stack)) {
+		std::cout <<"reduced container\n";
+		return true;
+	}
+	if (reduce_asi(stack, n)) {
+		std::cout <<"reduced asi\n";
+		return true;
+	}
+	return false;
+
+#endif
 
 	// TODO ASI if <eof> or <;> try to reduce to single statements token (stack.insert(...))
 	return

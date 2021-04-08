@@ -15,8 +15,8 @@
 class AST {
 public:
 	enum NodeType {
-		//
-		STATEMENTS = 0, // semicolon delineated
+		// semicolon delineated expressions
+		STATEMENTS = 0,
 
 		// result of a let expr
 		DECLARATION,
@@ -35,8 +35,6 @@ public:
 		OBJECT,	// { ... }
 		LIST, // [ ... ]
 
-
-
 		// containers
 		MACRO_OPEN,
 		LIST_OPEN,
@@ -51,11 +49,9 @@ public:
 		// temporary
 		OPERATOR,  // un-parsed operator
 
-
 		INVALID,
 
 		BOUND_ID,
-
 	} type;
 
 	Token token;
@@ -106,21 +102,21 @@ public:
 		switch (this->type) {
 			case NodeType::STATEMENTS:		return "SEMIS";
 			case NodeType::OPERATION:		return "OP_EXPR";
-			case NodeType::NUM_LITERAL:		return "NUM_LIT";
-			case NodeType::STR_LITERAL:		return "STR_LIT";
+			case NodeType::NUM_LITERAL:		return "NUM";
+			case NodeType::STR_LITERAL:		return "STR";
 			case NodeType::IDENTIFIER:		return "ID";
 			case NodeType::INVOKE:			return "INVOKE";
-			case NodeType::MACRO:			return "MACRO_LIT";
-			case NodeType::OBJECT:			return "OBJ_LIT";
-			case NodeType::INDEX:			return "LIST_IDX";
-			case NodeType::LIST:			return "LIST_LIT";
+			case NodeType::MACRO:			return "MACRO";
+			case NodeType::OBJECT:			return "OBJ";
+			case NodeType::INDEX:			return "INDEX";
+			case NodeType::LIST:			return "LIST";
 			case NodeType::MACRO_OPEN:		return "M_OPEN";
 			case NodeType::LIST_OPEN:		return "L_OPEN";
 			case NodeType::PAREN_OPEN:		return "P_OPEN";
 			case NodeType::OBJ_OPEN:		return "O_OPEN";
 			case NodeType::CONT_CLOSE:		return "C_CLOSE";
 			case NodeType::KV_PAIR:			return "KV_PAIR";
-			case NodeType::COMMA_SERIES:	return "CSRS";
+			case NodeType::COMMA_SERIES:	return "COMMA";
 			case NodeType::PAREN_EXPR:		return "P_EXPR";
 			case NodeType::DECLARATION:		return "DECL";
 			case NodeType::OPERATOR:		return "OP";
@@ -128,7 +124,6 @@ public:
 			default:						return "?:" + std::to_string(this->type);
 		}
 	}
-
 };
 
 class SyntaxError {
@@ -137,7 +132,8 @@ public:
 	std::string msg;
 
 	SyntaxError(Token _token, std::string _message):
-		token(std::move(_token)), msg(std::move(_message)) { }
+		token(std::move(_token)), msg(std::move(_message))
+	{ }
 };
 
 //
