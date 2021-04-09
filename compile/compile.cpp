@@ -130,7 +130,7 @@ void ParsedMacro::read_decl(AST& tree) {
 	}
 
 	// support multiple declarations separated by commas
-	if (tree.members[0].type == AST::NodeType::OPERATION && tree.members[0].token.token == ",")
+	if (tree.members[0].type == AST::NodeType::COMMA_SERIES)
 		tree.members = tree.members[0].members;
 
 	for (auto& d : tree.members) {
@@ -250,14 +250,20 @@ void ParsedMacro::read_assignment(AST& t) {
 		this->body.emplace_back(Command(Command::OPCode::SET_INDEX));
 
 	} else if (t.members[0].type == AST::NodeType::OPERATION && t.members[0].token.token == ".") {
-		// obj.name = value; => <value> <obj> SET_MEM_L(litnum(name))
+		// obj.name = value; => <obj> <value> SET_MEM_L(litnum(member_name))
+
+		// Read member request (USE_MEM_L), the syntax is basically correct but need to change operand order
+		this->read_tree(t.members[0]);
+
+		// Pop USE_MEM_L from the stack
+		auto instr = this->body.back();
+		instr.instr = Command::OPCode::SET_MEM_L;
+		this->body.pop_back();
 
 		// read value ("steve")
 		this->read_tree(t.members[1]);
 
-		// read member-request (USE_MEM_L) and convert to set_mem_l, other properties should be same
-		this->read_tree(t.members[0]);
-		this->body.back().instr = Command::OPCode::SET_MEM_L;
+		this->body.emplace_back(instr);
 
 	} else {
 		// Could be typerror
@@ -366,6 +372,11 @@ void ParsedMacro::read_macro_lit(AST& tree) {
 
 void ParsedMacro::read_list_lit(AST& tree) {
 	SCL_DEBUG_MSG("read_list_lit\n");
+
+	// Handle comma-series
+	if (tree.members[0].type == AST::NodeType::COMMA_SERIES)
+		tree.members = tree.members[0].members;
+
 	// put elements onto stack
 	for (auto& m : tree.members)
 		read_tree(m);
@@ -389,26 +400,72 @@ void ParsedMacro::read_statements(AST& tree) {
 void ParsedMacro::read_obj_lit(AST& tree) {
 	SCL_DEBUG_MSG("read_obj_lit");
 
-	// Handle {}
-	if (tree.members.empty()) {
-		this->body.emplace_back(Command(Command::OPCode::MK_OBJ, (int32_t) 0));
+	// Start with empty object
+	this->body.emplace_back(Command(Command::OPCode::MK_OBJ, (int32_t) 0));
+
+	// No members
+	if (tree.members.empty())
 		return;
+
+//	this->errors.emplace_back(SemanticError(
+//			"Multi-item object literals currently not supported, please use {} and then initialize members",
+//			tree.token.pos, this->file_name));
+
+
+	std::vector<AST>& members = tree.members[0].type == AST::NodeType::COMMA_SERIES
+			? tree.members[0].members
+			: tree.members;
+
+	// Add members
+	for (auto& m : members) {
+		if (m.type == AST::NodeType::KV_PAIR) {
+			auto& k = m.members[0];
+			auto& v = m.members[1];
+
+			// { a : 5, 'b' : 6 }
+			if (k.type == AST::NodeType::IDENTIFIER || k.type == AST::NodeType::STR_LITERAL) {
+				// add member name to lit header
+				const auto lit_num = this->compiler->empl_lit(
+						ParsedLiteral(ParsedLiteral::LitType::STRING, k.token.token));
+
+				// Compile value into next item on the stack
+				this->read_tree(v);
+
+				// Set member
+				this->body.emplace_back(Command(Command::OPCode::SET_MEM_L, lit_num));
+
+			// { [a] : 5 }
+			} else if (k.type == AST::NodeType::LIST) {
+				// key is the value of expression, need to use SET_INDEX instr
+
+				// <obj>* <key> <value> SET_INDEX => <obj>
+				this->read_tree(k.members[0]);
+				this->read_tree(v);
+				this->body.emplace_back(Command(Command::OPCode::SET_INDEX));
+			} else {
+				this->errors.emplace_back(SemanticError(
+						std::string("Invalid object member key:") + debug_AST(m),
+						tree.token.pos, this->file_name));
+				return;
+			}
+
+			// Key and value from identifier
+		} else if (m.type == AST::NodeType::IDENTIFIER) {
+			// Get value from var
+			this->read_tree(m);
+
+			// Make instruction
+			const auto lit_num = this->compiler->empl_lit(
+				ParsedLiteral(ParsedLiteral::LitType::STRING, m.token.token));
+			this->body.emplace_back(Command(Command::OPCode::SET_MEM_L, lit_num));
+		} else {
+			this->errors.emplace_back(SemanticError(
+					std::string("Invalid object member expected keys and values to be"
+				 	" separated by `:` and pairs with `,` got ") + debug_AST(m),
+					tree.token.pos, this->file_name));
+			return;
+		}
 	}
-
-	this->errors.emplace_back(SemanticError(
-			"Multi-item object literals currently not supported, please use {} and then initialize members",
-			tree.token.pos, this->file_name));
-//	if (tree.members[0].type == AST::NodeType::COMMA_SERIES) {
-//		for (auto& mem : tree.members[0].members) {
-//			if (mem.type == AST::NodeType::KV_PAIR) {
-//				std::string key;
-//				if (mem.members[0].type == AST::NodeType::IDENTIFIER || mem.members[0].type == AST::NodeType::STR_LITERAL) {
-//					key = mem.members[0].token.token;
-//				}
-//			}
-//		}
-//	}
-
 }
 
 void ParsedMacro::read_tree(AST& tree) {

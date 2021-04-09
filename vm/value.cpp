@@ -141,9 +141,9 @@ std::string Value::to_string(bool recursive) const {
 		case VType::N_FN:
 			return "(: native )";
 		case VType::REF: {
-			const auto p = std::get<ValueTypes::ref_t>(v);
+			const auto p = std::get<ValueTypes::ref_t>(this->v);
 			return p != nullptr ? p->to_string(false) : "null";
-		};
+		}
 		case VType::LIST: {
 			auto& l = *std::get<ValueTypes::list_ref>(this->v);
 			std::string ret = "[ ";
@@ -154,6 +154,15 @@ std::string Value::to_string(bool recursive) const {
 				ret += l[i].to_string(true);
 			}
 			ret += " ]";
+			return ret;
+		}
+		case VType::OBJ: {
+			std::string ret = "{\n";
+			for (auto p : *std::get<ValueTypes::obj_ref>(this->v)) {
+				ret += "\"" + p.first + "\" : ";
+				ret += p.second.to_string(true) + ",\n";
+			}
+			ret += '}';
 			return ret;
 		}
 		default:

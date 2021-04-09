@@ -212,16 +212,23 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			f.eval_stack.pop_back();
 			const Value ind_v = f.eval_stack.back();
 			f.eval_stack.pop_back();
-			std::size_t ind;
+			ssize_t ind;
+			std::string mem;
 			switch (ind_v.type()) {
 				case ValueTypes::VType::INT:
-					ind = std::get<Value::int_t>(ind_v.v);
+					ind = std::get<ValueTypes::int_t>(ind_v.v);
 					break;
 				case ValueTypes::VType::FLOAT:
-					ind = (std::size_t) std::get<Value::float_t>(ind_v.v);
+					ind = (std::size_t) std::get<ValueTypes::float_t>(ind_v.v);
+					break;
+				case ValueTypes::VType::STR:
+					if (f.eval_stack.back().type() != ValueTypes::VType::OBJ)
+						std::cerr <<"SET_INDEX: invalid string indexing for "
+							<< (int) f.eval_stack.back().type() <<std::endl;
+					mem = std::get<ValueTypes::str_t>(ind_v.v);
 					break;
 				default:
-					std::cout <<"SET_INDEX: type-error " <<(int) ind_v.type() <<" - " <<ind_v.to_string() <<std::endl;
+					std::cerr <<"SET_INDEX: type-error " <<(int) ind_v.type() <<" - " <<ind_v.to_string(true) <<std::endl;
 					return;
 			}
 			switch (f.eval_stack.back().type()) {
@@ -234,22 +241,26 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 						        std::get<ValueTypes::str_t>(v.v)[0];
 					} catch (...) {}
 					break;
+				case ValueTypes::VType::OBJ:
+					try {
+//						std::cout <<f.eval_stack.back().to_string(true) <<"." <<mem <<" = " <<v.to_string(true) <<std::endl;
+						(*std::get<ValueTypes::obj_ref>(f.eval_stack.back().v))[mem] = v;
+//						std::cout <<f.eval_stack.back().to_string(true) <<std::endl;
+					} catch (...) {}
+					break;
 
-				// TODO object fast set
 				// TODO type error
 			}
+			break;
 		};
 
 		case BCInstr::OPCode::MK_OBJ:
-			if (cmd.i == 0) {
-				f.eval_stack.emplace_back(::new(GC::alloc<ValueTypes::obj_t>()) ValueTypes::obj_t());
-			} else {
-				// TODO add support object initializer lists
-				std::cerr <<"sry rn only support {} objects";
-			}
+			// Make object
+			f.eval_stack.emplace_back(::new(GC::alloc<ValueTypes::obj_t>()) ValueTypes::obj_t());
 			return;
 
 		case BCInstr::OPCode::USE_MEM_L:
+			// Object member getter
 			try {
 				f.eval_stack.back() = (*std::get<Value::obj_ref>(f.eval_stack.back().v))
 					[std::get<Value::str_t>(std::get<Value>(f.rt->vm->literals[cmd.i].v).v)];
@@ -257,12 +268,20 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 				// TODO typeerror
 			}
 			return;
+
 		case BCInstr::OPCode::SET_MEM_L:
+			// Object member setter
 		{
-			Value& ref = (*std::get<Value::obj_ref>(f.eval_stack.back().v))
-				[std::get<Value::str_t>(std::get<Value>(f.rt->vm->literals[cmd.i].v).v)];
+			// Get value
+			Value v = std::move(f.eval_stack.back());
 			f.eval_stack.pop_back();
-			ref = f.eval_stack.back();
+
+			// Set object member
+			(*std::get<Value::obj_ref>(f.eval_stack.back().v))
+				[std::get<Value::str_t>(std::get<Value>(f.rt->vm->literals[cmd.i].v).v)]
+				= std::move(v);
+
+			// Object stays on the stack
 			return;
 		}
 		default:

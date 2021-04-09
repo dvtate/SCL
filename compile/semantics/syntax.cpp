@@ -19,13 +19,16 @@
 
 
 // OPTIMIZE: this can be replaced with Preprocessor
-enum class Associativity : signed char { LTR, RTL, NONE };
-std::unordered_map<std::string, Associativity> op_assoc{
+// NOTE: LTR is default
+/*
+enum class Associativity : signed char { LTR = 0, RTL, NONE };
+static std::unordered_map<std::string, Associativity> op_assoc {
 		{ ",", Associativity::NONE },
 		{ "@", Associativity::NONE },
 		{ "=", Associativity::RTL },
 		{ "**", Associativity::RTL },
 };
+*/
 
 static inline AST convert_leaf(AST& t, std::string f, std::vector<SemanticError>& errs)
 {
@@ -46,7 +49,6 @@ static inline AST convert_branch(AST& t, const std::string& f, std::vector<Seman
 	if (t.type != AST::NodeType::PAREN_EXPR && t.members.empty())
 		return convert_leaf(t, f, errs);
 
-
 	// convert paren exprs
 	if (t.type == AST::NodeType::PAREN_EXPR) {
 		if (t.members.size() > 1) {
@@ -55,6 +57,10 @@ static inline AST convert_branch(AST& t, const std::string& f, std::vector<Seman
 		}
 		return convert_branch(t.members[0], f, errs);
 	}
+
+	// Convert comma operator to COMMA_SERIES
+	if (t.type == AST::NodeType::OPERATION && t.token.token == ",")
+		t.type = AST::NodeType::COMMA_SERIES;
 
 	// associativity... ideally would have been handled by parser :(
 	if (t.type == AST::NodeType::OPERATION && t.members.size() > 2) {
@@ -77,10 +83,9 @@ static inline AST convert_branch(AST& t, const std::string& f, std::vector<Seman
 			t = mem;
 
 		} else if (op_sym == "@" || op_sym == ",") {
-			// non-associative operators (1,2,3,4,5)
+			// non-associative
 			// no action
 		} else {
-
 			// left-associative ((1+2)+3)
 			const auto nn = AST(AST::NodeType::OPERATION, t.token);
 			AST ret = t;
@@ -93,7 +98,6 @@ static inline AST convert_branch(AST& t, const std::string& f, std::vector<Seman
 			}
 			*np = t.members[0];
 			t = ret;
-
 		}
 	}
 
