@@ -72,11 +72,11 @@ $
   <summary>Builtin Global Variables</summary>
 	
 All of these values are reassignable and can be referenced and called within other scopes. 
-- `i`: command line arguments (Note: only at global scope, see macros section)
-- `o`: leave current scope with return value provided as argument (this is known as the return operator in most other langauges)
+- `i`: command line arguments (Note: only at global scope, see closures section)
+- `o`: leave current scope with return value provided as argument (this is known as the return operator in most other languages)
 - `print`: write values to terminal (ie: `print("Hello, world!")`)
 - `input`: read values from terminal as a string (ie: `age = Num(input())`)
-- `if`: performs functionality of ternary and ifstatements
+- `if`: performs functionality of ternary and branching
 - `Str`: converts given value to a string representation
 - `Num`: Parses a number (output is either Int or Float)
 - `vars`: debugging tool
@@ -84,7 +84,6 @@ All of these values are reassignable and can be referenced and called within oth
 - `import`: Load a native function or module
 - `size`: Gives size of given value, equivalent to `len` in Python
 - `copy`: Deep-copies given value
-	
 </details>
 
 ### Declaration

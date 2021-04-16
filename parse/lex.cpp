@@ -213,10 +213,9 @@ Token get_token(const T& buff, size_t& i, const F read) {
 	if (c == '\'' || c == '"') {
 		const size_t start = i;
 		if (end_str(buff, i, read, c))
-			return Token(Token::t::STRING, stl_substr(buff, 1+start, i++) );
+			return Token(Token::t::STRING, stl_substr(buff, 1 + start, i++) );
 		else
 			return Token( Token::t::ERROR, (std::string("Unterminated string literal (missing ") + c) + ")" );
-
 	}
 
 	// operator
@@ -240,7 +239,7 @@ Token get_token(const T& buff, size_t& i, const F read) {
 }
 
 // buffered read and tokenize on a line-by-line basis
-std::vector<Token> tokenize_stream(std::istream& in) {
+std::vector<Token> tokenize_stream(std::istream& in, const char* file_name = nullptr) {
 	// Temporary read buffer
 	std::deque<char> buff;
 	
@@ -274,10 +273,12 @@ std::vector<Token> tokenize_stream(std::istream& in) {
 	for (; ;) {
 		// Get token
 		// IIRC weird math here because of behavior when read() is called
+		// TODO improve this... position is off in some error messages
 		const size_t prev_i = i;
 		t = get_token(buff, i, read);
-		t.pos = chars_read - (i - prev_i);// pos;
+		t.pos = chars_read - (i - prev_i); // pos;
 		pos += i > prev_i ? (i - prev_i) : 0;
+		t.file = file_name;
 
 		if (t.type == Token::t::END) {
 			// End of buffer
@@ -288,11 +289,10 @@ std::vector<Token> tokenize_stream(std::istream& in) {
 
 			// EOF
 			if (read()) {
-				ret.emplace_back(Token(Token::t::OPERATOR, "eof"));
+				ret.emplace_back(Token(Token::t::OPERATOR, "eof", file_name));
 				ret.back().pos = pos;
 				return ret;
 			}
-
 		} else if (t.type == Token::t::ERROR) {
 			// Lex failed
 			return std::vector<Token>({ t });

@@ -13,7 +13,7 @@
 #include <forward_list>
 #include <memory>
 
-#include "semantics/process_tree.hpp"
+#include "semantics/semantics.hpp"
 #include "command.hpp"
 
 /*
@@ -171,9 +171,9 @@ public:
 
 	// used to populate internal structures
 	int64_t load_macro(ParsedMacro& macro);
-	void load_file(const std::string& fname);
+	void load_file(const char* file_name);
 
-	inline explicit Program(const std::string& fname) { load_file(fname); }
+	inline explicit Program(const char* file_name) { load_file(file_name); }
 	Program() = default;
 };
 

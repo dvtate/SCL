@@ -56,6 +56,7 @@ public:
 
 	Token token;
 
+	// TODO should be std::vector<AST*>
 	std::vector<AST> members;
 
 	// value added after the fact

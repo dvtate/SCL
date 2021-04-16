@@ -27,16 +27,16 @@ public:
 	// character index of the token in the scanned file
 	unsigned long long int pos;
 
+	// File from which the token was sourced
+	const char* file;
 
-	Token(const t type, std::string&& token):
-			type(type), token(token), pos(0) {}
-	Token(const t type, std::string&& token, unsigned long long int pos):
-			type(type), token(token), pos(pos) {}
+	Token(const t type, std::string token, const char* file = nullptr, unsigned long long int pos = 0):
+			type(type), token(std::move(token)), pos(pos), file(file) {}
 	Token() = default;
 	Token(const Token& other) = default;
 };
 
 // Lexer
-std::vector<Token> tokenize_stream(std::istream& in);
+std::vector<Token> tokenize_stream(std::istream& in, const char* file_name);
 
 #endif //SCL_LEX_HPP

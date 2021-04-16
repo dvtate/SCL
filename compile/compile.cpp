@@ -10,6 +10,7 @@
 #include "compile.hpp"
 #include "bytecode.hpp"
 #include "../parse/parse.hpp"
+#include "semantics/semantics.hpp"
 
 const static std::unordered_map<std::string, Command> keyword_values = {
 		{ "empty", Command(Command::OPCode::KW_VAL, (uint16_t) 0) },
@@ -621,32 +622,25 @@ int64_t Program::load_macro(ParsedMacro& macro) {
 }
 
 
-void Program::load_file(const std::string& fname) {
+void Program::load_file(const char* file_name) {
 	// parse main file
-	std::ifstream file = std::ifstream(fname);
+	std::ifstream file = std::ifstream(file_name);
 
-//	std::cout <<"tokenizing...";
-
-	SCL_DEBUG_MSG("tokenizing...");
-	const auto toks = tokenize_stream(file);
+	SCL_DEBUG_MSG("lexing...");
+	const auto toks = tokenize_stream(file, file_name);
 	SCL_DEBUG_MSG("done\n");
 
-
 	SCL_DEBUG_MSG("parsing...");
-//	std::cout <<"parsing...";
 	AST main = parse(toks);
-//	std::cout <<"done\n";
 	SCL_DEBUG_MSG("done\n");
 
 	// semantic analysis
-	std::vector<SemanticError> errs = process_tree(main, fname);
+	std::vector<SemanticError> errs = process_tree(main);
 	SCL_DEBUG_MSG("After Semantics: " << debug_AST(main) << std::endl);
 
 	// implicit main macro
-	ParsedMacro entry(main, fname,
-			std::vector<ParsedMacro*>{}, this);
+	ParsedMacro entry(main, file_name, std::vector<ParsedMacro*>{}, this);
 	entry.read_tree(main);
-
 
 	// literals.back() == main()
 	this->load_macro(entry);

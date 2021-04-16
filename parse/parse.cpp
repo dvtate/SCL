@@ -298,7 +298,7 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 		if (stack.empty() || stack.back().type != AST::NodeType::STATEMENTS) {
 			stack.emplace_back(AST(
 					AST::NodeType::STATEMENTS,
-					Token(Token::t::OPERATOR, ";", expr.token.pos),
+					Token(Token::t::OPERATOR, ";", expr.token.file, expr.token.pos),
 					{ expr }));
 			return nullptr;
 		}
@@ -479,7 +479,7 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 			// pop closer
 			stack.pop_back();
 
-			if ( (long int) stack.size() - 2 == i) {
+			if ((long int) stack.size() - 2 == i) {
 				// has expression to capture
 				const AST e = stack.back();
 				stack.pop_back();
@@ -506,7 +506,7 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 			stack.pop_back();
 			for (unsigned short m = i + 1; m < stack.size(); m++)
 				stack[i].members.emplace_back(stack[m]);
-			while (stack.size() > i + 1U)
+			while (stack.size() > (unsigned long) i + 1UL)
 				stack.pop_back();
 			stack.back().type = AST::NodeType::MACRO;
 
@@ -572,7 +572,7 @@ static inline bool reduce_invocations(std::vector<AST>& stack) {
 			if (arg.members.size() > 1)
 				throw std::vector<SyntaxError>{SyntaxError(arg.token, "Invalid parenthesised expression")};
 
-			stack.back() = AST(AST::NodeType::INVOKE, Token(Token::t::OPERATOR, "@"), children);
+			stack.back() = AST(AST::NodeType::INVOKE, Token(Token::t::OPERATOR, "@", arg.token.file, arg.token.pos), children);
 			return true;
 		}
 	}

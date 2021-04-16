@@ -1,6 +1,8 @@
 # Bytecode documentation
 This is subject to change and might already be outdated. Eventually will have better documentation
 
+## Potential Improvement:
+Ideally would have fixed width instructions that were aligned with pointer-width. But this is ok I think
 
 ## Instructions
 
@@ -8,7 +10,7 @@ This is subject to change and might already be outdated. Eventually will have be
 These instructions define literals
 - **TODO** make literal strings and json specify their length. For now they expect to be null-terminated
 #### `END_LIT_STRING`
-
+opcode 0
 #### `START_LIT_STRING`
 
 #### `START_LIT_MACRO`
@@ -65,12 +67,12 @@ constructs a list from values on stack
 #### `USE_MEM_L`
 gets member from an object (using literal number for mem name)
 - arg: lit id int64
-- stack args: <obj> USE_MEM_L(lit_num)
+- stack args: `<obj> USE_MEM_L(lit_num)`
 
 #### `SET_MEM_L`
 sets object member (using literal number for mem name)
 arg: lit id int64
-stack args: <obj> <value> SET_MEM_L(lit_num)
+stack args: `<obj> <value> SET_MEM_L(lit_num)`
 
 #### `MK_OBJ`
 construct object from values on stack
@@ -85,15 +87,15 @@ False
 
 #### `INVOKE`
 call a function
-- stack args: <i> <fn> INVOKE
+- stack args: `<i> <fn> INVOKE`
 
 #### `USE_INDEX`
 Get value from array
-- stack args: <list> <idx> USE_INDEX
+- stack args: `<list> <idx> USE_INDEX`
 
 #### `SET_INDEX`
 Set value in array
-- stack args: <list> <index> <value> SET_INDEX
+- stack args: `<list> <index> <value> SET_INDEX`
 
 ### Fault Table
 This section is generated in case of errors

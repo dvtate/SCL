@@ -5,9 +5,9 @@
 #ifndef SCL_SEMANTICS_SYNTAX_HPP
 #define SCL_SEMANTICS_SYNTAX_HPP
 
-#include "process_tree.hpp"
+#include "semantics.hpp"
 
 // Basically finish parser's job
-void sem_convert_syntax(AST& t, const std::string& f, std::vector<SemanticError>& errs);
+void sem_convert_syntax(AST& t, SemanticContext& ctx);
 
 #endif //SCL_SEMANTICS_SYNTAX_HPP

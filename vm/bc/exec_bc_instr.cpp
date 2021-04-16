@@ -277,6 +277,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			f.eval_stack.pop_back();
 
 			// Set object member
+			// TODO pre-hash the literal
 			(*std::get<Value::obj_ref>(f.eval_stack.back().v))
 				[std::get<Value::str_t>(std::get<Value>(f.rt->vm->literals[cmd.i].v).v)]
 				= std::move(v);

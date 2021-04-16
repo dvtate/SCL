@@ -13,10 +13,6 @@
 
 class Command {
 public:
-	using id_t = int64_t;
-	using size_t = int32_t;
-	using enum_t = uint16_t;
-
 	// mnemonic instruction
 	enum OPCode : unsigned char {
 		END_LIT_STRING = 0,

@@ -30,7 +30,7 @@ static std::unordered_map<std::string, Associativity> op_assoc {
 };
 */
 
-static inline AST convert_leaf(AST& t, std::string f, std::vector<SemanticError>& errs)
+static inline AST convert_leaf(AST& t, SemanticContext& ctx)
 {
 //	if (t.type == AST::NodeType::IDENTIFIER) {
 //		if (t.token.token == "print") {
@@ -43,8 +43,7 @@ static inline AST convert_leaf(AST& t, std::string f, std::vector<SemanticError>
 }
 
 
-
-static inline AST convert_branch(AST& t, const std::string& f, std::vector<SemanticError>& errs)
+static inline AST convert_branch(AST& t)
 {
 	if (t.type != AST::NodeType::PAREN_EXPR && t.members.empty())
 		return convert_leaf(t, f, errs);
@@ -56,6 +55,23 @@ static inline AST convert_branch(AST& t, const std::string& f, std::vector<Seman
 			return t;
 		}
 		return convert_branch(t.members[0], f, errs);
+	}
+
+	// Handle import function
+	if (t.type == AST::NodeType::INVOKE) {
+		const auto& fxn = t.members[0];
+		if (fxn.type == AST::NodeType::IDENTIFIER && fxn.token.token == "import") {
+			const auto& file = t.members[1];
+			if (file.type != AST::NodeType::STR_LITERAL) {
+				errs.emplace_back(SemanticError("import() expected a string literal", file.token.pos, f))
+			} else {
+				// replace this token with
+				// import("./test.scl")
+				// becomes
+				// (: ... contents of ./test.scl )()
+				// TODO ! after dinenner
+			}
+		}
 	}
 
 	// Convert comma operator to COMMA_SERIES
