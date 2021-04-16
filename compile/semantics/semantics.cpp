@@ -57,6 +57,11 @@ protected:
 			return -1;
 		}
 
+		// They're trying to import a .so file probably
+		if (p.extension() != ".scl") {
+			return -2;
+		}
+
 		// Check if we've imported it already
 		const auto it = std::find_if(this->imports.begin(), this->imports.end(), [&] (const ImportedFile& f) {
 			return f.path == p;
@@ -83,18 +88,19 @@ protected:
 
 		// Generate hiden identifier
 		const auto ret = this->imports.size();
-		std::string hid = this->import_hidden_identifer(ret);
+		std::string hidden_id = this->import_hidden_identifier(ret);
 
-		// Wrap file in a closure and assign it to a hidden variable
+		// Wrap file in a closure and assign it to a global hidden identifier
+		// All future imports of this module will refer to this identifier
 		// ie: let $(" import $FILE") = (: ... file contents )()
-		AST assignment = AST(AST::NodeType::DECLARATION, Token(Token::t::IDENTIFIER, "let", full_path_name), std::vector<AST>({
-			AST(AST::NodeType::OPERATOR, Token(Token::t::OPERATOR, "=", full_path_name), std::vector<AST>({
-				AST(AST::NodeType::IDENTIFIER, Token(Token::t::IDENTIFIER, hid, full_path_name)),
-				AST(AST::NodeType::INVOKE, Token(Token::t::OPERATOR, "(:", full_path_name), std::vector<AST>({
-					AST(AST::NodeType::MACRO, Token(Token::t::OPERATOR, "()", full_path_name), std::vector<AST>({ tree })),
-				})),
-			})),
-		}));
+		AST assignment = AST(AST::NodeType::DECLARATION, Token(Token::t::IDENTIFIER, "let", full_path_name), {
+			AST(AST::NodeType::OPERATION, Token(Token::t::OPERATOR, "=", full_path_name), {
+				AST(AST::NodeType::IDENTIFIER, Token(Token::t::IDENTIFIER, hidden_id, full_path_name)),
+				AST(AST::NodeType::INVOKE, Token(Token::t::OPERATOR, "@", full_path_name), {
+					AST(AST::NodeType::MACRO, Token(Token::t::OPERATOR, "(:)", full_path_name), { tree }),
+				}),
+			}),
+		});
 
 		// Do semantics on that tree too
 		const auto cp = std::filesystem::current_path();
@@ -112,7 +118,7 @@ protected:
 	inline AST& convert_syntax_branch(AST& t);
 	inline AST& convert_syntax_leaf(AST& t) { return t; }
 
-	inline std::string import_hidden_identifer(size_t index) {
+	inline std::string import_hidden_identifier(size_t index) {
 		if (index == 0)
 			return "empty";
 		return std::string(" import ") + std::to_string(index);
@@ -144,8 +150,6 @@ public:
 	AST& process_tree(AST& t) {
 		return this->convert_syntax_branch(t);
 	}
-
-	ssize_t import(const Token& t, std::string& file_name);
 
 	// Errors and Warnings
 	std::vector<SemanticError> errs;
@@ -191,9 +195,10 @@ AST& SemanticProcessor::convert_syntax_branch(AST& t) {
 			} else {
 				const auto idx = this->import(file.token, file.token.token);
 				if (idx >= 0) {
+					// Note this makes
 					t.type = AST::NodeType::IDENTIFIER;
 					t.token.type = Token::t::IDENTIFIER;
-					t.token.token = this->import_hidden_identifer(idx);
+					t.token.token = this->import_hidden_identifier(idx);
 					t.members.clear();
 					return this->convert_syntax_leaf(t);
 				}
