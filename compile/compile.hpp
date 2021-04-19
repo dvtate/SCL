@@ -13,7 +13,7 @@
 #include <forward_list>
 #include <memory>
 
-#include "semantics/semantics.hpp"
+#include "semantics.hpp"
 #include "command.hpp"
 
 /*

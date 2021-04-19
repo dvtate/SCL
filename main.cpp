@@ -122,6 +122,4 @@ int main(int argc, char** argv) {
 	}
 	if (out_bct)
 		std::cout <<compile_text(bytecode) <<std::endl;
-
-
 }

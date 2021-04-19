@@ -11,7 +11,7 @@
 #include <vector>
 #include <filesystem>
 
-#include "../../parse/parse.hpp"
+#include "../parse/parse.hpp"
 
 /* Semantic Analysis
  *

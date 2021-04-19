@@ -10,7 +10,7 @@
 #include "compile.hpp"
 #include "bytecode.hpp"
 #include "../parse/parse.hpp"
-#include "semantics/semantics.hpp"
+#include "semantics.hpp"
 
 const static std::unordered_map<std::string, Command> keyword_values = {
 		{ "empty", Command(Command::OPCode::KW_VAL, (uint16_t) 0) },

@@ -10,8 +10,8 @@
 
 #include "semantics.hpp"
 
-#include "../../parse/lex.hpp"
-#include "../../parse/parse.hpp"
+#include "../parse/lex.hpp"
+#include "../parse/parse.hpp"
 
 class ImportedFile {
 public:
