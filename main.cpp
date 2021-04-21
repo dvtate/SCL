@@ -9,6 +9,7 @@
 #include "util.hpp"
 #include "vm/vm.hpp"
 #include "vm/bc/read_bc.hpp"
+#include "compile/tree_to_source.hpp"
 
 // scl <cmd> <in> options
 
@@ -34,11 +35,11 @@ int main(int argc, char** argv) {
 	 * -f : required input file
 	 */
 
-	bool run, out_bc, out_bct;
-	run = out_bc = out_bct = false;
+	bool run, out_bc, out_bct, out_minified;
+	run = out_bc = out_bct = out_minified = false;
 	char* fname = nullptr;
 	int opt;
-	while ((opt = getopt(argc, argv, "croOf:"))) {
+	while ((opt = getopt(argc, argv, "croOmf:"))) {
 		int b = false;
 		switch (opt) {
 		case 'r':
@@ -53,6 +54,8 @@ int main(int argc, char** argv) {
 		case 'f':
 			fname = optarg;
 			break;
+		case 'm':
+			out_minified = true;
 		default:
 			b = true;
 			break;
@@ -61,7 +64,7 @@ int main(int argc, char** argv) {
 	}
 
 	// they want a shell
-	if (fname == nullptr || !(run || out_bc || out_bct)) {
+	if (fname == nullptr || !(run || out_bc || out_bct || out_minified)) {
 		print_help_msg();
 		return 1;
 	}
@@ -79,7 +82,7 @@ int main(int argc, char** argv) {
 		std::vector<std::string> args(argc);
 		for (int i = 0; i < argc; i++)
 			args.emplace_back(argv[i]);
-		interpreter = new VM{lits, args};
+		interpreter = new VM{lits, args, std::move(bc_src)};
 		interpreter->run();
 		return 0; // never gets called... (hopefully)
 	}
@@ -122,4 +125,7 @@ int main(int argc, char** argv) {
 	}
 	if (out_bct)
 		std::cout <<compile_text(bytecode) <<std::endl;
+	if (out_minified) {
+		std::cout <<tree_to_source(p.main) <<std::endl;
+	}
 }
