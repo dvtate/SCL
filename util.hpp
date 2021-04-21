@@ -24,6 +24,8 @@ namespace util {
 		std::ifstream f(fname, std::ifstream::in);
 		return show_line_pos(f, pos, fname);
 	}
+
+	std::pair<long, long> pos_to_line_offset(std::istream& file, const unsigned long long pos);
 }
 
 #endif //DLANG_UTIL_HPP

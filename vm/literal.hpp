@@ -29,13 +29,18 @@ public:
 	// instruction code
 	std::vector<BCInstr>* body;
 
+	// Position in the bytecode that the macro starts at
+	std::size_t start_pos;
+
 	ClosureDef(
 			std::vector<int64_t> capture_ids,
 			std::vector<int64_t> decl_ids,
-			std::vector<BCInstr> body):
+			std::vector<BCInstr> body,
+			const std::size_t start_pos):
 		capture_ids(std::move(capture_ids)),
 		decl_ids(std::move(decl_ids)),
-		body(new std::vector<BCInstr>(body))
+		body(new std::vector<BCInstr>(body)),
+		start_pos(start_pos)
 		{}
 	ClosureDef() = default;
 	~ClosureDef() {

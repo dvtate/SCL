@@ -58,28 +58,41 @@ public:
 		MK_OBJ,			// construct object from values on stack
 			// arg: number of items to pull from stack
 
-
 		VAL_EMPTY,
 		VAL_TRUE,
 		VAL_FALSE,
+		VAL_CATCH,	// pushes function used to set error handler for current macro
 
 		INVOKE,			// <i> <fn> INVOKE
 		USE_INDEX,		// <list> <idx> INVOKE
 		SET_INDEX,		// <list> <index> <value> SET_INDEX
 			// args come from stack only
 
+		//////////
 		// begin fault table
+		//////////
+
+		// Mutilated identifiers
 		ID_NAME,		// user-defined identifier name
 			// arg: str
 		ID_ID, 			// compiled identifier number
 			// arg: int64
+
+
+		// invoke lhs for stack traces
+		// TODO maybe it would be good to put these in lit header or sth so that there isn't as much string duplication?
+		INVOKE_REPR,	// The thing being invoked
+			//  arg: str
+		INVOKE_POS,		// Where in the program is the invocation taking place
+			//	arg: int64
+
+		//
 		FILE_NAME,		// file path
 			// arg: str
 		DEST_POS,		// location in compiled file
 			// arg: int64
 		SRC_POS,		// original file position
 			// arg: int64
-
 	} instr;
 
 	std::variant<uint16_t, int32_t, int64_t, double, std::string> arg;
@@ -122,6 +135,7 @@ public:
 			case VAL_EMPTY: return "VAL_EMPTY";
 			case VAL_TRUE:	return "VAL_TRUE";
 			case VAL_FALSE:	return "VAL_FALSE";
+			case VAL_CATCH: return "VAL_CATCH";
 			case INVOKE:	return "INVOKE";
 			case USE_INDEX: return "USE_INDEX";
 			case SET_INDEX: return "SET_INDEX";
@@ -184,6 +198,8 @@ public:
 				return "\tC_FALSE\n";
 			case OPCode::VAL_TRUE:
 				return "\tC_TRUE\n";
+			case OPCode::VAL_CATCH:
+				return "\tVAL_CATCH\n";
 			case OPCode::MK_LIST:
 				return "\tMAKE_LIST(" + std::to_string(std::get<int32_t>(this->arg)) + ")\n";
 
@@ -231,14 +247,13 @@ public:
 			case OPCode::USE_MEM_L: case OPCode::SET_MEM_L:
 				return ArgType::INT64;
 
-
 			case OPCode::BUILTIN_OP: case OPCode::KW_VAL:
 				return ArgType::INT16;
 			case OPCode::START_LIT_STRING: case OPCode::START_LIT_JSON: case OPCode::ID_NAME: case OPCode::FILE_NAME:
 				return ArgType::STRING;
-
-				case OPCode::MK_LIST: case OPCode::MK_OBJ:
+			case OPCode::MK_LIST: case OPCode::MK_OBJ:
 				return ArgType::INT32;
+
 			default:
 				return ArgType::NO_ARG;
 		}
@@ -321,15 +336,14 @@ public:
 	bool check_arg() {
 		const auto ind = this->arg.index();
 		switch (this->arg_type()) {
-			case ArgType::FLOAT:	return ind == 3;
-			case ArgType::INT64:	return ind == 2;
 			case ArgType::INT16:	return ind == 0;
 			case ArgType::INT32:	return ind == 1;
+			case ArgType::INT64:	return ind == 2;
+			case ArgType::FLOAT:	return ind == 3;
 			case ArgType::STRING:	return ind == 4;
 			default:				return true;
 		}
 	}
-
 };
 
 

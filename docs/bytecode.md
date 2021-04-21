@@ -97,6 +97,10 @@ Get value from array
 Set value in array
 - stack args: `<list> <index> <value> SET_INDEX`
 
+#### `SET_HANDLER`
+Set the error handler function for current macro
+- stack args: `<macro> SET_HANDLER`
+
 ### Fault Table
 This section is generated in case of errors
 

@@ -17,7 +17,6 @@ class Frame;
 
 class Closure {
 public:
-
 	int64_t i_id;
 	int64_t o_id;
 

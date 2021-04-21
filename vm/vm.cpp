@@ -32,7 +32,9 @@ public:
 };
 static_assert(sizeof(ExitProgramReturn) == sizeof(NativeFunction), "Should be same size for convenience");
 
-VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv)
+
+VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv, std::istream& bytecode_source):
+	bytecode_source(bytecode_source)
 {
 	this->literals = std::move(lit_header);
 
@@ -61,9 +63,7 @@ VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv)
 		args->emplace_back(Value(s));
 
 	main.vars[main.i_id] = ::new(GC::alloc<Value>()) Value(args);
-
-	main.vars[main.o_id] = ::new(GC::alloc<Value>()) Value(
-			::new(GC::alloc<NativeFunction>()) ExitProgramReturn());
+	main.vars[main.o_id] = ::new(GC::alloc<Value>()) Value(::new(GC::alloc<NativeFunction>()) ExitProgramReturn());
 
 	// TODO: capture command-line args
 	Value argv_list{std::string("cmd args coming soon")};

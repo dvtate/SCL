@@ -251,9 +251,6 @@ class CopyFn : public NativeFunction {
 	void mark() override {}
 };
 
-
-// TODO due to recycling behavior, these should not be GC'd
-//  use normal values and copy them into GC'd Value*s as needed
 static Value global_ids[] {
 	// 0 - empty
 	Value(),

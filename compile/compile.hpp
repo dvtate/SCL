@@ -93,16 +93,6 @@ public:
 	MutilatedSymbol find_id(const std::string& name);
 	int64_t declare_id(const std::string& id_name);
 
-	// Context that needs to be passed to children
-	struct context_arg {
-		bool lhs_eq : 1;
-	};
-
-	//
-	struct context_ret {
-		bool immutable : 1;
-	};
-
 	// translating different branch types into bytecode and populating internal structures
 	void read_tree(AST&); // main entry
 	void read_statements(AST&);
@@ -162,6 +152,9 @@ public:
 	// these are used for making the fault table
 	std::vector<MutilatedSymbol> identifiers;
 	std::unordered_map<std::string, std::vector<std::pair<std::size_t, unsigned long long>>> translated_positions;
+
+	// Parsed syntax tree
+	AST main;
 
 	std::vector<SemanticError> compile(std::vector<Command>& ret);
 

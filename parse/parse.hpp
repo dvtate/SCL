@@ -28,8 +28,7 @@ public:
 		STR_LITERAL,
 		IDENTIFIER,
 		INVOKE,    // fn(arg)
-		INDEX,
-		MEMBER_REQUEST, // bracket operators
+		INDEX,	// bracket
 		MACRO,	// macro literal
 		PAREN_EXPR, // temporary, used to add clarity to macro calls
 		OBJECT,	// { ... }
@@ -50,8 +49,6 @@ public:
 		OPERATOR,  // un-parsed operator
 
 		INVALID,
-
-		BOUND_ID,
 	} type;
 
 	Token token;
@@ -136,6 +133,8 @@ public:
 		token(std::move(_token)), msg(std::move(_message))
 	{ }
 };
+
+extern std::unordered_map<std::string, signed char> operator_precedence;
 
 //
 AST parse(const std::vector<Token>& tokens);

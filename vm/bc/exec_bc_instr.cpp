@@ -4,10 +4,13 @@
 #include <iostream>
 
 #include "../../debug.hpp"
-#include "exec_bc_instr.hpp"
 #include "../vm.hpp"
 #include "../operators/operators.hpp"
 #include "../operators/internal_tools.hpp"
+#include "../error.hpp"
+
+#include "exec_bc_instr.hpp"
+
 
 // (())
 static void invoke(Frame& f) {
@@ -285,6 +288,11 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			// Object stays on the stack
 			return;
 		}
+
+		case BCInstr::OPCode::VAL_CATCH:
+			f.eval_stack.emplace_back(Value((NativeFunction*)::new(GC::alloc<CatchFn>()) CatchFn(f)));
+			break;
+
 		default:
 			SCL_DEBUG_MSG("... not implemented" << cmd.repr() << std::endl);
 			return;

@@ -32,18 +32,20 @@ static inline std::string parse_str(std::string in) {
 
 static inline Literal capture_closure(std::istream& is,
 		std::unordered_map<int64_t, std::vector<int64_t>>& nested_macros,
-		const std::size_t litnum)
+		const std::size_t litnum, std::size_t& pos)
 {
 	std::vector <BCInstr> body;
 	std::vector <int64_t> decl_ids;
 	std::set <int64_t> use_ids;
 
-	char c;
+	const auto start_pos = pos;
 
+	char c;
 
 	while (true) {
 
 		c = is.get();
+		pos++;
 
 		// break condition
 		if (c == BCInstr::OPCode::END_LIT_MACRO) {
@@ -57,7 +59,7 @@ static inline Literal capture_closure(std::istream& is,
 					decl_ids.begin(), decl_ids.end(),
 					std::inserter(capture_ids, capture_ids.begin()));
 
-			return Literal(ClosureDef(capture_ids, decl_ids, std::move(body)));
+			return Literal(ClosureDef(capture_ids, decl_ids, std::move(body), start_pos));
 		}
 
 		if (c == BCInstr::OPCode::DECL_ID) {
@@ -149,8 +151,13 @@ static std::vector<int64_t> generate_capture_ids(int64_t entry, std::unordered_m
 
 
 std::vector<Literal> read_lit_header(std::istream& is) {
+	// Literal header
 	std::vector<Literal> ret;
 
+	// Instruction index
+	std::size_t pos = 0;
+
+	// Current command/instruction
 	char instr = is.get();
 
 	// used to recursively generate capture ids
@@ -169,7 +176,7 @@ std::vector<Literal> read_lit_header(std::istream& is) {
 			SCL_DEBUG_MSG("Read String Lit : " << ret.size() << std::endl);
 		} else if (instr == BCInstr::OPCode::START_LIT_MACRO){
 
-			ret.emplace_back(capture_closure(is, nested_closures, ret.size()));
+			ret.emplace_back(capture_closure(is, nested_closures, ret.size(), pos));
 			SCL_DEBUG_MSG("Read Macro Lit : " << ret.size() << std::endl);
 		}
 
@@ -177,6 +184,7 @@ std::vector<Literal> read_lit_header(std::istream& is) {
 
 		// fetch next instruction
 		instr = is.get();
+		pos++;
 	}
 
 	// recursively deduce closure capture Id's

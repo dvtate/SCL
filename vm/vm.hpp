@@ -21,6 +21,7 @@
 #include "literal.hpp"
 #include "value.hpp"
 #include "global_ids.hpp"
+#include "bc/fault_table.hpp"
 
 class Frame;
 class Runtime;
@@ -61,12 +62,10 @@ public:
 			rt(rt), closure(body), pos(pos), eval_stack(std::move(eval_stack))
 		{}
 
-	~Frame(){
-		delete(this->error_handler);
-	}
+	~Frame() {}
 
 	// run a single bytecode instruction and return
-	inline bool tick(){
+	inline bool tick() {
 		if (pos < this->closure.body->size()) {
 			exec_bc_instr(*this, (*this->closure.body)[this->pos++]);
 			return false;
@@ -220,11 +219,14 @@ public:
 	std::shared_ptr<Runtime> main_thread;
 	std::list<std::shared_ptr<Runtime>> worker_threads;
 
+	FaultTable* fault_table{nullptr};
 
+	std::istream& bytecode_source;
 
-
-	VM(std::vector<Literal> lit_header, const std::vector<std::string>&  argv);
-
+	VM(std::vector<Literal> lit_header, const std::vector<std::string>&  argv, std::istream& bytecode_source);
+	~VM() {
+		delete fault_table;
+	}
 
 	void run();
 

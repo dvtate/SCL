@@ -37,7 +37,7 @@ std::vector<std::string> keywords;
 
 
 // Operator Precedence
-std::unordered_map<std::string, signed char> op_prec = {
+std::unordered_map<std::string, signed char> operator_precedence = {
 		{ "(:", 22 },
 		{ "{", 22  },
 		{ "(",  21 },
@@ -378,8 +378,8 @@ static inline bool reduce_operators(std::vector<struct AST>& stack, const AST& n
 			return false;
 
 		// Get precedences
-		const auto prec_p = op_prec.at(stack[i].token.token);
-		const auto prec_n = op_prec.at(n.token.token);
+		const auto prec_p = operator_precedence.at(stack[i].token.token);
+		const auto prec_n = operator_precedence.at(n.token.token);
 
 		// reduce if lookahead is lower precedence than prev operator
 		if (prec_n <= prec_p || stack[i].token.token == ";") {

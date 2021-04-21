@@ -82,7 +82,7 @@ int main(int argc, char** argv) {
 		std::vector<std::string> args(argc);
 		for (int i = 0; i < argc; i++)
 			args.emplace_back(argv[i]);
-		interpreter = new VM{lits, args, std::move(bc_src)};
+		interpreter = new VM{lits, args, bc_src};
 		interpreter->run();
 		return 0; // never gets called... (hopefully)
 	}

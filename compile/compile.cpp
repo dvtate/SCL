@@ -77,9 +77,6 @@ void ParsedMacro::read_string_lit(AST& tree) {
 	// add command and update relocations
 	const size_t new_pos = this->body.size();
 	this->body.emplace_back(Command(Command::OPCode::USE_LIT, lit_num));
-	this->relocation.emplace_back(
-			std::pair<std::size_t, unsigned long long>{
-				new_pos, tree.token.pos });
 }
 
 void ParsedMacro::read_dot_op(AST& tree) {
@@ -110,9 +107,6 @@ void ParsedMacro::read_dot_op(AST& tree) {
 	// add
 	const auto pos = this->body.size();
 	this->body.emplace_back(Command(Command::OPCode::USE_MEM_L, lit_num));
-	this->relocation.emplace_back(
-			std::pair<std::size_t, unsigned long long> {
-				pos, tree.token.pos});
 }
 
 void ParsedMacro::read_index_op(AST& tree){
@@ -174,14 +168,18 @@ void ParsedMacro::read_decl(AST& tree) {
 void ParsedMacro::read_id(AST& tree) {
 	SCL_DEBUG_MSG("read_id\n");
 
+	// Special keyword values
 	if (tree.token.token == "true") {
 		this->body.emplace_back(Command::OPCode::VAL_TRUE);
 		return;
 	} if (tree.token.token == "false") {
 		this->body.emplace_back(Command::OPCode::VAL_FALSE);
 		return;
-	}  if (tree.token.token == "empty") {
+	} if (tree.token.token == "empty") {
 		this->body.emplace_back(Command::OPCode::VAL_EMPTY);
+		return;
+	} if (tree.token.token == "catch") {
+		this->body.emplace_back(Command::OPCode::VAL_CATCH);
 		return;
 	}
 
@@ -195,10 +193,9 @@ void ParsedMacro::read_id(AST& tree) {
 	}
 	const size_t n_pos = this->body.size();
 	this->body.emplace_back(Command(Command::OPCode::USE_ID, (int64_t) id.id));
-	this->relocation.emplace_back(
-			std::pair<std::size_t, unsigned long long>{
-				n_pos, tree.token.pos });
-
+//	this->relocation.emplace_back(
+//			std::pair<std::size_t, unsigned long long>{
+//				n_pos, tree.token.pos });
 }
 
 //
@@ -345,10 +342,13 @@ void ParsedMacro::read_macro_invoke(AST& t) {
 	read_tree(t.members[0]);
 
 	// TODO: typecheck
-
+	const auto new_pos = this->body.size();
 	this->body.emplace_back(Command(Command::OPCode::INVOKE));
 
+	// Relocations
+	this->relocation.emplace_back(std::pair<std::size_t, unsigned long long>{ new_pos, t.token.pos });
 
+	// TODO capture what is being assigned
 }
 
 void ParsedMacro::read_macro_lit(AST& tree) {
@@ -357,9 +357,7 @@ void ParsedMacro::read_macro_lit(AST& tree) {
 	// compile macro
 	std::vector<ParsedMacro*> pps = this->parents;
 	pps.emplace_back(this);
-	auto* mac = new ParsedMacro(
-			tree, this->file_name, pps, this->compiler,
-			this->declarations);
+	auto* mac = new ParsedMacro(tree, tree.token.file, pps, this->compiler, this->declarations);
 	for (auto& m : tree.members)
 		mac->read_tree(m);
 
@@ -368,7 +366,6 @@ void ParsedMacro::read_macro_lit(AST& tree) {
 
 	// reference it in bc
 	this->body.emplace_back(Command::OPCode::USE_LIT, litnum);
-
 }
 
 void ParsedMacro::read_list_lit(AST& tree) {
@@ -631,7 +628,7 @@ void Program::load_file(const char* file_name) {
 	SCL_DEBUG_MSG("done\n");
 
 	SCL_DEBUG_MSG("parsing...");
-	AST main = parse(toks);
+	this->main = parse(toks);
 	SCL_DEBUG_MSG("done\n");
 
 	// semantic analysis
@@ -639,8 +636,8 @@ void Program::load_file(const char* file_name) {
 	SCL_DEBUG_MSG("After Semantics: " << debug_AST(main) << std::endl);
 
 	// implicit main macro
-	ParsedMacro entry(main, file_name, std::vector<ParsedMacro*>{}, this);
-	entry.read_tree(main);
+	ParsedMacro entry(this->main, file_name, std::vector<ParsedMacro*>{}, this);
+	entry.read_tree(this->main);
 
 	// literals.back() == main()
 	this->load_macro(entry);
@@ -694,7 +691,7 @@ std::vector<SemanticError> Program::compile(std::vector<Command>& ret) {
 				// include macro specific relocations in global relocations table for fault table
 				auto &tp = this->translated_positions[macro.file_name];
 				for (auto &p : macro.relocation)
-					tp.emplace_back(std::pair{p.first + start_pos, p.second});
+					tp.emplace_back(std::pair{p.first + start_pos + 2, p.second});
 
 				// recombine errors
 				errs.insert(errs.end(), macro.errors.begin(), macro.errors.end());
