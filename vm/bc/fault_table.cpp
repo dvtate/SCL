@@ -7,15 +7,31 @@
 
 #include "fault_table.hpp"
 
+static inline void debug_fault_table(FaultTable& ft) {
+	std::cout <<"\nRead Fault Table:\n- relocations: ";
+	for (auto& p : ft.relocations)
+		std::cout <<p.first <<", ";
+	std::cout <<"\n- source_ids: ";
+	for (auto& p : ft.source_ids)
+		std::cout <<p.first <<", ";
+	std::cout <<"\n- invoke_lhs: ";
+	for (auto& p : ft.invoke_lhs)
+		std::cout <<p.first <<", ";
+	std::cout <<std::endl <<std::endl;
+}
+
+
+
+
+
 FaultTable* FaultTable::read(std::istream& is) {
 	auto* ret = new FaultTable;
-
-	char c = is.get();
 
 	std::shared_ptr<std::string> file;
 	std::string str;
 	uint64_t id;
 
+	char c = is.get();
 	while (c != EOF) {
 		switch (c) {
 			// Read string symbol
@@ -58,8 +74,11 @@ FaultTable* FaultTable::read(std::istream& is) {
 
 			default:
 				std::cerr <<"unexpected items in the fault table\n";
+				std::cerr <<"Instr: " <<BCInstr::repr((BCInstr::OPCode) c) <<std::endl;
 		}
+		c = is.get();
 	}
 
+	debug_fault_table(*ret);
 	return ret;
 }

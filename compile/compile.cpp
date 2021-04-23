@@ -11,13 +11,12 @@
 #include "bytecode.hpp"
 #include "../parse/parse.hpp"
 #include "semantics.hpp"
+#include "tree_to_source.hpp"
 
 const static std::unordered_map<std::string, Command> keyword_values = {
 		{ "empty", Command(Command::OPCode::KW_VAL, (uint16_t) 0) },
 		{ "true",  Command(Command::OPCode::KW_VAL, (uint16_t) 1) },
 		{ "false", Command(Command::OPCode::KW_VAL, (uint16_t) 2) },
-		{ "print", Command(Command::OPCode::KW_VAL, (uint16_t) 3) },
-		{ "input", Command(Command::OPCode::KW_VAL, (uint16_t) 4) },
 };
 
 
@@ -349,6 +348,15 @@ void ParsedMacro::read_macro_invoke(AST& t) {
 	this->relocation.emplace_back(std::pair<std::size_t, unsigned long long>{ new_pos, t.token.pos });
 
 	// TODO capture what is being assigned
+	std::string lhs_depiction;
+	if (t.members[0].type == AST::NodeType::MACRO) {
+		lhs_depiction = "(: ... )";
+	} else {
+		lhs_depiction = tree_to_source(t.members[0]);
+		if (lhs_depiction.size() > 50)
+			lhs_depiction = lhs_depiction.substr(0, 40) + "...";
+	}
+	this->invoked_exprs.emplace_back(std::pair<std::size_t, std::string>{ new_pos, lhs_depiction });
 }
 
 void ParsedMacro::read_macro_lit(AST& tree) {
@@ -583,6 +591,8 @@ MutilatedSymbol ParsedMacro::find_id(const std::string& name) {
 			{ "import", MutilatedSymbol("import", 8, MutilatedSymbol::SymbolType::CONSTANT) },
 			{ "size", MutilatedSymbol("size", 9, MutilatedSymbol::SymbolType::CONSTANT) },
 			{ "copy", MutilatedSymbol("copy", 10, MutilatedSymbol::SymbolType::CONSTANT) },
+			{ "Error", MutilatedSymbol("Error", 11, MutilatedSymbol::SymbolType::CONSTANT) },
+			{ "throw", MutilatedSymbol("Error", 12, MutilatedSymbol::SymbolType::CONSTANT) },
 	};
 
 	// if it's a global id use that instead...
@@ -688,10 +698,12 @@ std::vector<SemanticError> Program::compile(std::vector<Command>& ret) {
 				ret.insert(ret.end(), macro.body.begin(), macro.body.end());
 				ret.emplace_back(Command(Command::OPCode::END_LIT_MACRO));
 
-				// include macro specific relocations in global relocations table for fault table
-				auto &tp = this->translated_positions[macro.file_name];
-				for (auto &p : macro.relocation)
-					tp.emplace_back(std::pair{p.first + start_pos + 2, p.second});
+				// Include macro's contributions to the fault table
+				auto& tp = this->translated_positions[macro.file_name];
+				for (auto& p : macro.relocation)
+					tp.emplace_back(std::pair{ p.first + start_pos + 1, p.second });
+				for (auto& p : macro.invoked_exprs)
+					this->invoked_exprs.emplace_back(std::pair{ p.first + start_pos + 1, p.second });
 
 				// recombine errors
 				errs.insert(errs.end(), macro.errors.begin(), macro.errors.end());
@@ -710,6 +722,10 @@ std::vector<SemanticError> Program::compile(std::vector<Command>& ret) {
 	for (auto& sym : this->identifiers) {
 		ret.emplace_back(Command(Command::OPCode::ID_NAME, sym.name));
 		ret.emplace_back(Command(Command::OPCode::ID_ID, (int64_t) sym.id));
+	}
+	for (auto& p : this->invoked_exprs) {
+		ret.emplace_back(Command(Command::OPCode::INVOKE_POS, (int64_t) p.first));
+		ret.emplace_back(Command(Command::OPCode::INVOKE_REPR, p.second));
 	}
 
 	for (auto& f : this->translated_positions) {

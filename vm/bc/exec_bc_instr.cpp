@@ -13,7 +13,7 @@
 
 
 // (())
-static void invoke(Frame& f) {
+static inline void invoke(Frame& f) {
 	Value v = f.eval_stack.back();
 	f.eval_stack.pop_back();
 	vm_util::invoke_value_sync(f, v, false);

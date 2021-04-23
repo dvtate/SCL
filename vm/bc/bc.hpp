@@ -32,6 +32,10 @@ public:
 
 		return ret + "<missing/unk arg>";
 	}
+
+	inline static std::string repr(const OPCode oc) {
+		return Command::cmd_name(oc);
+	}
 };
 
 #endif //SCL_BC_HPP

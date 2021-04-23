@@ -47,6 +47,8 @@ public:
 class Frame {
 public:
 	Runtime* rt;
+
+	// Policy when error occurs
 	Value* error_handler{nullptr};
 
 	// closure we're running

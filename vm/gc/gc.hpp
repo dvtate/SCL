@@ -23,7 +23,7 @@
  * Tricolor tracing
  * Concurrent tracing
  * Thread safety (multiple writers to stl containers)
- *
+ * Use linked lists
  *
  * DONE
  * - naive marking

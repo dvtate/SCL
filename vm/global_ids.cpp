@@ -12,6 +12,7 @@
 #include "vm.hpp"
 #include "operators/internal_tools.hpp"
 #include "async.hpp"
+#include "error.hpp"
 
 
 //TODO: split this into multiple files...
@@ -244,9 +245,52 @@ class CopyFn : public NativeFunction {
 				throw "????";
 		}
 	}
+
+public:
 	void operator()(Frame& f) override {
 		auto ret = copy_value(f.eval_stack.back());
 		f.eval_stack.back() = ret;
+	}
+	void mark() override {}
+};
+
+// Throw an error
+class ThrowFn : public NativeFunction {
+	void operator()(Frame& f) override {
+
+	}
+	void mark() override {}
+};
+
+// Error constructor
+class ErrorFn : public NativeFunction {
+	void operator()(Frame& f) override {
+		Value& i = f.eval_stack.back();
+		switch (i.type()) {
+			// Extract arguments from lists and objects
+			case ValueTypes::VType::LIST: {
+				ValueTypes::list_t& l = *std::get<ValueTypes::list_t*>(i.v);
+				std::string name = l[0].to_string();
+				std::string message = l[1].to_string();
+				f.eval_stack.back() = gen_error_object(name, message, f);
+			}
+			case ValueTypes::VType::OBJ: {
+				ValueTypes::obj_t &o = *std::get<ValueTypes::obj_t *>(i.v);
+				std::string name = o["name"].to_string();
+				std::string message = o["message"].to_string();
+				f.eval_stack.back() = gen_error_object(name, message, f);
+			}
+
+			// No arg = no message
+			case ValueTypes::VType::EMPTY:
+				f.eval_stack.back() = gen_error_object("Error", "", f);
+				break;
+
+			// Default name, given message
+			default:
+				f.eval_stack.back() = gen_error_object("Error", i.to_string(), f);
+				break;
+		}
 	}
 	void mark() override {}
 };
@@ -274,11 +318,12 @@ static Value global_ids[] {
 	Value((NativeFunction*)::new(GC::static_alloc<SizeFn>()) SizeFn()),
 	// 10 - copy
 	Value((NativeFunction*)::new(GC::static_alloc<CopyFn>()) CopyFn()),
+	// 11 - Error
+	Value((NativeFunction*)::new(GC::static_alloc<ErrorFn>()) ErrorFn()),
+	// 12 - throw
+	Value((NativeFunction*)::new(GC::static_alloc<ThrowFn>()) ThrowFn()),
 
-	// - range (need objects first...)
-	// - copy
-	// - size
-	//
+	// TODO iterators?
 };
 
 // We want to use the more performant, segregated GC spaces
@@ -292,8 +337,9 @@ static_assert(sizeof(NativeFunction) == sizeof(AsyncFn), "AsyncFn wrong size");
 static_assert(sizeof(NativeFunction) == sizeof(ImportFn), "ImportFn wrong size");
 static_assert(sizeof(NativeFunction) == sizeof(SizeFn), "SizeFn wrong size");
 static_assert(sizeof(NativeFunction) == sizeof(CopyFn), "CopyFn wrong size");
+static_assert(sizeof(NativeFunction) == sizeof(ThrowFn), "ThrowFn wrong size");
+static_assert(sizeof(NativeFunction) == sizeof(ThrowFn), "ThrowFn wrong size");
 static_assert(sizeof(GC::Destructor<NumFn>) == sizeof(GC::_Destructor), "Destructor wrong size");
-
 const Value& get_global_id(int64_t id) {
 	return global_ids[id];
 }

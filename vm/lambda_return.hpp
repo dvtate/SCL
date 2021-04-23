@@ -33,14 +33,15 @@
  * - Removing runtime safety checks performed at compile time
  */
 
+
 // executed by rt event loop
 class LambdaReturnMsg : public RTMessage {
 public:
+	std::shared_ptr<SyncCallStack> stack_target; // from
 	std::shared_ptr<Frame> frame_target;
-	std::shared_ptr<SyncCallStack> stack_target;
 	Value ret;
 	LambdaReturnMsg():
-		frame_target(nullptr), stack_target(nullptr), ret() {}
+		stack_target(nullptr), frame_target(nullptr), ret() {}
 
 	LambdaReturnMsg(
 			std::shared_ptr<Frame> frame_target,

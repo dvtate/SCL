@@ -34,7 +34,6 @@ namespace ValueTypes {
 //	using str_ref	= str_t*; // might as well use fuckin C-string
 	using ref_t		= Value*;
 
-	using lam = Closure;
 	using lam_t 	= Closure*;
 	using lam_ref 	= lam_t;
 	using n_fn_t 	= NativeFunction*;
@@ -47,9 +46,7 @@ namespace ValueTypes {
 
 	using bool_t 	= ValueTypes::int_t;
 
-	using variant_t = std::variant<
-			empty_t, float_t, int_t, str_t,
-			ref_t, lam_t, n_fn_t, obj_ref, list_ref>;
+	using variant_t = std::variant<empty_t, float_t, int_t, str_t, ref_t, lam_t, n_fn_t, obj_ref, list_ref>;
 
 	// Alligned with variant_t index
 	enum class VType {

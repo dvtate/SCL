@@ -15,14 +15,12 @@
 
 class Value {
 public:
-	// TODO remove these typedefs
-	using empty_t	= ValueTypes::empty_t;
+	// TODO remove these
 	using int_t 	= ValueTypes::int_t;
-	using float_t 	= ValueTypes::float_t ;
+	using float_t 	= ValueTypes::float_t;
 
 	using str_t 	= ValueTypes::str_t;
 	using ref_t		= ValueTypes::ref_t;
-	using lam_t 	= ValueTypes::lam_t;
 	using n_fn_t 	= ValueTypes::n_fn_t;
 
 	using list_t	= ValueTypes::list_t;
@@ -55,7 +53,7 @@ public:
 		this->v = ValueTypes::variant_t();
 	}
 
-	inline ValueTypes::VType type() const {
+	[[nodiscard]] inline ValueTypes::VType type() const {
 		return (VType) this->v.index();
 	}
 

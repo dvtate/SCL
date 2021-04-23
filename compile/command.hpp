@@ -147,6 +147,8 @@ public:
 			case USE_MEM_L: return "USE_MEM_L";
 			case SET_MEM_L: return "SET_MEM_L";
 			case MK_OBJ:	return "MK_OBJ";
+			case INVOKE_REPR:	return "INVOKE_REPR";
+			case INVOKE_POS:	return "INVOKE_POS";
 			default:		return "UNKNOWN";
 		}
 	}
@@ -220,6 +222,11 @@ public:
 			case OPCode::ID_ID:
 				return "ID_ID " + std::to_string(std::get<int64_t>(this->arg)) + "\n";
 
+			case INVOKE_POS:
+				return "INVOKE_POS " + std::to_string((uint64_t) std::get<int64_t>(this->arg)) + " : ";
+			case INVOKE_REPR:
+				return "INVOKE_REPR " + std::get<std::string>(this->arg) + "\n";
+
 			case OPCode::FILE_NAME:
 				return "In file: " + std::get<std::string>(this->arg) + "\n";
 
@@ -244,12 +251,13 @@ public:
 			// TODO: these can all be converted to int32_t
 			case OPCode::I64_LIT: case OPCode::DECL_ID: case OPCode::SET_ID: case OPCode::USE_ID:
 			case OPCode::USE_LIT: case OPCode::ID_ID: case OPCode::SRC_POS: case OPCode::DEST_POS:
-			case OPCode::USE_MEM_L: case OPCode::SET_MEM_L:
+			case OPCode::USE_MEM_L: case OPCode::SET_MEM_L: case OPCode::INVOKE_POS:
 				return ArgType::INT64;
 
 			case OPCode::BUILTIN_OP: case OPCode::KW_VAL:
 				return ArgType::INT16;
 			case OPCode::START_LIT_STRING: case OPCode::START_LIT_JSON: case OPCode::ID_NAME: case OPCode::FILE_NAME:
+			case OPCode::INVOKE_REPR:
 				return ArgType::STRING;
 			case OPCode::MK_LIST: case OPCode::MK_OBJ:
 				return ArgType::INT32;

@@ -76,8 +76,11 @@ public:
 	// Lexical parents
 	std::vector<ParsedMacro*> parents;
 
-	// where did different commands originate in source program
+	// Where did different commands originate in source program
 	std::vector<std::pair<std::size_t, unsigned long long>> relocation;
+
+	// What value is being invoked?
+	std::vector<std::pair<std::size_t, std::string>> invoked_exprs;
 
 	//
 	std::vector<SemanticError> errors;
@@ -152,6 +155,7 @@ public:
 	// these are used for making the fault table
 	std::vector<MutilatedSymbol> identifiers;
 	std::unordered_map<std::string, std::vector<std::pair<std::size_t, unsigned long long>>> translated_positions;
+	std::vector<std::pair<std::size_t, std::string>> invoked_exprs;
 
 	// Parsed syntax tree
 	AST main;
