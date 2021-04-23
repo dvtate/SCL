@@ -12,15 +12,13 @@ namespace util {
 
 	std::pair<long, long> pos_to_line_offset(std::istream& file, const unsigned long long pos) {
 		std::string line;
-		long line_num = 0;
 		long i = 0;
-		for (; std::getline(file, line); line_num++)
+		for (long line_num = 1; std::getline(file, line); line_num++)
 			if (i + line.length() > pos)
 				return std::pair<long, long>{ line_num, pos - i };
 			else
 				i += line.length();
 
-		std::cout <<"FUCK\n";
 		return { -1L , -1L };
 	}
 

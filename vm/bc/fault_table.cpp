@@ -4,6 +4,7 @@
 #include <iostream>
 
 #include "bc.hpp"
+#include "../../debug.hpp"
 
 #include "fault_table.hpp"
 
@@ -17,6 +18,9 @@ static inline void debug_fault_table(FaultTable& ft) {
 	std::cout <<"\n- invoke_lhs: ";
 	for (auto& p : ft.invoke_lhs)
 		std::cout <<p.first <<", ";
+	for (auto& p : ft.invoke_lhs)
+		std::cout <<p.second <<", ";
+
 	std::cout <<std::endl <<std::endl;
 }
 
@@ -40,6 +44,7 @@ FaultTable* FaultTable::read(std::istream& is) {
 				str = "";
 				while ((c = is.get()))
 					str += c;
+				ret->invoke_lhs[id] = str;
 				break;
 
 			// Mutilated id
@@ -52,7 +57,6 @@ FaultTable* FaultTable::read(std::istream& is) {
 			// depictions of invoked values (relevant position)
 			case BCInstr::OPCode::INVOKE_POS:
 				is.read((char*) &id, sizeof(id));
-				ret->invoke_lhs[id] = str;
 				break;
 
 			// Relocations
@@ -78,7 +82,8 @@ FaultTable* FaultTable::read(std::istream& is) {
 		}
 		c = is.get();
 	}
-
+#ifdef SCL_DEBUG
 	debug_fault_table(*ret);
+#endif
 	return ret;
 }

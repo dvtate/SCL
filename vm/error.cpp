@@ -50,15 +50,16 @@ public:
 			this->trace.emplace_back(std::pair<uint64_t, std::vector<BCInstr>*>{ f->pos, f->closure.body });
 	}
 
-	std::string depict(Frame& f) {
+	std::string depict(Frame& f, const std::string& name, const std::string& message) {
 		auto& ft = f.rt->vm->fault_table;
 		if (!ft)
 			ft = FaultTable::read(f.rt->vm->bytecode_source);
 
 		VM& vm = *f.rt->vm;
 
-		std::string ret;
+		std::string ret = name + ": " + message + "\n";
 
+		// ErrorName: Error message
 		// \tat depict_invoke (file_path:line_num:line_pos)
 		// \tat depict_invoke (file_path:line_num:line_pos)
 		// \tat depict_invoke (file_path:line_num:line_pos)
@@ -85,6 +86,15 @@ public:
 			}
 		}
 
+		// Last one do line snapshot
+		try {
+			auto macro_start_pos = get_macro_start_pos(vm.literals, this->trace.back().second);
+			auto src_pos = ft->relocations.at(this->trace.back().first + macro_start_pos);
+			ret = util::show_line_pos(*src_pos.first, src_pos.second) + "\n" + ret;
+		} catch (...) {
+			std::cerr <<"fault_table_miss2'(_)\n";
+		}
+
 		return ret;
 	}
 };
@@ -106,9 +116,7 @@ public:
 		std::string name = obj["name"].to_string();
 		std::string message = obj["message"].to_string();
 
-		// ErrorName: Error message
-		ValueTypes::str_t ret = name + ": " + message + "\n";
-		ret += trace.depict(f);
+		ValueTypes::str_t ret = trace.depict(f, name, message);
 
 		// Value on the back should be empty
 		//    at object.member.function (/path/to/file/scl:##line:##offset)
