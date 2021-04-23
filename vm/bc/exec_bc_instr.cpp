@@ -173,6 +173,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			f.eval_stack.emplace_back((ValueTypes::int_t) 1);
 			return;
 		case BCInstr::OPCode::VAL_FALSE:
+			f.eval_stack.emplace_back((ValueTypes::int_t) 0);
 			return;
 		case BCInstr::OPCode::CLEAR_STACK:
 			f.eval_stack.clear();

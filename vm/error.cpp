@@ -73,6 +73,7 @@ public:
 			try {
 				ret += ft->invoke_lhs.at(pos) + " ";
 			} catch (...) {
+				ret += "unknown ";
 				std::cerr <<"fault_table_miss1(" << macro_start_pos << " " << pos <<")\n";
 			}
 			try {
@@ -82,6 +83,7 @@ public:
 				ret += "(";
 				ret += (*src_pos.first) + ":" + std::to_string(line_col.first) + ":" + std::to_string(line_col.second) + ")\n";
 			} catch (...) {
+				ret += "(unknown:??:?\?)\n";
 				std::cerr <<"fault_table_miss2(" << macro_start_pos << " " << pos <<")\n";
 			}
 		}
@@ -90,7 +92,7 @@ public:
 		try {
 			auto macro_start_pos = get_macro_start_pos(vm.literals, this->trace.back().second);
 			auto src_pos = ft->relocations.at(this->trace.back().first + macro_start_pos);
-			ret = util::show_line_pos(*src_pos.first, src_pos.second) + "\n" + ret;
+			ret = util::show_line_pos(*src_pos.first, src_pos.second) + ' ' +  ret;
 		} catch (...) {
 			std::cerr <<"fault_table_miss2'(_)\n";
 		}
