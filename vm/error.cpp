@@ -39,99 +39,105 @@ static inline size_t get_macro_start_pos(std::vector<Literal>& lits, std::vector
 	return std::get<ClosureDef>(l.v).start_pos;
 }
 
-// Stack trace
-class ErrorTrace {
-public:
-	std::vector<std::pair<uint64_t, std::vector<BCInstr>*>> trace;
 
-	ErrorTrace(SyncCallStack& cs) {
-		this->trace.reserve(cs.stack.size());
-		for (const auto& f : cs.stack)
-			this->trace.emplace_back(std::pair<uint64_t, std::vector<BCInstr>*>{ f->pos, f->closure.body });
-	}
 
-	std::string depict(Frame& f, const std::string& name, const std::string& message) {
-		auto& ft = f.rt->vm->fault_table;
-		if (!ft)
-			ft = FaultTable::read(f.rt->vm->bytecode_source);
 
-		VM& vm = *f.rt->vm;
 
-		std::string ret = name + ": " + message + "\n";
+ErrorTrace::ErrorTrace(SyncCallStack& cs) {
+	this->trace.reserve(cs.stack.size());
+	for (const auto& f : cs.stack)
+		this->trace.emplace_back(std::pair<uint64_t, std::vector<BCInstr>*>{ f->pos, f->closure.body });
+}
 
-		// ErrorName: Error message
-		// \tat depict_invoke (file_path:line_num:line_pos)
-		// \tat depict_invoke (file_path:line_num:line_pos)
-		// \tat depict_invoke (file_path:line_num:line_pos)
-		// ...
+void ErrorTrace::extend(SyncCallStack& cs) {
+	std::vector<std::pair<uint64_t, std::vector<BCInstr>*>> new_trace;
+	new_trace.reserve(cs.stack.size() + this->trace.size());
+	for (const auto& f : cs.stack)
+		new_trace.emplace_back(std::pair<uint64_t, std::vector<BCInstr>*>{ f->pos, f->closure.body });
+	new_trace.insert(new_trace.end(), this->trace.begin(), this->trace.end());
+	this->trace = new_trace;
+}
 
-		// For each item in the trace...
-		for (int i = this->trace.size() - 1; i >= 0; i--) {
-			auto& p = this->trace[i];
-			ret += "\tat ";
-			auto macro_start_pos = get_macro_start_pos(vm.literals, p.second);
-			auto pos = p.first + macro_start_pos;
-			try {
-				ret += ft->invoke_lhs.at(pos) + " ";
-			} catch (...) {
-				ret += "unknown ";
-				std::cerr <<"fault_table_miss1(" << macro_start_pos << " " << pos <<")\n";
-			}
-			try {
-				auto src_pos = ft->relocations.at(pos);
-				auto is = std::ifstream(*src_pos.first);
-				auto line_col = util::pos_to_line_offset(is, src_pos.second);
-				ret += "(";
-				ret += (*src_pos.first) + ":" + std::to_string(line_col.first) + ":" + std::to_string(line_col.second) + ")\n";
-			} catch (...) {
-				ret += "(unknown:??:?\?)\n";
-				std::cerr <<"fault_table_miss2(" << macro_start_pos << " " << pos <<")\n";
-			}
-		}
+std::string ErrorTrace::depict(Frame& f, const std::string& name, const std::string& message) {
+	auto& ft = f.rt->vm->fault_table;
+	if (!ft)
+		ft = FaultTable::read(f.rt->vm->bytecode_source);
 
-		// Last one do line snapshot
+	VM& vm = *f.rt->vm;
+
+	std::string ret = name + ": " + message + "\n";
+
+	// ErrorName: Error message
+	// \tat depict_invoke (file_path:line_num:line_pos)
+	// \tat depict_invoke (file_path:line_num:line_pos)
+	// \tat depict_invoke (file_path:line_num:line_pos)
+	// ...
+
+	// For each item in the trace...
+	for (int i = this->trace.size() - 1; i >= 0; i--) {
+		auto& p = this->trace[i];
+		ret += "\tat ";
+		auto macro_start_pos = get_macro_start_pos(vm.literals, p.second);
+		auto pos = p.first + macro_start_pos;
 		try {
-			auto macro_start_pos = get_macro_start_pos(vm.literals, this->trace.back().second);
-			auto src_pos = ft->relocations.at(this->trace.back().first + macro_start_pos);
-			ret = util::show_line_pos(*src_pos.first, src_pos.second) + ' ' +  ret;
+			ret += ft->invoke_lhs.at(pos) + " ";
 		} catch (...) {
-			std::cerr <<"fault_table_miss2'(_)\n";
+			ret += "unknown ";
+			std::cerr <<"fault_table_miss1(" << macro_start_pos << " " << pos <<")\n";
 		}
-
-		return ret;
-	}
-};
-
-
-class ErrorTraceStrFn : public NativeFunction {
-public:
-	std::shared_ptr<Frame> frame;
-	ErrorTrace trace;
-	Value self;
-	ErrorTraceStrFn(Frame& f, Value self):
-		frame(f.rt->running->stack.back()),
-		trace(ErrorTrace(*f.rt->running)),
-		self(self)
-	{}
-
-	void operator()(Frame& f) override {
-		ValueTypes::obj_t& obj = *std::get<ValueTypes::obj_ref>(self.v);
-		std::string name = obj["name"].to_string();
-		std::string message = obj["message"].to_string();
-
-		ValueTypes::str_t ret = trace.depict(f, name, message);
-
-		// Value on the back should be empty
-		//    at object.member.function (/path/to/file/scl:##line:##offset)
-		//	  ...
-		f.eval_stack.back() = Value(ret);
+		try {
+			auto src_pos = ft->relocations.at(pos);
+			auto is = std::ifstream(*src_pos.first);
+			auto line_col = util::pos_to_line_offset(is, src_pos.second);
+			ret += "(";
+			ret += (*src_pos.first) + ":" + std::to_string(line_col.first) + ":" + std::to_string(line_col.second) + ")\n";
+		} catch (...) {
+			ret += "(unknown:??:?\?)\n";
+			std::cerr <<"fault_table_miss2(" << macro_start_pos << " " << pos <<")\n";
+		}
 	}
 
-	void mark() override {
-		GC::mark(this->self);
-		frame->mark();
+	// Last one do line snapshot
+	try {
+		auto macro_start_pos = get_macro_start_pos(vm.literals, this->trace.back().second);
+		auto src_pos = ft->relocations.at(this->trace.back().first + macro_start_pos);
+		ret = util::show_line_pos(*src_pos.first, src_pos.second) + ' ' +  ret;
+	} catch (...) {
+		std::cerr <<"fault_table_miss2'(_)\n";
 	}
-};
+
+	return ret;
+}
+
+
+ErrorTraceStrFn::ErrorTraceStrFn(Frame& f, Value self):
+	frame(f.rt->running->stack.back()),
+	trace(ErrorTrace(*f.rt->running)),
+	self(self)
+{}
+
+void ErrorTraceStrFn::operator()(Frame& f) {
+	ValueTypes::obj_t& obj = *std::get<ValueTypes::obj_ref>(self.v);
+	std::string name = obj["name"].to_string();
+	std::string message = obj["message"].to_string();
+
+	ValueTypes::str_t ret = trace.depict(f, name, message);
+
+	// Value on the back should be empty
+	//    at object.member.function (/path/to/file/scl:##line:##offset)
+	//	  ...
+	f.eval_stack.back() = Value(ret);
+}
+
+void ErrorTraceStrFn::mark() {
+	GC::mark(this->self);
+	frame->mark();
+}
+
+
+
+
+
 
 Value gen_error_object(const std::string name, const std::string message, Frame& f) {
 	ValueTypes::obj_t* obj = ::new(GC::alloc<ValueTypes::obj_t>()) ValueTypes::obj_t;

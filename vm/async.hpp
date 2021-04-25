@@ -10,6 +10,7 @@
 #include "vm.hpp"
 #include "value.hpp"
 #include "operators/internal_tools.hpp"
+#include "error.hpp"
 
 /*
  * Async is of type :: (a -> b) -> (a -> (Empty -> b))
@@ -29,10 +30,11 @@ public:
 		ret(*ret), stack_target(std::move(stack_target)), is_error(is_error) {}
 
 	void action(Runtime& rt) override {
-		if (!this->is_error)
-			stack_target->stack.back()->eval_stack.emplace_back(ret);
-		else
+		if (this->is_error) {
 			stack_target->throw_error(ret);
+		} else {
+			stack_target->stack.back()->eval_stack.emplace_back(ret);
+		}
 
 		// run it again bc should have been stopped when the Future was invoked
 		rt.set_active(this->stack_target);
@@ -66,12 +68,30 @@ public:
 		f.rt->kill_running();
 		if (this->stack_target == nullptr)
 			return;
+		if (this->is_error)
+			this->extend_error();
 		this->stack_target->stack[0]->rt->recv_msg(
 			new AsyncResultMsg(this->ret, this->stack_target, is_error));
 	}
 	void mark() override {
 		if (ret)
 			GC::mark(*ret);
+	}
+
+	void extend_error() {
+		// Try to extend error callstack with current trace if it's native error
+		if (std::holds_alternative<ValueTypes::obj_ref>(this->ret->v)) {
+			auto& obj = *std::get<ValueTypes::obj_ref>(this->ret->v);
+			if (obj.find("__str") != obj.end()) {
+				auto& str_fn_v = obj["__str"];
+				if (std::holds_alternative<ValueTypes::n_fn_t>(str_fn_v.v)) {
+					auto* trace_str_fn = dynamic_cast<ErrorTraceStrFn*>(
+							std::get<ValueTypes::n_fn_t>(str_fn_v.v));
+					if (trace_str_fn)
+						trace_str_fn->trace.extend(*this->stack_target);
+				}
+			}
+		}
 	}
 };
 
@@ -86,6 +106,7 @@ public:
 		this->ofn->stack_target = f.rt->running;
 		if (this->ofn->ret != nullptr) {
 			if (this->ofn->is_error) {
+				this->ofn->extend_error();
 				f.rt->running->throw_error(*this->ofn->ret);
 			} else {
 				f.eval_stack.emplace_back(*this->ofn->ret);
