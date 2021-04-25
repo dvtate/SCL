@@ -66,7 +66,8 @@ public:
 		// ...
 
 		// For each item in the trace...
-		for (auto& p : this->trace) {
+		for (int i = this->trace.size() - 1; i >= 0; i--) {
+			auto& p = this->trace[i];
 			ret += "\tat ";
 			auto macro_start_pos = get_macro_start_pos(vm.literals, p.second);
 			auto pos = p.first + macro_start_pos;

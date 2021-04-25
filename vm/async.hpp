@@ -16,17 +16,23 @@
  * tfw using functions instead of objects
  */
 
+// TODO should probably split into .hpp and .cpp
+
 /// Resumes execution of frame after async result received
 class AsyncResultMsg : public RTMessage {
 public:
 	Value ret;
 	std::shared_ptr<SyncCallStack> stack_target;
+	bool is_error;
 
-	AsyncResultMsg(std::shared_ptr<Value> ret, std::shared_ptr<SyncCallStack> stack_target):
-		ret(*ret), stack_target(std::move(stack_target)) {}
+	AsyncResultMsg(std::shared_ptr<Value> ret, std::shared_ptr<SyncCallStack> stack_target, bool is_error):
+		ret(*ret), stack_target(std::move(stack_target)), is_error(is_error) {}
 
 	void action(Runtime& rt) override {
-		stack_target->stack.back()->eval_stack.emplace_back(ret);
+		if (!this->is_error)
+			stack_target->stack.back()->eval_stack.emplace_back(ret);
+		else
+			stack_target->throw_error(ret);
 
 		// run it again bc should have been stopped when the Future was invoked
 		rt.set_active(this->stack_target);
@@ -42,6 +48,9 @@ public:
 	// store return value if frame_target not set
 	std::shared_ptr<Value> ret{nullptr};
 
+	// does ret store an error?
+	bool is_error{false};
+
 	// this gets set when user invokes the future functor
 	std::shared_ptr<SyncCallStack> stack_target{nullptr}; //
 
@@ -51,13 +60,15 @@ public:
 
 	void operator()(Frame& f) override {
 		this->ret = std::make_shared<Value>(f.eval_stack.back());
+		this->kill_thread(f);
+	}
+	void kill_thread(Frame& f) {
 		f.rt->kill_running();
 		if (this->stack_target == nullptr)
 			return;
 		this->stack_target->stack[0]->rt->recv_msg(
-				new AsyncResultMsg(this->ret, this->stack_target));
+			new AsyncResultMsg(this->ret, this->stack_target, is_error));
 	}
-
 	void mark() override {
 		if (ret)
 			GC::mark(*ret);
@@ -74,7 +85,11 @@ public:
 	void operator()(Frame& f) override {
 		this->ofn->stack_target = f.rt->running;
 		if (this->ofn->ret != nullptr) {
-			f.eval_stack.emplace_back(*this->ofn->ret);
+			if (this->ofn->is_error) {
+				f.rt->running->throw_error(*this->ofn->ret);
+			} else {
+				f.eval_stack.emplace_back(*this->ofn->ret);
+			}
 		} else {
 			f.rt->freeze_running();
 		}
@@ -82,6 +97,37 @@ public:
 
 	void mark() override {
 		ofn->mark();
+	}
+};
+
+// By default errors thrown in async tasks will
+class AsyncDefaultCatchFn : public NativeFunction {
+	AsyncReturnNativeFn* ret;
+public:
+
+	explicit AsyncDefaultCatchFn(AsyncReturnNativeFn* ret): ret(ret) {}
+
+	void operator()(Frame& f) override {
+		// Copy the error
+		std::shared_ptr<Value> err = std::make_shared<Value>(f.eval_stack.back());
+		// Print a message
+		std::cout <<"WARNING: Uncaught Exception in async task:\n";
+
+		// Convert the error to a string and print it
+		(*std::get<ValueTypes::n_fn_t>(get_global_id((int64_t) GlobalId::STR).v))(f);
+		(*std::get<ValueTypes::n_fn_t>(get_global_id((int64_t) GlobalId::PRINT).v))(f);
+
+		// Put the error into the return closure and mark that it's an error
+		// This way the future will throw
+		this->ret->ret = err;
+		this->ret->is_error = true;
+
+		// Transfer control
+		this->ret->kill_thread(f);
+	}
+
+	void mark() override {
+		this->ret->mark();
 	}
 };
 
@@ -119,6 +165,8 @@ public:
 			auto rcs = f.rt->running;
 			f.rt->spawn_thread();
 			f.rt->running->stack.emplace_back(std::make_shared<Frame>(f.rt, c));
+			f.rt->running->stack.back()->error_handler = ::new(GC::alloc<Value>()) Value(
+					(NativeFunction*)::new(GC::alloc<AsyncDefaultCatchFn>()) AsyncDefaultCatchFn(ofn));
 		} else {
 			std::cerr <<"async only accepts closures for now :/\n";
 			// todo: typerror

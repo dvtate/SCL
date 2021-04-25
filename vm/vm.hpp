@@ -40,7 +40,14 @@ public:
 class SyncCallStack  {
 public:
 	std::vector<std::shared_ptr<Frame>> stack;
+
+	SyncCallStack() {
+		this->stack.reserve(32);
+	}
+
 	void mark();
+
+	void throw_error(Value thrown);
 };
 
 

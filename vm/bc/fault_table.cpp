@@ -8,6 +8,7 @@
 
 #include "fault_table.hpp"
 
+#ifdef SCL_DEBUG
 static inline void debug_fault_table(FaultTable& ft) {
 	std::cout <<"\nRead Fault Table:\n- relocations: ";
 	for (auto& p : ft.relocations)
@@ -23,6 +24,7 @@ static inline void debug_fault_table(FaultTable& ft) {
 
 	std::cout <<std::endl <<std::endl;
 }
+#endif
 
 
 

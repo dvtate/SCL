@@ -11,18 +11,56 @@
 #include "value.hpp"
 #include "bc/exec_bc_instr.hpp"
 #include "global_ids.hpp"
+#include "operators/internal_tools.hpp"
+
+
+inline void fatal_exception(Frame& f) {
+	std::cout <<"Fatal Exception:\n";
+	(*std::get<ValueTypes::n_fn_t>(get_global_id((int64_t) GlobalId::STR).v))(f);
+	(*std::get<ValueTypes::n_fn_t>(get_global_id((int64_t) GlobalId::PRINT).v))(f);
+	exit(1);
+}
+
 
 void SyncCallStack::mark() {
 	for (auto& f : this->stack)
 		f->mark();
 }
 
-class ExitProgramReturn : public virtual NativeFunction {
+void SyncCallStack::throw_error(Value thrown)  {
+	for (int i = this->stack.size() - 1; i >= 0; i--) {
+		auto* h = this->stack[i]->error_handler;
+		if (h != nullptr) {
+			// Pop the stack back one level behind that of the handler
+			// Replace the bad function call(stack) with the error handler
+			// Note that this destroys back until the i-1-th frame
+			// Note that the position of that frame will be the call that caused the error
+
+			std::shared_ptr<Frame> f;
+			if (i != 0) {
+				this->stack.resize(i);
+				f = this->stack.back();
+			} else {
+				this->stack.resize(1);
+				f = this->stack.back();
+//				f->pos = f->closure.body->size();
+			}
+
+			f->eval_stack.emplace_back(thrown);
+			vm_util::invoke_value_sync(*f, *h, true);
+			return;
+		}
+	}
+
+	// No handlers, die
+	this->stack.back()->eval_stack.emplace_back(thrown);
+	fatal_exception(*this->stack.back());
+}
+
+class ExitProgramReturn : public NativeFunction {
 public:
 
 	void operator()(Frame& f) override {
-		// TODO: convert stack.back() to int and return it
-		// f.eval_stack.back();
 		if (std::holds_alternative<Value::int_t>(f.eval_stack.back().v))
 			exit(std::get<Value::int_t>(f.eval_stack.back().v));
 		else
@@ -32,6 +70,12 @@ public:
 };
 static_assert(sizeof(ExitProgramReturn) == sizeof(NativeFunction), "Should be same size for convenience");
 
+//class FatalExceptionHandler : public NativeFunction {
+//public:
+//	void operator()(Frame& f) override {
+//		fatal_exception(f, f.eval_stack.back());
+//	}
+//};
 
 VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv, std::istream& bytecode_source):
 	bytecode_source(bytecode_source)
@@ -53,7 +97,6 @@ VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv, st
 	// capture global variables
 	for (const int64_t id : entry.capture_ids) {
 		SCL_DEBUG_MSG("capture global id # " << id << std::endl);
-//		std::cout <<"cid" <<id <<std::endl;
 		main.vars[id] = ::new(GC::alloc<Value>()) Value(get_global_id(id));
 	}
 
@@ -68,9 +111,6 @@ VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv, st
 	// TODO: capture command-line args
 	Value argv_list{std::string("cmd args coming soon")};
 	main.vars[main.i_id] = ::new(GC::alloc<Value>()) Value(argv_list);
-
-	// declare locals
-//	main.declare_empty_locals(entry.decl_ids);
 }
 
 void VM::run() {

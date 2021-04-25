@@ -98,7 +98,19 @@ class IfFn : public NativeFunction {
 // Any -> Str
 class StrFn : public NativeFunction {
 	void operator()(Frame& f) override {
-		f.eval_stack.back() = Value(f.eval_stack.back().to_string());
+		Value& v = f.eval_stack.back();
+
+		// if object has a __str method, call that
+		if (v.type() == ValueTypes::VType::OBJ) {
+			auto& o = *std::get<ValueTypes::obj_t*>(v.v);
+			if (o.find("__str") != o.end()) {
+				vm_util::invoke_value_sync(f, o["__str"], true);
+				return;
+			}
+		}
+
+		// Otherwise convert it to a string manually
+		f.eval_stack.back() = Value(v.to_string());
 	}
 
 	void mark() override {}
@@ -257,7 +269,9 @@ public:
 // Throw an error
 class ThrowFn : public NativeFunction {
 	void operator()(Frame& f) override {
-
+		Value e = f.eval_stack.back();
+		f.eval_stack.pop_back();
+		f.rt->running->throw_error(e);
 	}
 	void mark() override {}
 };
