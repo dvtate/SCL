@@ -2,15 +2,16 @@
 // Created by tate on 31-05-20.
 //
 
-#include "internal_tools.hpp"
-
 #include "../value.hpp"
 #include "../lambda_return.hpp"
+#include "../error.hpp"
+
+#include "internal_tools.hpp"
 
 
 namespace vm_util {
 
-	void invoke_value_sync(Frame &f, Value& v, bool uncallable) {
+	void invoke_value_sync(Frame& f, Value& v, bool uncallable) {
 
 		switch (v.type()) {
 			case ValueTypes::VType::REF:
@@ -41,7 +42,8 @@ namespace vm_util {
 				if (uncallable) {
 					f.rt->running->stack.back()->eval_stack.back() = v;
 				} else {
-					// TODO type-error
+					f.rt->running->throw_error(gen_error_object("TypeError",
+            			std::string("Cannot call value of type") + v.type_name() , f));
 				}
 		}
 	}

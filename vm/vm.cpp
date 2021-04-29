@@ -108,9 +108,13 @@ VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv, st
 	main.vars[main.i_id] = ::new(GC::alloc<Value>()) Value(args);
 	main.vars[main.o_id] = ::new(GC::alloc<Value>()) Value(::new(GC::alloc<NativeFunction>()) ExitProgramReturn());
 
-	// TODO: capture command-line args
-	Value argv_list{std::string("cmd args coming soon")};
-	main.vars[main.i_id] = ::new(GC::alloc<Value>()) Value(argv_list);
+	// Capture command line arguments
+	auto* argv_list = ::new(GC::static_alloc<ValueTypes::list_t>()) ValueTypes::list_t;
+	argv_list->reserve(argv.size());
+	for (auto& str : argv)
+		argv_list->emplace_back(str);
+
+	main.vars[main.i_id] = ::new(GC::static_alloc<Value>()) Value(argv_list);
 }
 
 void VM::run() {

@@ -57,6 +57,21 @@ public:
 		return (VType) this->v.index();
 	}
 
+	[[nodiscard]] inline const std::string type_name() const {
+		const static std::string type_names[] = {
+			"empty",
+			"Float",
+			"Int",
+			"Str",
+			"Closure",
+			"NativeClosure",
+			"Object",
+			"List",
+			"Ref",
+		};
+		return type_names[this->v.index()];
+	}
+
 	bool eq_value(const Value& other) const;
 	bool eq_identity(const Value& other) const;
 	bool truthy() const;

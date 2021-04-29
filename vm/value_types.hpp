@@ -32,6 +32,9 @@ namespace ValueTypes {
 
 	using str_t 	= std::string;
 //	using str_ref	= str_t*; // might as well use fuckin C-string
+
+	// TODO remove ref_t it's failed idea that slows things down for no reason
+	// If user wants to pass-by reference they can use objects or arrays
 	using ref_t		= Value*;
 
 	using lam_t 	= Closure*;
@@ -46,7 +49,7 @@ namespace ValueTypes {
 
 	using bool_t 	= ValueTypes::int_t;
 
-	using variant_t = std::variant<empty_t, float_t, int_t, str_t, ref_t, lam_t, n_fn_t, obj_ref, list_ref>;
+	using variant_t = std::variant<empty_t, float_t, int_t, str_t, lam_t, n_fn_t, obj_ref, list_ref, ref_t>;
 
 	// Alligned with variant_t index
 	enum class VType {
@@ -54,11 +57,11 @@ namespace ValueTypes {
 		FLOAT = 1,
 		INT = 2,
 		STR = 3,
-		REF = 4,
-		LAM = 5,
-		N_FN = 6,
-		OBJ = 7,
-		LIST = 8,
+		LAM = 4,
+		N_FN = 5,
+		OBJ = 6,
+		LIST = 7,
+		REF = 8,
 	};
 }
 

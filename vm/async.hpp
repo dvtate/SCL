@@ -86,7 +86,7 @@ public:
 				auto& str_fn_v = obj["__str"];
 				if (std::holds_alternative<ValueTypes::n_fn_t>(str_fn_v.v)) {
 					auto* trace_str_fn = dynamic_cast<ErrorTraceStrFn*>(
-							std::get<ValueTypes::n_fn_t>(str_fn_v.v));
+						std::get<ValueTypes::n_fn_t>(str_fn_v.v));
 					if (trace_str_fn)
 						trace_str_fn->trace.extend(*this->stack_target);
 				}
@@ -162,39 +162,37 @@ public:
 	void operator()(Frame& f) override {
 		SCL_DEBUG_MSG("invoked async wrapper");
 
-		if (this->v.type() == Value::VType::LAM) {
-			// Make async lambda call
-
-			// Get lambda
-			auto& c = *std::get<ValueTypes::lam_ref>(v.v);
-
-			// get input (pass by reference vs value
-			c.vars[c.i_id] =  f.eval_stack.back().type() == Value::VType::REF
-				? std::get<Value::ref_t>(f.eval_stack.back().v)
-				: ::new(GC::alloc<Value>()) Value(f.eval_stack.back());
-			f.eval_stack.pop_back();
-
-			// make output fn
-			auto* ofn = ::new(GC::alloc<AsyncReturnNativeFn>()) AsyncReturnNativeFn();
-			auto* future = ::new(GC::alloc<AsyncFutureNativeFn>()) AsyncFutureNativeFn(ofn);
-			c.vars[c.o_id] = ::new(GC::alloc<Value>()) Value((NativeFunction*) ofn);
-
-			// return future functor
-			f.rt->running->stack.back()->eval_stack.emplace_back((NativeFunction*)future);
-
-			// context switch to other frame
-			auto rcs = f.rt->running;
-			f.rt->spawn_thread();
-			f.rt->running->stack.emplace_back(std::make_shared<Frame>(f.rt, c));
-			f.rt->running->stack.back()->error_handler = ::new(GC::alloc<Value>()) Value(
-					(NativeFunction*)::new(GC::alloc<AsyncDefaultCatchFn>()) AsyncDefaultCatchFn(ofn));
-		} else {
-			std::cerr <<"async only accepts closures for now :/\n";
-			// todo: typerror
-			// not a closure
-			// just run it as tho it's sync lol
-			vm_util::invoke_value_sync(f, this->v, true);
+		// Invalid argument
+		if (this->v.type() != Value::VType::LAM) {
+			f.rt->running->throw_error(gen_error_object("TypeError", "async expected a closure", f));
+			return;
 		}
+
+		// Make async lambda call
+
+		// Get lambda
+		auto& c = *std::get<ValueTypes::lam_ref>(v.v);
+
+		// get input (pass by reference vs value
+		c.vars[c.i_id] =  f.eval_stack.back().type() == Value::VType::REF
+			? std::get<Value::ref_t>(f.eval_stack.back().v)
+			: ::new(GC::alloc<Value>()) Value(f.eval_stack.back());
+		f.eval_stack.pop_back();
+
+		// make output fn
+		auto* ofn = ::new(GC::alloc<AsyncReturnNativeFn>()) AsyncReturnNativeFn();
+		auto* future = ::new(GC::alloc<AsyncFutureNativeFn>()) AsyncFutureNativeFn(ofn);
+		c.vars[c.o_id] = ::new(GC::alloc<Value>()) Value((NativeFunction*) ofn);
+
+		// return future functor
+		f.rt->running->stack.back()->eval_stack.emplace_back((NativeFunction*)future);
+
+		// context switch to other frame
+		auto rcs = f.rt->running;
+		f.rt->spawn_thread();
+		f.rt->running->stack.emplace_back(std::make_shared<Frame>(f.rt, c));
+		f.rt->running->stack.back()->error_handler = ::new(GC::alloc<Value>()) Value(
+				(NativeFunction*)::new(GC::alloc<AsyncDefaultCatchFn>()) AsyncDefaultCatchFn(ofn));
 	}
 
 	void mark() override {

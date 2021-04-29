@@ -2,9 +2,10 @@
 // Created by tate on 23-05-20.
 //
 
-#include "math.hpp"
-
 #include "../vm.hpp"
+#include "../error.hpp"
+
+#include "math.hpp"
 
 
 namespace VM_ops {
@@ -28,6 +29,10 @@ namespace VM_ops {
 					case ValueTypes::VType::STR:
 						lhs.v = std::to_string(std::get<ValueTypes::int_t>(lhs.v)) + std::get<ValueTypes::str_t>(rhs.v);
 						break;
+					default:
+						f.rt->running->throw_error(gen_error_object("TypeError",
+							std::string("Cannot add values with types ") + lhs.type_name() + " and " + rhs.type_name(), f));
+						return;
 				}
 				break;
 
@@ -42,6 +47,10 @@ namespace VM_ops {
 					case ValueTypes::VType::STR:
 						std::get<ValueTypes::str_t>(lhs.v) += std::get<ValueTypes::str_t>(rhs.v);
 						break;
+					default:
+						f.rt->running->throw_error(gen_error_object("TypeError",
+							std::string("Cannot add values with types ") + lhs.type_name() + " and " + rhs.type_name(), f));
+						return;
 				}
 				break;
 			case ValueTypes::VType::FLOAT:
@@ -55,8 +64,16 @@ namespace VM_ops {
 					case ValueTypes::VType::STR:
 						lhs.v = std::to_string(std::get<ValueTypes::float_t>(lhs.v)) + std::get<ValueTypes::str_t>(rhs.v);
 						break;
+					default:
+						f.rt->running->throw_error(gen_error_object("TypeError",
+							std::string("Cannot add values with types ") + lhs.type_name() + " and " + rhs.type_name(), f));
+						return;
 				}
 				break;
+			default:
+				f.rt->running->throw_error(gen_error_object("TypeError",
+					std::string("Cannot add values with types ") + lhs.type_name() + " and " + rhs.type_name(), f));
+				return;
 		}
 	}
 
@@ -72,8 +89,9 @@ namespace VM_ops {
 				f.eval_stack.back() = Value(std::get<Value::int_t>(l->v) - std::get<Value::int_t>(r->v));
 			} else if (rt == Value::VType::FLOAT) {
 				f.eval_stack.back() = Value(std::get<Value::int_t>(l->v) - std::get<Value::float_t>(r->v));
-			} else { /* todo: typerror */
-				f.eval_stack.back() = Value();
+			} else {
+				f.rt->running->throw_error(gen_error_object("TypeError",
+					std::string("Cannot subtract values with types ") + l->type_name() + " and " + r->type_name(), f));
 			}
 		} else if (lt == Value::VType::FLOAT) {
 			if (rt == Value::VType::FLOAT) {
@@ -84,7 +102,8 @@ namespace VM_ops {
 				f.eval_stack.back() = Value();
 			}
 		} else {
-			f.eval_stack.back() = Value();
+			f.rt->running->throw_error(gen_error_object("TypeError",
+				std::string("Cannot subtract values with types ") + l->type_name() + " and " + r->type_name(), f));
 		}
 	};
 

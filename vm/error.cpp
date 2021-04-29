@@ -21,9 +21,9 @@ void CatchFn::mark() {
 	this->frame->mark();
 }
 void CatchFn::operator()(Frame& f) {
-	if (this->frame->error_handler) {
-		// TODO the frame already has an error handler cannot assign two
-	}
+//	if (this->frame->error_handler) {
+//		// Note maybe we should warn user about multiple catch statements?
+//	}
 	this->frame->error_handler = ::new(GC::alloc<Value>()) Value(f.eval_stack.back());
 }
 
@@ -145,4 +145,8 @@ Value gen_error_object(const std::string name, const std::string message, Frame&
 	(*obj)["message"] = Value(message);
 	(*obj)["__str"] = Value((NativeFunction*) ::new(GC::alloc<ErrorTraceStrFn>()) ErrorTraceStrFn(f, Value(obj)));
 	return Value(obj);
+}
+
+Value gen_error_object(const std::string name, const std::string message, SyncCallStack& cs) {
+	return gen_error_object(name, message, *cs.stack.back());
 }

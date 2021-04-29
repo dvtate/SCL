@@ -21,9 +21,12 @@ static inline void invoke(Frame& f) {
 
 // ([])
 // TODO refactor
+// TODO typerrors
 void index(Frame& f) {
 	Value* v = f.eval_stack.back().deref();
 	if (v == nullptr) {
+		f.rt->running->throw_error(gen_error_object("TypeError", "async expected a closure", f));
+		return;
 		std::cout <<"null passed to USE_INDEX[0]!!!\n";
 		return;
 	}
@@ -232,6 +235,9 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 					mem = std::get<ValueTypes::str_t>(ind_v.v);
 					break;
 				default:
+					f.rt->running->throw_error(gen_error_object(
+						"TypeError",
+						std::string("Index expected Int, Float or String, received ") + ind_v.type_name(), f));
 					std::cerr <<"SET_INDEX: type-error " <<(int) ind_v.type() <<" - " <<ind_v.to_string(true) <<std::endl;
 					return;
 			}
@@ -253,7 +259,12 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 					} catch (...) {}
 					break;
 
-				// TODO type error
+				default:
+					f.rt->running->throw_error(gen_error_object(
+						"TypeError",
+						std::string("cannot index type - ") + f.eval_stack.back().type_name(),
+						f));
+					break;
 			}
 			break;
 		};
@@ -269,7 +280,11 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 				f.eval_stack.back() = (*std::get<Value::obj_ref>(f.eval_stack.back().v))
 					[std::get<Value::str_t>(std::get<Value>(f.rt->vm->literals[cmd.i].v).v)];
 			} catch (const std::bad_variant_access& e) {
-				// TODO typeerror
+				f.rt->running->throw_error(gen_error_object(
+						"TypeError",
+						std::string("cannot request member of non-object type ") + f.eval_stack.back().type_name(),
+						f));
+				break;
 			}
 			return;
 

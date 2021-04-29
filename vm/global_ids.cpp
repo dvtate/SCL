@@ -54,9 +54,8 @@ public:
 
 		std::thread([](const std::shared_ptr<SyncCallStack>& cs){
 			std::string inp;
-			if (!std::getline(std::cin, inp)) {
-				// TODO: eof-error
-			}
+			if (!std::getline(std::cin, inp))
+				cs->throw_error(gen_error_object("EOF-Error", "input not received", *cs));
 
 			// return value
 			cs->stack.back()->eval_stack.emplace_back(Value(inp));
@@ -226,7 +225,8 @@ class SizeFn : public NativeFunction {
 
 class CopyFn : public NativeFunction {
 	// TODO move this to Value class
-	Value copy_value(const Value& v) {
+	static Value copy_value(const Value& v) {
+		do_branch:
 		switch (v.type()) {
 			// non-reference types
 			case ValueTypes::VType::FLOAT:
@@ -234,6 +234,9 @@ class CopyFn : public NativeFunction {
 			case ValueTypes::VType::EMPTY:
 			case ValueTypes::VType::STR:
 				return v;
+
+			case ValueTypes::VType::REF:
+				return copy_value(*std::get<ValueTypes::ref_t>(v.v));
 
 			case ValueTypes::VType::LIST: {
 				const auto* l = std::get<ValueTypes::list_ref>(v.v);

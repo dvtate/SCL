@@ -1,15 +1,14 @@
 //
 // Created by tate on 07-06-20.
 //
-
-#include "cmp.hpp"
 #include "../value.hpp"
 #include "../vm.hpp"
+#include "../error.hpp"
+#include "cmp.hpp"
 
 namespace VM_ops {
 
 	void check_equality(Frame& f) {
-		// TODO: move to Value.equals()
 		Value r = f.eval_stack.back();
 		f.eval_stack.pop_back();
 		Value l = f.eval_stack.back();
@@ -18,7 +17,6 @@ namespace VM_ops {
 	}
 
 	void check_identity(Frame& f) {
-		// TODO: move to Value.equals()
 		Value r = f.eval_stack.back();
 		f.eval_stack.pop_back();
 		Value l = f.eval_stack.back();
@@ -78,7 +76,9 @@ namespace VM_ops {
 			f.eval_stack.back() = Value((ValueTypes::int_t)\
 					(std::get<ValueTypes::str_t>(l->v) OP std::get<ValueTypes::str_t>(l->v)));\
 		} else {\
-			f.eval_stack.back() = Value();\
+            f.rt->running->throw_error(gen_error_object("TypeError", \
+            	std::string(#OP "Not supported between types ") + l->type_name() + " and " + r->type_name(), f)); \
+			return;\
 		}\
 	}
 
