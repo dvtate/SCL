@@ -27,7 +27,10 @@ public:
 
 namespace ValueTypes {
 	using empty_t	= std::monostate;
+
+	// TODO add bigint type and replace int64's with int8's?
 	using int_t 	= int64_t;
+
 	using float_t 	= double;
 
 	using str_t 	= std::string;
@@ -37,6 +40,8 @@ namespace ValueTypes {
 	// If user wants to pass-by reference they can use objects or arrays
 	using ref_t		= Value*;
 
+	// TODO rename *_ref typedecls?
+
 	using lam_t 	= Closure*;
 	using lam_ref 	= lam_t;
 	using n_fn_t 	= NativeFunction*;
@@ -44,11 +49,17 @@ namespace ValueTypes {
 
 	using list_t	= std::vector<Value>;
 	using list_ref	= list_t*;
-	using obj_t		= std::unordered_map<std::string, Value>;
+
+	// TODO need to make custom object type that supports
+	// Definitely: pre-hashed keys, selecting values by index, preservation of order
+	// Maybe: prototypal inheritance?
+	using obj_t		= tsl::ordered_map<std::string, Value>;
 	using obj_ref	= obj_t*;
 
+	// This is a stub
 	using bool_t 	= ValueTypes::int_t;
 
+	// The only datatype for this lang
 	using variant_t = std::variant<empty_t, float_t, int_t, str_t, lam_t, n_fn_t, obj_ref, list_ref, ref_t>;
 
 	// Alligned with variant_t index
@@ -64,6 +75,5 @@ namespace ValueTypes {
 		REF = 8,
 	};
 }
-
 
 #endif //SCL_VALUE_TYPES_HPP

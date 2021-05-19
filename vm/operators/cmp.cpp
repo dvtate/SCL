@@ -42,9 +42,9 @@ namespace VM_ops {
 		Value r = f.eval_stack.back();\
 		f.eval_stack.pop_back();\
 		Value& l = f.eval_stack.back();\
-		SCL_DEBUG_MSG("CMP OP: " <<f.eval_stack.back().to_string() <<#OP <<rhs.to_string()<<std::endl);\
+		SCL_DEBUG_MSG("CMP OP: " <<l.to_string() <<#OP <<r.to_string()<<std::endl);\
 		\
-		SCL_DEBUG_MSG("CMP OP TYPES: " <<(int) l->type() <<#OP <<(int) r->type()<<std::endl);\
+		SCL_DEBUG_MSG("CMP OP TYPES: " <<(int) l.type() <<#OP <<(int) r.type()<<std::endl);\
 	\
 		const auto lt = l.type(), rt = r.type();\
 		if (lt == ValueTypes::VType::INT) {\

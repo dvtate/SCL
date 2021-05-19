@@ -70,6 +70,12 @@ public:
 		return type_names[this->v.index()];
 	}
 
+	// Exact match
+	bool operator==(const Value& other) const {
+		return this->v == other.v;
+	}
+
+	// Language matching
 	bool eq_value(const Value& other) const;
 	bool eq_identity(const Value& other) const;
 	bool truthy() const;

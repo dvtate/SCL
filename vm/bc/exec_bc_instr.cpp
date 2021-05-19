@@ -19,66 +19,6 @@ static inline void invoke(Frame& f) {
 	vm_util::invoke_value_sync(f, v, false);
 }
 
-// ([])
-// TODO refactor
-// TODO typerrors
-static void index(Frame& f) {
-	// Get the index
-	bool is_str = false;
-	ValueTypes::int_t ind;
-	ValueTypes::str_t mem;
-	Value index_value = f.eval_stack.back();
-	{
-		switch (index_value.type()) {
-			case ValueTypes::VType::INT:
-				ind = std::get<ValueTypes::int_t>(index_value.v);
-				break;
-			case ValueTypes::VType::FLOAT:
-				ind = (ValueTypes::int_t) std::get<ValueTypes::float_t>(index_value.v);
-				break;
-			case ValueTypes::VType::STR:
-				is_str = true;
-				mem = std::get<ValueTypes::str_t>(index_value.v);
-				break;
-			default:
-				f.rt->running->throw_error(gen_error_object(
-						"TypeError",
-						"Expected a numeric index type",
-						f));
-				return;
-		}
-	}
-
-	f.eval_stack.pop_back();
-
-	// Extract value
-	// TODO maybe range checks?
-	Value& v = f.eval_stack.back();
-	if (!is_str && std::holds_alternative<Value::list_ref>(v.v)) {
-		auto l = std::get<Value::list_ref>(v.v);
-		try {
-			f.eval_stack.back() = l->at(ind);
-		} catch (...) {
-			f.eval_stack.back() = Value();
-		}
-	} else if (!is_str && std::holds_alternative<ValueTypes::str_t>(v.v)) {
-		auto &s = std::get<ValueTypes::str_t>(v.v);
-		try {
-			f.eval_stack.back() = Value(std::string() + s.at(ind));
-		} catch (...) {
-			f.eval_stack.back() = Value();
-		}
-	} else if (is_str && std::holds_alternative<ValueTypes::obj_ref>(v.v)) {
-		f.eval_stack.back() = (*std::get<Value::obj_ref>(v.v))[mem];
-	} else {
-		f.rt->running->throw_error(gen_error_object(
-				"TypeError",
-				std::string("Invalid types passed to [] operator: ") + v.type_name() + " and " + index_value.type_name(),
-				f));
-		return;
-	}
-}
-
 // [ ... ]
 void make_list(Frame& f, uint32_t n) {
 	Value lv(::new(GC::alloc<ValueTypes::list_t>()) ValueTypes::list_t());
@@ -186,9 +126,13 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 		case BCInstr::OPCode::CLEAR_STACK:
 			f.eval_stack.clear();
 			return;
-		case BCInstr::OPCode::USE_INDEX:
-			index(f);
+		case BCInstr::OPCode::USE_INDEX: {
+			Value index = f.eval_stack.back();
+			f.eval_stack.pop_back();
+			Value& v = f.eval_stack.back();
+			f.eval_stack.back() = vm_util::index_value(f, v, index);
 			return;
+		}
 
 		// declaring a mutable identifier
 		case BCInstr::OPCode::DECL_ID: {

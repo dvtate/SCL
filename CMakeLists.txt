@@ -36,7 +36,7 @@ add_executable(scl
 
         vm/gc/gc.cpp vm/gc/gc.hpp
 
-        )
+        vm/primitive_methods.cpp vm/primitive_methods.hpp)
 
 
 target_link_libraries(scl PRIVATE Threads::Threads)
