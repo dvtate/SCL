@@ -175,7 +175,7 @@ public:
 
 		// get input (pass by reference vs value
 		c.vars[c.i_id] =  f.eval_stack.back().type() == Value::VType::REF
-			? std::get<Value::ref_t>(f.eval_stack.back().v)
+			? std::get<ValueTypes::ref_t>(f.eval_stack.back().v)
 			: ::new(GC::alloc<Value>()) Value(f.eval_stack.back());
 		f.eval_stack.pop_back();
 

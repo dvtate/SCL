@@ -282,7 +282,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			} catch (const std::bad_variant_access& e) {
 				f.rt->running->throw_error(gen_error_object(
 						"TypeError",
-						std::string("cannot request member of non-object type ") + f.eval_stack.back().type_name(),
+						std::string("cannot request member of non-object type	 ") + f.eval_stack.back().type_name(),
 						f));
 				break;
 			}

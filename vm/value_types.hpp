@@ -65,4 +65,5 @@ namespace ValueTypes {
 	};
 }
 
+
 #endif //SCL_VALUE_TYPES_HPP

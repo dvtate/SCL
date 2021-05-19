@@ -20,7 +20,6 @@ public:
 	using float_t 	= ValueTypes::float_t;
 
 	using str_t 	= ValueTypes::str_t;
-	using ref_t		= ValueTypes::ref_t;
 	using n_fn_t 	= ValueTypes::n_fn_t;
 
 	using list_t	= ValueTypes::list_t;
@@ -37,7 +36,6 @@ public:
 	explicit Value(const ValueTypes::float_t in):		v(in) {}
 	explicit Value(const str_t& in): 					v(in) {}
 	explicit Value(const ValueTypes::int_t in): 		v(in) {}
-	explicit Value(ValueTypes::ref_t in): 				v(in) {}
 	explicit Value(ValueTypes::lam_t in): 				v(in) {}
 	explicit Value(ValueTypes::n_fn_t in):				v(in) {}
 	explicit Value(const ValueTypes::list_t& in):
@@ -57,7 +55,7 @@ public:
 		return (VType) this->v.index();
 	}
 
-	[[nodiscard]] inline const std::string type_name() const {
+	[[nodiscard]] inline const std::string& type_name() const {
 		const static std::string type_names[] = {
 			"empty",
 			"Float",
@@ -75,10 +73,8 @@ public:
 	bool eq_value(const Value& other) const;
 	bool eq_identity(const Value& other) const;
 	bool truthy() const;
-	inline Value* deref() const {
-		return std::holds_alternative<ValueTypes::ref_t>(v)
-			? std::get<ValueTypes::ref_t>(v)
-			: (Value*) this;
+	inline Value* deref() {
+		return this;
 	}
 
 	std::string to_string(bool recursive = false) const;
@@ -136,9 +132,6 @@ namespace GC {
 				return;
 			case ValueTypes::VType::N_FN:
 				mark(std::get<ValueTypes::n_fn_ref>(v.v));
-				return;
-			case ValueTypes::VType::REF:
-				mark(std::get<ValueTypes::ref_t>(v.v));
 				return;
 			default:
 				return;

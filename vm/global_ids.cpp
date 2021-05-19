@@ -235,9 +235,6 @@ class CopyFn : public NativeFunction {
 			case ValueTypes::VType::STR:
 				return v;
 
-			case ValueTypes::VType::REF:
-				return copy_value(*std::get<ValueTypes::ref_t>(v.v));
-
 			case ValueTypes::VType::LIST: {
 				const auto* l = std::get<ValueTypes::list_ref>(v.v);
 				ValueTypes::list_ref ret = ::new(GC::alloc<ValueTypes::list_t>()) ValueTypes::list_t();

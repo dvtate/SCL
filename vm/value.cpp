@@ -10,7 +10,8 @@
 
 // aka operator == or operator ?=
 bool Value::eq_value(const Value& other) const {
-	Value* l = this->deref(), * r = other.deref();
+	const Value* l = this;
+	const Value* r = &other;
 
 	// maybe null == null
 	if (l == r)
@@ -57,9 +58,6 @@ bool Value::eq_value(const Value& other) const {
 bool Value::eq_identity(const Value& other) const {
 	if (this->type() != other.type())
 		return false;
-	if (std::holds_alternative<ValueTypes::ref_t>(this->v)) {
-		return std::get<ValueTypes::ref_t>(v) == std::get<ValueTypes::ref_t>(other.v);
-	}
 
 	auto t = this->type();
 
@@ -98,9 +96,6 @@ bool Value::eq_identity(const Value& other) const {
 bool Value::truthy() const {
 	auto* val = (Value*) this;
 	switch (val->type()) {
-		case VType::REF: {
-			return std::get<ValueTypes::ref_t>(v)->truthy();
-		}
 		case ValueTypes::VType::INT:
 			return std::get<ValueTypes::int_t>(val->v);
 		case ValueTypes::VType::FLOAT:
@@ -140,10 +135,6 @@ std::string Value::to_string(bool recursive) const {
 			return "(: ... )";
 		case VType::N_FN:
 			return "(: native )";
-		case VType::REF: {
-			const auto p = std::get<ValueTypes::ref_t>(this->v);
-			return p != nullptr ? p->to_string(false) : "null";
-		}
 		case VType::LIST: {
 			auto& l = *std::get<ValueTypes::list_ref>(this->v);
 			std::string ret = "[ ";
