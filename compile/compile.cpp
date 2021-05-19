@@ -286,15 +286,14 @@ void ParsedMacro::read_operation(AST& t){
 	// TODO: replace with actual operator ID's from VM
 	std::unordered_map<std::string, uint16_t> op_ids {
 			{ "+",		0 },
-			{ "=",		1 },
+			{ "-",		1 },
 			{ "==",		2 },
-			{ "===",	3 },
+			{ "===",		3 },
 			{ "<",		4 },
 			{ ">",		5 },
 			{ "<=",		6 },
 			{ ">=",		7 },
 			{ "!",		8 },
-			{ "-",		9 },
 	};
 
 	// check if it forms an expression or just lexical
@@ -561,7 +560,6 @@ ParsedMacro::ParsedMacro(AST &tree, std::string file_name, std::vector<ParsedMac
 	declarations["i"] = i;
 	this->body.emplace_back(Command(Command::OPCode::DECL_ID, i.id));
 	this->body.emplace_back(Command(Command::OPCode::DECL_ID, o.id));
-
 }
 
 
@@ -579,6 +577,7 @@ MutilatedSymbol ParsedMacro::find_id(const std::string& name) {
 			return it->second;
 	}
 
+	// Global, built-in identifiers
 	static const std::unordered_map<std::string, MutilatedSymbol> globals = {
 			{ "empty", MutilatedSymbol("empty", 0, MutilatedSymbol::SymbolType::CONSTANT) },
 			{ "print", MutilatedSymbol("print", 1, MutilatedSymbol::SymbolType::CONSTANT) },
@@ -603,7 +602,6 @@ MutilatedSymbol ParsedMacro::find_id(const std::string& name) {
 		// use before declaration
 		return MutilatedSymbol("", -1);
 	}
-
 }
 
 int64_t ParsedMacro::declare_id(const std::string& id_name) {

@@ -144,22 +144,17 @@ public:
 
 // Any -> Int | Float | Empty
 class NumFn : public NativeFunction {
-
 	void operator()(Frame& f) override {
-		Value i = f.eval_stack.back();
-		Value* in = i.deref();
-		if (in == nullptr) {
-			f.eval_stack.back() = Value();
-			return;
-		}
+		Value& in = f.eval_stack.back();
 
-		if (std::holds_alternative<Value::int_t>(in->v) ||
-			std::holds_alternative<Value::float_t>(in->v))
-			// already a Num
+		// already a Num => return is
+		if (std::holds_alternative<Value::int_t>(in.v) ||
+			std::holds_alternative<Value::float_t>(in.v))
 			return;
 
-		if (std::holds_alternative<Value::str_t>(in->v)) {
-			const auto& s = std::get<Value::str_t>(in->v);
+		// parse strings
+		if (std::holds_alternative<Value::str_t>(in.v)) {
+			const auto& s = std::get<Value::str_t>(in.v);
 			try {
 				f.eval_stack.back() = Value((Value::int_t) std::stoll(s));
 			} catch (...) {
@@ -170,6 +165,7 @@ class NumFn : public NativeFunction {
 				}
 			}
 		} else {
+			// invalid => empty
 			f.eval_stack.back() = Value();
 		}
 	}

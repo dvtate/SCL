@@ -22,55 +22,60 @@ static inline void invoke(Frame& f) {
 // ([])
 // TODO refactor
 // TODO typerrors
-void index(Frame& f) {
-	Value* v = f.eval_stack.back().deref();
-	if (v == nullptr) {
-		f.rt->running->throw_error(gen_error_object("TypeError", "async expected a closure", f));
-		return;
-		std::cout <<"null passed to USE_INDEX[0]!!!\n";
-		return;
-	}
-
-	uint64_t ind;
-	if (std::holds_alternative<Value::int_t>(v->v)) {
-		auto i = std::get<Value::int_t>(v->v);
-		if (i < 0) {
-//			std::cout <<"neg index";
-			f.eval_stack.pop_back();
-			f.eval_stack.back() = Value();
-			return;
+static void index(Frame& f) {
+	// Get the index
+	bool is_str = false;
+	ValueTypes::int_t ind;
+	ValueTypes::str_t mem;
+	Value index_value = f.eval_stack.back();
+	{
+		switch (index_value.type()) {
+			case ValueTypes::VType::INT:
+				ind = std::get<ValueTypes::int_t>(index_value.v);
+				break;
+			case ValueTypes::VType::FLOAT:
+				ind = (ValueTypes::int_t) std::get<ValueTypes::float_t>(index_value.v);
+				break;
+			case ValueTypes::VType::STR:
+				is_str = true;
+				mem = std::get<ValueTypes::str_t>(index_value.v);
+				break;
+			default:
+				f.rt->running->throw_error(gen_error_object(
+						"TypeError",
+						"Expected a numeric index type",
+						f));
+				return;
 		}
-		ind = i;
-	} else if (std::holds_alternative<Value::float_t>(v->v)) {
-		ind = (uint64_t) std::get<Value::float_t>(v->v);
-	} else {
-		std::cout << "USE_INDEX wrong index type\n";
-		f.eval_stack.pop_back();
-		return;
 	}
 
 	f.eval_stack.pop_back();
-	v = f.eval_stack.back().deref();
-	if (v == nullptr) {
-		std::cout <<"null passed to USE_INDEX[1]!!!\n";
-		return;
-	}
-	if (std::holds_alternative<Value::list_ref>(v->v)) {
-		auto l = std::get<Value::list_ref>(v->v);
+
+	// Extract value
+	// TODO maybe range checks?
+	Value& v = f.eval_stack.back();
+	if (!is_str && std::holds_alternative<Value::list_ref>(v.v)) {
+		auto l = std::get<Value::list_ref>(v.v);
 		try {
 			f.eval_stack.back() = l->at(ind);
 		} catch (...) {
 			f.eval_stack.back() = Value();
 		}
-	} else if (std::holds_alternative<ValueTypes::str_t>(v->v)) {
-		auto& s = std::get<ValueTypes::str_t>(v->v);
+	} else if (!is_str && std::holds_alternative<ValueTypes::str_t>(v.v)) {
+		auto &s = std::get<ValueTypes::str_t>(v.v);
 		try {
 			f.eval_stack.back() = Value(std::string() + s.at(ind));
 		} catch (...) {
 			f.eval_stack.back() = Value();
 		}
+	} else if (is_str && std::holds_alternative<ValueTypes::obj_ref>(v.v)) {
+		f.eval_stack.back() = (*std::get<Value::obj_ref>(v.v))[mem];
 	} else {
-		std::cout <<"USE_INDEX wrong list type.." <<(int) v->type() <<'\n' <<v->to_string() <<std::endl;
+		f.rt->running->throw_error(gen_error_object(
+				"TypeError",
+				std::string("Invalid types passed to [] operator: ") + v.type_name() + " and " + index_value.type_name(),
+				f));
+		return;
 	}
 }
 
@@ -282,7 +287,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			} catch (const std::bad_variant_access& e) {
 				f.rt->running->throw_error(gen_error_object(
 						"TypeError",
-						std::string("cannot request member of non-object type	 ") + f.eval_stack.back().type_name(),
+						std::string("cannot request member of non-object type - ") + f.eval_stack.back().type_name(),
 						f));
 				break;
 			}

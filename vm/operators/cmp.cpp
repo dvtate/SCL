@@ -39,45 +39,40 @@ namespace VM_ops {
 // template for comparison operators... will have to replace eventually...
 #define SCL_CMP_FN_DEF(FNAME, OP) \
 	void FNAME(Frame& f) {\
-		Value rhs = f.eval_stack.back();\
+		Value r = f.eval_stack.back();\
 		f.eval_stack.pop_back();\
-		Value* l = f.eval_stack.back().deref();\
-		Value* r = rhs.deref();\
+		Value& l = f.eval_stack.back();\
 		SCL_DEBUG_MSG("CMP OP: " <<f.eval_stack.back().to_string() <<#OP <<rhs.to_string()<<std::endl);\
 		\
-		if (l == nullptr || r == nullptr) {\
-			f.eval_stack.back() = Value(false);\
-			return;\
-		}\
 		SCL_DEBUG_MSG("CMP OP TYPES: " <<(int) l->type() <<#OP <<(int) r->type()<<std::endl);\
 	\
-		const auto lt = l->type(), rt = r->type();\
+		const auto lt = l.type(), rt = r.type();\
 		if (lt == ValueTypes::VType::INT) {\
 			if (rt == ValueTypes::VType::INT)\
 				f.eval_stack.back() = Value((ValueTypes::int_t) \
-						(std::get<ValueTypes::int_t>(l->v) OP std::get<ValueTypes::int_t>(r->v)));\
+						(std::get<ValueTypes::int_t>(l.v) OP std::get<ValueTypes::int_t>(r.v)));\
 			else if (rt == ValueTypes::VType::FLOAT)\
 				f.eval_stack.back() = Value((ValueTypes::int_t) \
-						(std::get<ValueTypes::int_t>(l->v) OP std::get<ValueTypes::float_t>(r->v)));\
+						(std::get<ValueTypes::int_t>(l.v) OP std::get<ValueTypes::float_t>(r.v)));\
 			else {\
                 f.eval_stack.back() = Value();\
                 }\
 		} else if (lt == ValueTypes::VType::FLOAT) {\
 			if (rt == ValueTypes::VType::FLOAT)\
 				f.eval_stack.back() = Value((ValueTypes::int_t) \
-						std::get<ValueTypes::float_t>(l->v) OP std::get<ValueTypes::float_t>(r->v));\
+						std::get<ValueTypes::float_t>(l.v) OP std::get<ValueTypes::float_t>(r.v));\
 			else if (rt == ValueTypes::VType::INT)\
 				f.eval_stack.back() = Value((ValueTypes::int_t) \
-						(std::get<ValueTypes::float_t>(l->v) OP std::get<ValueTypes::int_t>(r->v)));\
+						(std::get<ValueTypes::float_t>(l.v) OP std::get<ValueTypes::int_t>(r.v)));\
 			else  {\
                 f.eval_stack.back() = Value(); \
 			}\
 		} else if (lt == ValueTypes::VType::STR && rt == ValueTypes::VType::STR) {\
 			f.eval_stack.back() = Value((ValueTypes::int_t)\
-					(std::get<ValueTypes::str_t>(l->v) OP std::get<ValueTypes::str_t>(l->v)));\
+					(std::get<ValueTypes::str_t>(l.v) OP std::get<ValueTypes::str_t>(l.v)));\
 		} else {\
             f.rt->running->throw_error(gen_error_object("TypeError", \
-            	std::string(#OP "Not supported between types ") + l->type_name() + " and " + r->type_name(), f)); \
+            	std::string(#OP "Not supported between types ") + l.type_name() + " and " + r.type_name(), f)); \
 			return;\
 		}\
 	}

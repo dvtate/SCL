@@ -78,32 +78,31 @@ namespace VM_ops {
 	}
 
 	void sub_act(Frame& f) {
-		Value rhs = f.eval_stack.back();
+		Value r = f.eval_stack.back();
 		f.eval_stack.pop_back();
-		Value* l = f.eval_stack.back().deref();
-		Value* r = rhs.deref();
+		Value& l = f.eval_stack.back();
 
-		const auto lt = l->type(), rt = r->type();
+		const auto lt = l.type(), rt = r.type();
 		if (lt == Value::VType::INT) {
 			if (rt == Value::VType::INT) {
-				f.eval_stack.back() = Value(std::get<Value::int_t>(l->v) - std::get<Value::int_t>(r->v));
+				f.eval_stack.back() = Value(std::get<Value::int_t>(l.v) - std::get<Value::int_t>(r.v));
 			} else if (rt == Value::VType::FLOAT) {
-				f.eval_stack.back() = Value(std::get<Value::int_t>(l->v) - std::get<Value::float_t>(r->v));
+				f.eval_stack.back() = Value(std::get<Value::int_t>(l.v) - std::get<Value::float_t>(r.v));
 			} else {
 				f.rt->running->throw_error(gen_error_object("TypeError",
-					std::string("Cannot subtract values with types ") + l->type_name() + " and " + r->type_name(), f));
+					std::string("Cannot subtract values with types ") + l.type_name() + " and " + r.type_name(), f));
 			}
 		} else if (lt == Value::VType::FLOAT) {
 			if (rt == Value::VType::FLOAT) {
-				f.eval_stack.back() = Value(std::get<Value::float_t>(l->v) - std::get<Value::float_t>(r->v));
+				f.eval_stack.back() = Value(std::get<Value::float_t>(l.v) - std::get<Value::float_t>(r.v));
 			} else if (rt == Value::VType::INT) {
-				f.eval_stack.back() = Value(std::get<Value::float_t>(l->v) - std::get<Value::int_t>(r->v));
+				f.eval_stack.back() = Value(std::get<Value::float_t>(l.v) - std::get<Value::int_t>(r.v));
 			} else {
 				f.eval_stack.back() = Value();
 			}
 		} else {
 			f.rt->running->throw_error(gen_error_object("TypeError",
-				std::string("Cannot subtract values with types ") + l->type_name() + " and " + r->type_name(), f));
+				std::string("Cannot subtract values with types ") + l.type_name() + " and " + r.type_name(), f));
 		}
 	};
 

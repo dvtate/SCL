@@ -73,10 +73,6 @@ public:
 	bool eq_value(const Value& other) const;
 	bool eq_identity(const Value& other) const;
 	bool truthy() const;
-	inline Value* deref() {
-		return this;
-	}
-
 	std::string to_string(bool recursive = false) const;
 };
 
