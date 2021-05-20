@@ -26,7 +26,8 @@ add_executable(scl
 
         vm/value.cpp vm/value.hpp vm/closure.cpp vm/closure.hpp vm/vm.cpp vm/vm.hpp vm/literal.cpp vm/literal.hpp
         vm/lambda_return.hpp vm/global_ids.cpp vm/global_ids.hpp vm/error.hpp vm/error.cpp vm/async.hpp vm/value_types.hpp
-
+        vm/primitive_methods.cpp vm/primitive_methods.hpp
+        
         vm/bc/read_bc.cpp vm/bc/read_bc.hpp vm/bc/exec_bc_instr.cpp vm/bc/exec_bc_instr.hpp vm/bc/bc.cpp vm/bc/bc.hpp
         vm/bc/fault_table.cpp vm/bc/fault_table.hpp
 
@@ -36,7 +37,7 @@ add_executable(scl
 
         vm/gc/gc.cpp vm/gc/gc.hpp
 
-        vm/primitive_methods.cpp vm/primitive_methods.hpp)
+        )
 
 
 target_link_libraries(scl PRIVATE Threads::Threads)

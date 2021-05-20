@@ -76,10 +76,10 @@ public:
 	}
 
 	// Language matching
-	bool eq_value(const Value& other) const;
-	bool eq_identity(const Value& other) const;
-	bool truthy() const;
-	std::string to_string(bool recursive = false) const;
+	[[nodiscard]] bool eq_value(const Value& other) const;
+	[[nodiscard]] bool eq_identity(const Value& other) const;
+	[[nodiscard]] bool truthy() const;
+	[[nodiscard]] std::string to_string(bool recursive = false) const;
 };
 
 // Tracing
@@ -89,18 +89,16 @@ namespace GC {
 	void mark(Value* v);
 
 	inline void mark(ValueTypes::obj_t& obj) {
-		for (auto& p : obj) {
+		for (auto& p : obj)
 			mark((Value&) p.second);
-		}
 	}
 	inline void mark(ValueTypes::obj_ref obj) {
 		if (mark((void*) obj))
 			mark(*obj);
 	}
 	inline void mark(ValueTypes::list_t& obj) {
-		for (auto& v : obj) {
+		for (auto& v : obj)
 			mark(v);
-		}
 	}
 	inline void mark(ValueTypes::list_ref obj) {
 		if (mark((void*) obj))
@@ -109,9 +107,8 @@ namespace GC {
 
 	void mark(NativeFunction& fn);
 	inline void mark(ValueTypes::n_fn_t fn) {
-		if (mark((void*) fn)) {
+		if (mark((void*) fn))
 			mark(*fn);
-		};
 	}
 
 	// TODO switch to ValueTypes::lam_t
