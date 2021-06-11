@@ -96,7 +96,7 @@ VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv, st
 	}
 
 	// Load argv
-	ValueTypes::list_ref args = ::new(GC::alloc<ValueTypes::list_t>()) ValueTypes::list_t();
+	auto* args = ::new(GC::alloc<ValueTypes::list_t>()) ValueTypes::list_t();
 	for (const std::string& s : argv)
 		args->emplace_back(Value(s));
 

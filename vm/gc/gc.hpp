@@ -15,6 +15,7 @@
 #include <cassert>
 
 #include "../value_types.hpp"
+//#include "../value.hpp"
 
 /* TODO
  * Generic pointer types
@@ -153,9 +154,9 @@ class LambdaReturnNativeFn;
 namespace GC {
 
 #define SCL__GC_DECLS(TYPE) \
-	template<> TYPE* alloc<TYPE>(void); \
-	extern void mark(TYPE&); \
-	extern void mark(TYPE*);
+    template<> TYPE* alloc<TYPE>(void); \
+    extern void mark(TYPE&); \
+    extern void mark(TYPE*);
 
 	SCL__GC_DECLS(Value);
 	SCL__GC_DECLS(ValueTypes::list_t);
@@ -163,6 +164,7 @@ namespace GC {
 	SCL__GC_DECLS(NativeFunction);
 	SCL__GC_DECLS(Closure);
 	SCL__GC_DECLS(LambdaReturnNativeFn);
+
 }
 
 #endif //SCL_GC_HPP

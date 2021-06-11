@@ -139,8 +139,8 @@ void ErrorTraceStrFn::mark() {
 
 
 
-Value gen_error_object(const std::string name, const std::string message, Frame& f) {
-	ValueTypes::obj_t* obj = ::new(GC::alloc<ValueTypes::obj_t>()) ValueTypes::obj_t;
+Value gen_error_object(const std::string& name, const std::string& message, Frame& f) {
+	auto* obj = ::new(GC::alloc<ValueTypes::obj_t>()) ValueTypes::obj_t;
 	(*obj)["name"] = Value(name);
 	(*obj)["message"] = Value(message);
 	(*obj)["__str"] = Value((NativeFunction*) ::new(GC::alloc<ErrorTraceStrFn>()) ErrorTraceStrFn(f, Value(obj)));

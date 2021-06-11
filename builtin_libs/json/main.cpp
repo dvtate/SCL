@@ -3,15 +3,42 @@
 //
 
 #include <optional>
+#include <unordered_set>
 
 #include "../../vm/vm.hpp"
 // TODO this shouldn't be needed :(
 #include "../../vm/operators/internal_tools.hpp"
 #include "../../vm/error.hpp"
 
+// Exported native funcitons
+static NativeFunction* stringify_nfn;
+static NativeFunction* parse_nfn;
+
 class JSONStringifyFn : public NativeFunction {
+	// Local Error for cyclic references
+	class CyclicRefsEx : public std::exception {
+	public:
+		std::string trace {"Cyclic Reference: "};
+		CyclicRefsEx() noexcept = default;
+		CyclicRefsEx(CyclicRefsEx& other) noexcept : trace(other.trace) {}
+
+		[[nodiscard]] const char* what() const noexcept override {
+			return this->trace.c_str();
+		}
+
+		/// Add to trace
+		void push(std::string frame) {
+			this->trace += "\n" + frame;
+		}
+	};
+
 	// TODO handle cyclic references...
-	static std::optional<std::string> act(const Value& v, Frame& f) {
+	static std::optional<std::string> act(const Value& v, Frame& f, std::unordered_set<const Value*>& s) {
+		if (s.contains(&v)) {
+			throw CyclicRefsEx();
+		} else {
+			s.emplace(&v);
+		}
 		switch (v.type()) {
 			case ValueTypes::VType::STR:
 				return std::string("\"") + std::get<ValueTypes::str_t>(v.v) + "\"";
@@ -38,12 +65,23 @@ class JSONStringifyFn : public NativeFunction {
 					return "[]";
 
 				// Start with first element which doesn't need comma
-				std::string ret = "[" + JSONStringifyFn::act(l[0], f).value_or("null");
+				std::string ret = "[";
+				try {
+					ret += JSONStringifyFn::act(l[0], f, s).value_or("null");
+				} catch (CyclicRefsEx& e) {
+					e.push("-- in index zero of list");
+					throw e;
+				}
 
 				// Add more comma separated elements
 				for (int i = 1; i < l.size(); i++) {
 					ret += ",";
-					ret += JSONStringifyFn::act(l[i], f).value_or("null");
+					try {
+						ret += JSONStringifyFn::act(l[i], f, s).value_or("null");
+					} catch (CyclicRefsEx& e) {
+						e.push("-- in index " + std::to_string(i) + " of list");
+						throw e;
+					}
 				}
 
 				// End list
@@ -53,31 +91,47 @@ class JSONStringifyFn : public NativeFunction {
 
 			// Objects
 			case ValueTypes::VType::OBJ: {
+				std::cout <<"object\n";
 				auto& o = *std::get<ValueTypes::obj_ref>(v.v);
 				if (o.empty())
 					return "{}";
 
 				// Custom to_json method/value
 				if (o.contains("__to_json")) {
-					f.eval_stack.emplace_back(Value());
-					vm_util::invoke_value_sync(f, o["__to_json"], true);
-					Value ret = f.eval_stack.back();
-					f.eval_stack.pop_back();
-					return JSONStringifyFn::act(ret, f);
+					auto& val = o["__to_json"];
+					if (val.type() == ValueTypes::VType::LAM || val.type() == ValueTypes::VType::LAM) {
+						f.eval_stack.emplace_back(Value());
+//						std::cout <<"__to_json: " <<val.to_string(true) <<std::endl;
+						vm_util::invoke_value_sync(f, val, false);
+						return std::nullopt;
+					}
 				}
 
 				// Normal object stringify same algorithm as for list
 				auto it = o.begin();
 				std::string ret = "{";
-				auto val = JSONStringifyFn::act(it->second, f);
-				if (val)
-					ret +="\"" + it->first + "\":" + *val;
-				++it;
-
-				for (; it != o.end(); ++it) {
-					val = JSONStringifyFn::act(it->second, f);
+				try {
+					// Put first kv pair into ret
+					auto val = JSONStringifyFn::act(it->second, f, s);
 					if (val)
-						ret += ",\"" + it->first + "\":" + *val;
+						ret +="\"" + it->first + "\":" + *val;
+
+				} catch (CyclicRefsEx& e) {
+					e.push("-- in field '" + it->first + "' of object");
+					throw e;
+				}
+
+				// Put the rest of the kv pairs into the ret
+				++it;
+				for (; it != o.end(); ++it) {
+					try {
+						auto val = JSONStringifyFn::act(it->second, f, s);
+						if (val)
+							ret += ",\"" + it->first + "\":" + *val;
+					} catch (CyclicRefsEx& e) {
+						e.push("-- in field '" + it->first + "' of object");
+						throw e;
+					}
 				}
 
 				// Return completed object
@@ -97,19 +151,27 @@ class JSONStringifyFn : public NativeFunction {
 public:
 	void operator()(Frame& f) override {
 		auto &arg = f.eval_stack.back();
-		auto ret = JSONStringifyFn::act(arg, f);
-		if (!ret)
-			f.eval_stack.back() = Value();
-		else
-			f.eval_stack.back() = Value(*ret);
+		std::unordered_set<const Value*> s;
+		try {
+			auto ret = JSONStringifyFn::act(arg, f, s);
+			f.eval_stack.back() = !ret ? Value() : Value(*ret);
+		} catch (CyclicRefsEx& e) {
+			f.rt->running->throw_error(gen_error_object("TypeError", e.trace, f));
+		}
 	}
 
 	void mark() override {}
 };
 
+
+
+
+
 extern "C" void export_action(Frame* f) {
+	stringify_nfn = ::new(GC::static_alloc<NativeFunction>()) JSONStringifyFn();
+
 	f->eval_stack.back() = Value(::new(GC::static_alloc<ValueTypes::obj_t>()) ValueTypes::obj_t(
 		{
-			{"to", Value(::new(GC::static_alloc<NativeFunction>()) JSONStringifyFn())},
+			{"dumps", Value(stringify_nfn) },
 		}));
 }

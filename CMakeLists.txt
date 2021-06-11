@@ -13,8 +13,8 @@ link_libraries(dl)
 #set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -lefence -g -Wall -Wextra")
 #set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
 
-add_executable(scl
-        main.cpp util.cpp util.hpp debug.hpp
+set(SOURCE_FILES
+        util.cpp util.hpp debug.hpp
 
         lib/tsl/ordered_hash.h lib/tsl/ordered_map.hpp
         lib/tsl/ordered_set.hpp
@@ -28,7 +28,7 @@ add_executable(scl
         vm/value.cpp vm/value.hpp vm/closure.cpp vm/closure.hpp vm/vm.cpp vm/vm.hpp vm/literal.cpp vm/literal.hpp
         vm/lambda_return.hpp vm/global_ids.cpp vm/global_ids.hpp vm/error.hpp vm/error.cpp vm/async.hpp vm/value_types.hpp
         vm/primitive_methods.cpp vm/primitive_methods.hpp
-        
+
         vm/bc/read_bc.cpp vm/bc/read_bc.hpp vm/bc/exec_bc_instr.cpp vm/bc/exec_bc_instr.hpp vm/bc/bc.cpp vm/bc/bc.hpp
         vm/bc/fault_table.cpp vm/bc/fault_table.hpp
 
@@ -36,14 +36,21 @@ add_executable(scl
         vm/operators/internal_tools.cpp vm/operators/internal_tools.hpp vm/operators/cmp.cpp vm/operators/cmp.hpp
         vm/operators/logic.cpp vm/operators/logic.hpp
 
-        vm/gc/gc.cpp vm/gc/gc.hpp
+        vm/gc/gc.cpp vm/gc/gc.hpp)
 
-        )
+add_library(scl_vm SHARED
+        ${SOURCE_FILES}
+)
 
+
+add_executable(scl
+        main.cpp
+)
 target_compile_features(scl PUBLIC cxx_std_20)
+target_link_libraries(scl PRIVATE Threads::Threads SHARED scl_vm)
+target_link_libraries(scl PUBLIC scl_vm)
 
 add_library(json_module SHARED
-        builtin_libs/json/main.cpp
-        vm/vm.cpp vm/gc/gc.cpp)
+        builtin_libs/json/main.cpp)
+target_link_libraries(json_module PUBLIC scl_vm)
 
-target_link_libraries(scl PRIVATE Threads::Threads)

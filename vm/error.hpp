@@ -58,7 +58,7 @@ public:
 
 
 //
-Value gen_error_object(const std::string name, const std::string message, Frame& f);
+Value gen_error_object(const std::string& name, const std::string& message, Frame& f);
 Value gen_error_object(const std::string name, const std::string message, SyncCallStack& cs);
 
 #endif //SCL_ERROR_HPP
