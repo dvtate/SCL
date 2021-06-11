@@ -6,6 +6,7 @@ enable_language(C)
 
 set(CMAKE_CXX_STANDARD 20)
 
+
 find_package(Threads REQUIRED)
 link_libraries(dl)
 
@@ -39,5 +40,10 @@ add_executable(scl
 
         )
 
+target_compile_features(scl PUBLIC cxx_std_20)
+
+add_library(json_module SHARED
+        builtin_libs/json/main.cpp
+        vm/vm.cpp vm/gc/gc.cpp)
 
 target_link_libraries(scl PRIVATE Threads::Threads)

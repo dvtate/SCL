@@ -75,6 +75,6 @@ public:
 };
 
 
-Value get_primitive_member(Frame& f, Value& v, const std::string key) {
+Value get_primitive_member(Frame& f, Value& v, const std::string& key) {
 	return Value();
 }

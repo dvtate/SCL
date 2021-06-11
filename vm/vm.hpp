@@ -22,11 +22,12 @@
 #include "value.hpp"
 #include "global_ids.hpp"
 #include "bc/fault_table.hpp"
+#include "operators/internal_tools.hpp"
 
+// Interrelated classes
 class Frame;
 class Runtime;
 class VM;
-class Value;
 
 // abstract type used for ITC/IPC/Synchronization
 class RTMessage {

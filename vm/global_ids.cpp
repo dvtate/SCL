@@ -4,7 +4,6 @@
 
 #include <iostream>
 #include <dlfcn.h>
-#include <cassert>
 #include "global_ids.hpp"
 
 #include "value_types.hpp"
@@ -70,7 +69,6 @@ public:
 
 class IfFn : public NativeFunction {
 	void operator()(Frame& f) override {
-
 		Value i = f.eval_stack.back();
 		f.eval_stack.back() = Value();
 		SCL_DEBUG_MSG("if(" << i.to_string() << ") called");
@@ -129,7 +127,7 @@ public:
 
 		// import action
 		using imported_fn = void(*)(Frame*);
-		imported_fn import_action = (imported_fn) dlsym(dl, "export_action");
+		auto import_action = (imported_fn) dlsym(dl, "export_action");
 		if (!import_action) {
 			std::cerr <<"Fatal: import error: dlerror: " <<dlerror() <<std::endl;
 			exit(1);
@@ -233,14 +231,14 @@ class CopyFn : public NativeFunction {
 
 			case ValueTypes::VType::LIST: {
 				const auto* l = std::get<ValueTypes::list_ref>(v.v);
-				ValueTypes::list_ref ret = ::new(GC::alloc<ValueTypes::list_t>()) ValueTypes::list_t();
+				auto* ret = ::new(GC::alloc<ValueTypes::list_t>()) ValueTypes::list_t();
 				for (auto& e : *l)
 					ret->emplace_back(copy_value(e));
 				return Value(ret);
 			};
 			case ValueTypes::VType::OBJ: {
 				const auto* o = std::get<ValueTypes::obj_ref>(v.v);
-				ValueTypes::obj_ref ret = ::new(GC::alloc<ValueTypes::obj_t>()) ValueTypes::obj_t();
+				auto* ret = ::new(GC::alloc<ValueTypes::obj_t>()) ValueTypes::obj_t();
 				for (const auto& p : *o)
 					(*ret)[p.first] = copy_value(p.second);
 				return Value(ret);
@@ -249,7 +247,8 @@ class CopyFn : public NativeFunction {
 			// TODO closures, native functions:
 			case ValueTypes::VType::LAM: case ValueTypes::VType::N_FN:
 				return v;
-			default:
+
+			case ValueTypes::VType::REF:
 				throw "????";
 		}
 	}

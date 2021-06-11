@@ -379,7 +379,7 @@ void ParsedMacro::read_list_lit(AST& tree) {
 	SCL_DEBUG_MSG("read_list_lit\n");
 
 	// Handle comma-series
-	if (tree.members[0].type == AST::NodeType::COMMA_SERIES)
+	if (!tree.members.empty() && tree.members[0].type == AST::NodeType::COMMA_SERIES)
 		tree.members = tree.members[0].members;
 
 	// put elements onto stack

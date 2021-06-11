@@ -13,8 +13,6 @@
 // middle section where user code lives
 std::vector<Literal> read_lit_header(std::istream& is);
 
-// TODO: read fault table... (bottom)
-
 // TODO: metadata section   (top)
 
 #endif //SCL_READ_BC_HPP

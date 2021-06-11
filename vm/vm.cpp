@@ -8,11 +8,6 @@
 #include <cassert>
 
 #include "vm.hpp"
-#include "value.hpp"
-#include "bc/exec_bc_instr.hpp"
-#include "global_ids.hpp"
-#include "operators/internal_tools.hpp"
-
 
 inline void fatal_exception(Frame& f) {
 	std::cout <<"Fatal Exception:\n";
