@@ -8,17 +8,33 @@ on:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
-
     steps:
     - uses: actions/checkout@v2
-    - name: build
+    - name: build-gcc
       run: |
           mkdir build 
           cd build
-          export CXX=g++-9
-          export CC=gcc-9
+          export CXX=g++-10
+          export CC=gcc-10
           echo /usr/bin/g*
           cmake ..
           make -j `nproc`
+          cd ..
+          rm -rf build
+          
+  build-clang:
+    runs-on: ubuntu-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: build-clang
+      run: |
+          mkdir build 
+          cd build
+          export CXX=clang-12
+          export CC=clang-12
+          echo /usr/bin/g*
+          cmake ..
+          make -j `nproc`
+          cd ..
+          rm -rf build
