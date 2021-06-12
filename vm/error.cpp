@@ -24,7 +24,7 @@ void CatchFn::operator()(Frame& f) {
 //	if (this->frame->error_handler) {
 //		// Note maybe we should warn user about multiple catch statements?
 //	}
-	this->frame->error_handler = ::new(GC::alloc<Value>()) Value(f.eval_stack.back());
+	this->frame->error_handler = f.gc_make<Value>(f.eval_stack.back());
 }
 
 static std::unordered_map<std::vector<BCInstr>*, unsigned long> macro_body_lit_map_cache;
@@ -140,10 +140,10 @@ void ErrorTraceStrFn::mark() {
 
 
 Value gen_error_object(const std::string& name, const std::string& message, Frame& f) {
-	auto* obj = ::new(GC::alloc<ValueTypes::obj_t>()) ValueTypes::obj_t;
+	auto* obj = f.gc_make<ValueTypes::obj_t>();
 	(*obj)["name"] = Value(name);
 	(*obj)["message"] = Value(message);
-	(*obj)["__str"] = Value((NativeFunction*) ::new(GC::alloc<ErrorTraceStrFn>()) ErrorTraceStrFn(f, Value(obj)));
+	(*obj)["__str"] = Value((NativeFunction*) f.gc_make<ErrorTraceStrFn>(f, Value(obj)));
 	return Value(obj);
 }
 

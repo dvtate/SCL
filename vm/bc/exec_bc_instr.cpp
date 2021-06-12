@@ -21,7 +21,7 @@ static inline void invoke(Frame& f) {
 
 // [ ... ]
 void make_list(Frame& f, uint32_t n) {
-	Value lv(::new(GC::alloc<ValueTypes::list_t>()) ValueTypes::list_t());
+	Value lv(f.gc_make<ValueTypes::list_t>());
 	auto* l = std::get<Value::list_ref>(lv.v);
 
 	// take items off stack and put them into lv -> l
@@ -37,7 +37,7 @@ static void use_lit(Frame& f, const std::size_t litnum) {
 		f.eval_stack.emplace_back(std::get<Value>(lit.v));
 	} else {
 		auto &cd = std::get<ClosureDef>(lit.v);
-		auto* c = ::new(GC::alloc<Closure>()) Closure();
+		auto* c = f.gc_make<Closure>();
 
 #ifdef SCL_DEBUG
 		// capture lexical vars
@@ -138,7 +138,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 		case BCInstr::OPCode::DECL_ID: {
 			auto*& v = f.closure.vars[cmd.i];
 			if (v == nullptr) // undefined
-				v = ::new(GC::alloc<Value>()) Value();
+				v = f.gc_make<Value>();
 			return;
 		};
 
@@ -220,7 +220,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 
 		case BCInstr::OPCode::MK_OBJ:
 			// Make object
-			f.eval_stack.emplace_back(::new(GC::alloc<ValueTypes::obj_t>()) ValueTypes::obj_t());
+			f.eval_stack.emplace_back(f.gc_make<ValueTypes::obj_t>());
 			return;
 
 		case BCInstr::OPCode::USE_MEM_L:
@@ -255,7 +255,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 		}
 
 		case BCInstr::OPCode::VAL_CATCH:
-			f.eval_stack.emplace_back(Value((NativeFunction*)::new(GC::alloc<CatchFn>()) CatchFn(f)));
+			f.eval_stack.emplace_back(Value((NativeFunction*) f.gc_make<CatchFn>(f)));
 			break;
 
 		default:

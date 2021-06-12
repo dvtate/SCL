@@ -176,13 +176,13 @@ public:
 		// get input (pass by reference vs value
 		c.vars[c.i_id] =  f.eval_stack.back().type() == Value::VType::REF
 			? std::get<ValueTypes::ref_t>(f.eval_stack.back().v)
-			: ::new(GC::alloc<Value>()) Value(f.eval_stack.back());
+			: f.gc_make<Value>(f.eval_stack.back());
 		f.eval_stack.pop_back();
 
 		// make output fn
-		auto* ofn = ::new(GC::alloc<AsyncReturnNativeFn>()) AsyncReturnNativeFn();
-		auto* future = ::new(GC::alloc<AsyncFutureNativeFn>()) AsyncFutureNativeFn(ofn);
-		c.vars[c.o_id] = ::new(GC::alloc<Value>()) Value((NativeFunction*) ofn);
+		auto* ofn = f.gc_make<AsyncReturnNativeFn>();
+		auto* future = f.gc_make<AsyncFutureNativeFn>(ofn);
+		c.vars[c.o_id] = f.gc_make<Value>((NativeFunction*) ofn);
 
 		// return future functor
 		f.rt->running->stack.back()->eval_stack.emplace_back((NativeFunction*)future);
@@ -191,8 +191,8 @@ public:
 		auto rcs = f.rt->running;
 		f.rt->spawn_thread();
 		f.rt->running->stack.emplace_back(std::make_shared<Frame>(f.rt, c));
-		f.rt->running->stack.back()->error_handler = ::new(GC::alloc<Value>()) Value(
-				(NativeFunction*)::new(GC::alloc<AsyncDefaultCatchFn>()) AsyncDefaultCatchFn(ofn));
+		f.rt->running->stack.back()->error_handler = f.gc_make<Value>(
+				(NativeFunction*) f.gc_make<AsyncDefaultCatchFn>(ofn));
 	}
 
 	void mark() override {

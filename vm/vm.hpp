@@ -6,7 +6,6 @@
 #define DLANG_VM_HPP
 
 #include <iostream>
-
 #include <thread>
 #include <mutex>
 
@@ -23,6 +22,7 @@
 #include "global_ids.hpp"
 #include "bc/fault_table.hpp"
 #include "operators/internal_tools.hpp"
+#include "gc/gc.hpp"
 
 // Interrelated classes
 class Frame;
@@ -52,68 +52,25 @@ public:
 };
 
 
-class Frame {
-public:
-	Runtime* rt;
-
-	// Policy when error occurs
-	Value* error_handler{nullptr};
-
-	// closure we're running
-	Closure closure;
-
-	// index of bytecode read head
-	uint_fast32_t pos;
-
-	// values we're working with
-	std::vector<Value> eval_stack;
-
-	Frame(Runtime* rt, Closure body, unsigned int pos = 0, std::vector<Value> eval_stack = {}):
-			rt(rt), closure(body), pos(pos), eval_stack(std::move(eval_stack))
-		{}
-
-	~Frame() {}
-
-	// run a single bytecode instruction and return
-	inline bool tick() {
-		if (pos < this->closure.body->size()) {
-			exec_bc_instr(*this, (*this->closure.body)[this->pos++]);
-			return false;
-		}
-		return true;
-	}
-
-	// GC mark
-	void mark() {
-		// Mark Definition
-		GC::mark(this->closure);
-
-		// Mark stack
-		for (Value& v : this->eval_stack)
-			GC::mark(v);
-
-		// Mark Error handler
-		if (this->error_handler)
-			GC::mark(this->error_handler);
-	}
-};
-
 // different threads running on same process
 class Runtime {
 public:
 	VM* vm;
 
-	// currently running thread
+	// Currently running thread
 	std::shared_ptr<SyncCallStack> running;
 
-	// threads to execute [stack]
+	// Threads to execute [stack]
 	std::vector<std::shared_ptr<SyncCallStack>> active;
 
-	// threads that still have pending actions
+	// Threads that still have pending actions
 	std::vector<std::shared_ptr<SyncCallStack>> undead;
 
-	// thread safety as messages can come from different procs/ISR's
+	// Thread safety as messages can come from different procs/ISR's
 	std::mutex msg_queue_mtx;
+
+	// Each process gets it's own garbage collector
+	GarbageCollector gc;
 
 	explicit Runtime(VM* vm): vm(vm) { }
 
@@ -221,6 +178,57 @@ public:
 
 };
 
+class Frame {
+public:
+	Runtime* rt;
+
+	// Policy when error occurs
+	Value* error_handler{nullptr};
+
+	// closure we're running
+	Closure closure;
+
+	// index of bytecode read head
+	uint_fast32_t pos;
+
+	// values we're working with
+	std::vector<Value> eval_stack;
+
+	Frame(Runtime* rt, Closure body, unsigned int pos = 0, std::vector<Value> eval_stack = {}):
+			rt(rt), closure(body), pos(pos), eval_stack(std::move(eval_stack))
+	{}
+
+	~Frame() {}
+
+	// run a single bytecode instruction and return
+	inline bool tick() {
+		if (pos < this->closure.body->size()) {
+			exec_bc_instr(*this, (*this->closure.body)[this->pos++]);
+			return false;
+		}
+		return true;
+	}
+
+	// GC mark
+	void mark() {
+		// Mark Definition
+		GC::mark(this->closure);
+
+		// Mark stack
+		for (Value& v : this->eval_stack)
+			GC::mark(v);
+
+		// Mark Error handler
+		if (this->error_handler)
+			GC::mark(this->error_handler);
+	}
+
+	// Instanitiate object in place
+	template<class T, class ... Args>
+	[[nodiscard]] T* gc_make(Args&& ... args){
+		return ::new(this->rt->gc.alloc<T>()) T(args...);
+	}
+};
 
 class VM {
 public:
@@ -247,18 +255,6 @@ public:
 		this->main_thread->mark();
 		for (auto& sp : this->worker_threads)
 			sp->mark();
-	}
-
-	void do_gc() {
-		// Mark all values in use
-//		std::cout <<"marking" <<std::endl;
-		this->mark();
-
-		// Free unused
-//		std::cout <<"Sweeping" <<std::endl;
-		GC::sweep();
-
-//		GC::print_summary();
 	}
 };
 

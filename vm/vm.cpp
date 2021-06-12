@@ -16,6 +16,11 @@ inline void fatal_exception(Frame& f) {
 	exit(1);
 }
 
+//// Instanitiate object in place
+//template<class T, class ... Args>
+//[[nodiscard]] T* Frame::gc_make(Args&& ... args) {
+//	return ::new(this->rt->gc.alloc<T>()) T(args...);
+//}
 
 void SyncCallStack::mark() {
 	for (auto& f : this->stack)
@@ -92,24 +97,25 @@ VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv, st
 	// capture global variables
 	for (const int64_t id : entry.capture_ids) {
 		SCL_DEBUG_MSG("capture global id # " << id << std::endl);
-		main.vars[id] = ::new(GC::alloc<Value>()) Value(get_global_id(id));
+		main.vars[id] = ::new(this->main_thread->gc.alloc<Value>()) Value(get_global_id(id));
 	}
 
 	// Load argv
-	auto* args = ::new(GC::alloc<ValueTypes::list_t>()) ValueTypes::list_t();
+	auto* args = ::new(this->main_thread->gc.alloc<ValueTypes::list_t>()) ValueTypes::list_t();
 	for (const std::string& s : argv)
 		args->emplace_back(Value(s));
 
-	main.vars[main.i_id] = ::new(GC::alloc<Value>()) Value(args);
-	main.vars[main.o_id] = ::new(GC::alloc<Value>()) Value(::new(GC::alloc<NativeFunction>()) ExitProgramReturn());
+	main.vars[main.i_id] = ::new(this->main_thread->gc.alloc<Value>()) Value(args);
+	main.vars[main.o_id] = ::new(this->main_thread->gc.alloc<Value>()) Value(
+			::new(this->main_thread->gc.alloc<NativeFunction>()) ExitProgramReturn());
 
 	// Capture command line arguments
-	auto* argv_list = ::new(GC::static_alloc<ValueTypes::list_t>()) ValueTypes::list_t;
+	auto* argv_list = ::new(this->main_thread->gc.static_alloc<ValueTypes::list_t>()) ValueTypes::list_t;
 	argv_list->reserve(argv.size());
 	for (auto& str : argv)
 		argv_list->emplace_back(str);
 
-	main.vars[main.i_id] = ::new(GC::static_alloc<Value>()) Value(argv_list);
+	main.vars[main.i_id] = ::new(this->main_thread->gc.alloc<Value>()) Value(argv_list);
 }
 
 void VM::run() {
@@ -118,7 +124,6 @@ void VM::run() {
 
 // event loop
 void Runtime::run() {
-
 	while (!this->undead.empty()) {
 		// handle actions messages
 		if (!this->_msg_queue.empty()) {
@@ -130,15 +135,18 @@ void Runtime::run() {
 		}
 
 		// Maybe we need to GC
-		if ((GC::size() - GC::last_gc_size) > GC::THRESHOLD) {
-//			std::cout <<"DOGC!\n";
-			const int start = GC::size();
-			this->vm->do_gc();
-			GC::last_gc_size = GC::size();
-//			std::cout <<"before: " <<start <<" after: " <<GC::last_gc_size <<std::endl;
-			const auto diff = (int) start - (int) GC::last_gc_size;
-//			if (diff)
-//				std::cout <<"freed: " <<diff <<std::endl;
+		if (this->gc.need_gc()) {
+			// TODO benchmark time and stuff
+			const auto before = this->gc.size();
+
+			// Mark and sweep
+			// TODO stop all other processes and trigger gc event
+			this->vm->mark();
+			this->gc.sweep();
+
+			const auto after = this->gc.size();
+			std::cout <<"before: " <<before <<" after: " <<after <<std::endl;
+			std::cout <<"diff: " <<(before - after) <<std::endl;
 		}
 
 		// make sure we have something to do

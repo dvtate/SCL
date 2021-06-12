@@ -10,8 +10,8 @@ set(CMAKE_CXX_STANDARD 20)
 find_package(Threads REQUIRED)
 link_libraries(dl)
 
-set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -lefence -g -Wall -Wextra")
-#set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -g")
+#set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -lefence -g -Wall -Wextra")
+#set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 ")
 
 set(SOURCE_FILES
         util.cpp util.hpp debug.hpp
@@ -36,7 +36,9 @@ set(SOURCE_FILES
         vm/operators/internal_tools.cpp vm/operators/internal_tools.hpp vm/operators/cmp.cpp vm/operators/cmp.hpp
         vm/operators/logic.cpp vm/operators/logic.hpp
 
-        vm/gc/gc.cpp vm/gc/gc.hpp vm/gc/gc_2.cpp vm/gc/gc_2.hpp)
+        vm/gc/gc.cpp vm/gc/gc.hpp
+
+        )
 
 add_library(scl_vm SHARED
         ${SOURCE_FILES}
@@ -44,7 +46,7 @@ add_library(scl_vm SHARED
 
 
 add_executable(scl
-        main.cpp
+        main.cpp # ${SOURCE_FILES}
 )
 target_compile_features(scl PUBLIC cxx_std_20)
 target_link_libraries(scl PRIVATE Threads::Threads)
@@ -52,5 +54,5 @@ target_link_libraries(scl PUBLIC scl_vm)
 
 add_library(json_module SHARED
         builtin_libs/json/main.cpp)
-#target_link_libraries(json_module PUBLIC scl_vm)
+target_link_libraries(json_module PUBLIC scl_vm)
 

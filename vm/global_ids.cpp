@@ -190,8 +190,7 @@ class VarsFn : public NativeFunction {
 class AsyncFn : public NativeFunction {
 	void operator()(Frame& f) override {
 		f.eval_stack.back() = Value((NativeFunction*)
-				::new(GC::alloc<AsyncWrapperNativeFn>())
-					AsyncWrapperNativeFn(f.eval_stack.back()));
+				f.gc_make<AsyncWrapperNativeFn>(f.eval_stack.back()));
 	}
 	void mark() override {}
 };
@@ -219,7 +218,7 @@ class SizeFn : public NativeFunction {
 
 class CopyFn : public NativeFunction {
 	// TODO move this to Value class
-	static Value copy_value(const Value& v) {
+	static Value copy_value(const Value& v, Frame& f) {
 		do_branch:
 		switch (v.type()) {
 			// non-reference types
@@ -231,16 +230,16 @@ class CopyFn : public NativeFunction {
 
 			case ValueTypes::VType::LIST: {
 				const auto* l = std::get<ValueTypes::list_ref>(v.v);
-				auto* ret = ::new(GC::alloc<ValueTypes::list_t>()) ValueTypes::list_t();
+				auto* ret = f.gc_make<ValueTypes::list_t>();
 				for (auto& e : *l)
-					ret->emplace_back(copy_value(e));
+					ret->emplace_back(copy_value(e, f));
 				return Value(ret);
 			};
 			case ValueTypes::VType::OBJ: {
 				const auto* o = std::get<ValueTypes::obj_ref>(v.v);
-				auto* ret = ::new(GC::alloc<ValueTypes::obj_t>()) ValueTypes::obj_t();
+				auto* ret = f.gc_make<ValueTypes::obj_t>();
 				for (const auto& p : *o)
-					(*ret)[p.first] = copy_value(p.second);
+					(*ret)[p.first] = copy_value(p.second, f);
 				return Value(ret);
 			};
 
@@ -251,11 +250,12 @@ class CopyFn : public NativeFunction {
 			case ValueTypes::VType::REF:
 				throw "????";
 		}
+		return Value();
 	}
 
 public:
 	void operator()(Frame& f) override {
-		auto ret = copy_value(f.eval_stack.back());
+		auto ret = copy_value(f.eval_stack.back(), f);
 		f.eval_stack.back() = ret;
 	}
 	void mark() override {}
@@ -348,7 +348,6 @@ static_assert(sizeof(NativeFunction) == sizeof(SizeFn), "SizeFn wrong size");
 static_assert(sizeof(NativeFunction) == sizeof(CopyFn), "CopyFn wrong size");
 static_assert(sizeof(NativeFunction) == sizeof(ThrowFn), "ThrowFn wrong size");
 static_assert(sizeof(NativeFunction) == sizeof(ThrowFn), "ThrowFn wrong size");
-static_assert(sizeof(GC::Destructor<NumFn>) == sizeof(GC::_Destructor), "Destructor wrong size");
 const Value& get_global_id(int64_t id) {
 	return global_ids[id];
 }

@@ -22,15 +22,15 @@ namespace vm_util {
 				// Bind input
 				Closure c = *std::get<ValueTypes::lam_ref>(v.v);
 				if (f.eval_stack.back().type() != ValueTypes::VType::REF) {
-					c.vars[c.i_id] = ::new(GC::alloc<Value>()) Value(f.eval_stack.back());
+					c.vars[c.i_id] = f.gc_make<Value>(f.eval_stack.back());
 				} else {
 					c.vars[c.i_id] = std::get<ValueTypes::ref_t>(f.eval_stack.back().v);
 				}
 				f.eval_stack.pop_back();
 
 				// Bind output
-				c.vars[c.o_id] = ::new(GC::alloc<Value>()) Value((NativeFunction*)
-					::new(GC::alloc<LambdaReturnNativeFn>()) LambdaReturnNativeFn(f));
+				c.vars[c.o_id] = f.gc_make<Value>((NativeFunction*)
+						f.gc_make<LambdaReturnNativeFn>(f));
 
 				//
 				f.rt->running->stack.emplace_back(new Frame(f.rt, c));
