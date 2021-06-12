@@ -91,7 +91,6 @@ class JSONStringifyFn : public NativeFunction {
 
 			// Objects
 			case ValueTypes::VType::OBJ: {
-				std::cout <<"object\n";
 				auto& o = *std::get<ValueTypes::obj_ref>(v.v);
 				if (o.empty())
 					return "{}";
