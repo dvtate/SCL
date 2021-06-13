@@ -224,16 +224,17 @@ let map = (:
 This was the main reason I made this language. JavaScript, Python, C· and most other languages featuring the most popular async/await syntax require you to change your program depending on sync/async context and in doing so adds excess and/or confusing features. In this language I only needed to add a single built-in global `async` in order to provide equivalent functionality.
 
 ### Running code in a new thread
+Lets walk through an exmaple that gets main points across. Imagine we have a function `request` that takes a url and fetches it's content over the internet. 
 ```
-// Imagine request is a function that takes a url and fetches
-// it's content from the internet
 let request = import('request.so')
-
-// We can call request just like any other function
-// The VM will put this thread on hold and do other tasks while wait
+```
+We can call request like any normal function and as we're awaiting the results, the VM can work on other tasks
+```
 let text = request('http://x.com')
 print(text); // x
-
+```
+However we can also perform the function call in a separate thread! We first make an `async` wrapper for the `request` function and then call it, receiving an eventual. Which we can call later to get the results.
+```
 // Alternatively we can make the request in a new thread
 let eventual = async(request)('http://x.com')
 
@@ -283,7 +284,7 @@ let delay3 = (: set_timeout(i, o)() )
 ### Yielding
 TODO
 
-### Core values
+## Core values
 - Unclear operators should be avoided, use functions instead
 	- ie - `return`, `break`, `continue`, `export`, `import`, etc.
 - No redundant language features
