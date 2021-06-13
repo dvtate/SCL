@@ -19,7 +19,7 @@ class JSONStringifyFn : public NativeFunction {
 	class CyclicRefsEx : public std::exception {
 	public:
 		std::string trace {"Cyclic Reference: "};
-		CyclicRefsEx() noexcept = default;
+		CyclicRefsEx() noexcept {};
 		CyclicRefsEx(CyclicRefsEx& other) noexcept : trace(other.trace) {}
 
 		[[nodiscard]] const char* what() const noexcept override {

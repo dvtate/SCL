@@ -166,7 +166,7 @@ namespace GC {
 		gc.generic_destructors.emplace_back();
 		// TODO this works but there should be a less ghetto way to do this...
 		const GarbageCollector::Destructor<T> destroy;
-		std::memcpy(&gc.generic_destructors.back(), &destroy, sizeof(GarbageCollector::_Destructor));
+		std::memcpy((void*) &gc.generic_destructors.back(),(void*) &destroy, sizeof(GarbageCollector::_Destructor));
 		return ret;
 	}
 

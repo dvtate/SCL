@@ -7,7 +7,7 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+  build-gcc:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -31,7 +31,7 @@ jobs:
       run: |
           mkdir build 
           cd build
-          export CXX=clang-12
+          export CXX=clang++-12
           export CC=clang-12
           echo /usr/bin/g*
           cmake ..
