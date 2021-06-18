@@ -90,8 +90,8 @@ public:
 	}
 
 	// Make alloc a friend
-	template <class T> friend
-	T* GC::alloc(GarbageCollector&);
+	template <class T>
+	friend T* GC::alloc(GarbageCollector&);
 
 private:
 	// Segregated Heaps

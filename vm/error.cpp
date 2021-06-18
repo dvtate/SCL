@@ -115,6 +115,12 @@ ErrorTraceStrFn::ErrorTraceStrFn(Frame& f, Value self):
 	trace(ErrorTrace(*f.rt->running)),
 	self(self)
 {}
+ErrorTraceStrFn::ErrorTraceStrFn(SyncCallStack& cs, Value self):
+	frame(cs.stack.back()),
+	trace(cs),
+	self(self)
+{}
+
 
 void ErrorTraceStrFn::operator()(Frame& f) {
 	ValueTypes::obj_t& obj = *std::get<ValueTypes::obj_ref>(self.v);
@@ -135,10 +141,6 @@ void ErrorTraceStrFn::mark() {
 }
 
 
-
-
-
-
 Value gen_error_object(const std::string& name, const std::string& message, Frame& f) {
 	auto* obj = f.gc_make<ValueTypes::obj_t>();
 	(*obj)["name"] = Value(name);
@@ -147,6 +149,11 @@ Value gen_error_object(const std::string& name, const std::string& message, Fram
 	return Value(obj);
 }
 
-Value gen_error_object(const std::string name, const std::string message, SyncCallStack& cs) {
-	return gen_error_object(name, message, *cs.stack.back());
+Value gen_error_object(const std::string& name, const std::string& message, SyncCallStack& cs) {
+	auto f = cs.stack.back();
+	auto* obj = f->gc_make<ValueTypes::obj_t>();
+	(*obj)["name"] = Value(name);
+	(*obj)["message"] = Value(message);
+	(*obj)["__str"] = Value((NativeFunction*) f->gc_make<ErrorTraceStrFn>(cs, Value(obj)));
+	return Value(obj);
 }

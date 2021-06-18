@@ -53,6 +53,6 @@ target_link_libraries(scl PRIVATE Threads::Threads)
 target_link_libraries(scl PUBLIC scl_vm)
 
 add_library(json_module SHARED
-        builtin_libs/json/main.cpp)
+        builtin_libs/json/main.cpp builtin_libs/json/parse.hpp builtin_libs/json/stringify.hpp)
 target_link_libraries(json_module PUBLIC scl_vm)
 

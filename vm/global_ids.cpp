@@ -67,6 +67,7 @@ public:
 	void mark() override {}
 };
 
+// Branching
 class IfFn : public NativeFunction {
 	void operator()(Frame& f) override {
 		Value i = f.eval_stack.back();
@@ -113,6 +114,7 @@ class StrFn : public NativeFunction {
 	void mark() override {}
 };
 
+// Load a .so file
 class ImportFn : public NativeFunction {
 public:
 	void operator()(Frame& f) override {

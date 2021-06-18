@@ -82,7 +82,11 @@ public:
 	[[nodiscard]] std::string to_string(bool recursive = false) const;
 
 	template <class T>
-	[[nodiscard]] T& get() const {
+	[[nodiscard]] const T& get() const {
+		return std::get<T>(this->v);
+	}
+	template <class T>
+	[[nodiscard]] T& get() {
 		return std::get<T>(this->v);
 	}
 };

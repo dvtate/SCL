@@ -52,6 +52,7 @@ public:
 	Value self;
 
 	ErrorTraceStrFn(Frame &f, Value self);
+	ErrorTraceStrFn(SyncCallStack& cs, Value self);
 	void operator()(Frame& f) override;
 	void mark() override;
 };
@@ -59,6 +60,6 @@ public:
 
 //
 Value gen_error_object(const std::string& name, const std::string& message, Frame& f);
-Value gen_error_object(const std::string name, const std::string message, SyncCallStack& cs);
+Value gen_error_object(const std::string& name, const std::string& message, SyncCallStack& cs);
 
 #endif //SCL_ERROR_HPP

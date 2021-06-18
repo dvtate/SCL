@@ -85,7 +85,7 @@ namespace vm_util {
 	}
 
 	Value index_value(Frame& f, Value& v, Value& index) {
-		std::cout <<"index_value(" << v.to_string() <<", " <<index.type_name() <<")\n";
+//		std::cout <<"index_value(" << v.to_string() <<", " <<index.type_name() <<")\n";
 
 		// Object with overloaded [] operator
 		if (std::holds_alternative<ValueTypes::obj_ref>(v.v)) {
@@ -121,5 +121,4 @@ namespace vm_util {
 				return Value();
 		}
 	}
-
 }

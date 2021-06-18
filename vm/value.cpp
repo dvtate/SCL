@@ -3,6 +3,7 @@
 //
 
 #include <iostream>
+#include <sstream>
 
 #include "closure.hpp"
 #include "value.hpp"
@@ -125,8 +126,11 @@ std::string Value::to_string(bool recursive) const {
 			return "empty";
 		case VType::INT:
 			return std::to_string(std::get<ValueTypes::int_t>(this->v));
-		case VType::FLOAT:
-			return std::to_string(std::get<ValueTypes::float_t>(this->v));
+		case VType::FLOAT: {
+			std::stringstream ss;
+			ss <<std::get<ValueTypes::float_t>(this->v);
+			return ss.str();
+		};
 		case VType::STR:
 			return recursive
 				? (std::string("\"") + std::get<ValueTypes::str_t>(this->v) + "\"")
@@ -148,8 +152,11 @@ std::string Value::to_string(bool recursive) const {
 			return ret;
 		}
 		case VType::OBJ: {
-			std::string ret = "{\n";
-			for (auto p : *std::get<ValueTypes::obj_ref>(this->v)) {
+			std::string ret = "{";
+			auto& o = *std::get<ValueTypes::obj_ref>(this->v);
+			if (!o.empty())
+				ret += '\n';
+			for (auto& p : o) {
 				ret += "\"" + p.first + "\" : ";
 				ret += p.second.to_string(true) + ",\n";
 			}
