@@ -15,8 +15,8 @@ static NativeFunction* parse_nfn;
 
 class JSONParseFn : public NativeFunction {
 	// Recursive descent parser roughly adhering to
-	// https://www.json.org/json-en.html
-	// https://datatracker.ietf.org/doc/html/rfc8259
+	// https://www.json.org/json-en.html <- general idea
+	// https://datatracker.ietf.org/doc/html/rfc8259 <- more details
 
 	/// Thrown on invalid JSON input
 	class ParseError : public std::exception {
@@ -104,7 +104,7 @@ class JSONParseFn : public NativeFunction {
 					case 'u': {
 						const auto hex_seq = s.substr(i + 1, 4);
 						char* p;
-						const int16_t hex_val = strtol(hex_seq.c_str(), &p, 16);
+						const auto hex_val = (int16_t) strtol(hex_seq.c_str(), &p, 16);
 						if (*p != '\0')
 							throw ParseError(i, "Invalid \\uXXXX hex code - " + hex_seq);
 						if (hex_val >> 8)
@@ -272,7 +272,7 @@ class JSONParseFn : public NativeFunction {
 			i++;
 			auto v = value(s, i, f);
 			if (!v)
-				throw ParseError(i,std::string("unexpected token ") + s[i]);
+				throw ParseError(i, std::string("unexpected token ") + s[i]);
 
 			// Push pair
 			ret->emplace(k->get<ValueTypes::str_t>(), *v);

@@ -10,38 +10,30 @@
 #include <sstream>
 
 #include "../../vm/vm.hpp"
-// TODO this shouldn't be needed :(
 #include "../../vm/operators/internal_tools.hpp"
 #include "../../vm/error.hpp"
+
+#include "cyclic_refs_exception.hpp"
 
 // Exported native funciton
 static NativeFunction* stringify_nfn;
 
 class JSONStringifyFn : public NativeFunction {
-	// Local Error for cyclic references
-	class CyclicRefsEx : public std::exception {
-	public:
-		std::string trace {"Cyclic Reference: "};
-		CyclicRefsEx() noexcept {};
-		CyclicRefsEx(CyclicRefsEx& other) noexcept : trace(other.trace) {}
-
-		[[nodiscard]] const char* what() const noexcept override {
-			return this->trace.c_str();
-		}
-
-		/// Add to trace
-		void push(std::string frame) {
-			this->trace += "\n" + frame;
-		}
-	};
 
 	// TODO handle cyclic references...
-	static std::optional<std::string> act(const Value& v, Frame& f, std::unordered_set<const Value*>& s) {
+	static std::optional<std::string> act(
+			const Value& v,
+			Frame& f,
+			std::unordered_set<const Value*>& s
+	) {
+		// Check cyclic refs
 		if (s.contains(&v)) {
 			throw CyclicRefsEx();
 		} else {
 			s.emplace(&v);
 		}
+
+		// Branch on ValueTypes
 		switch (v.type()) {
 			case ValueTypes::VType::STR:
 				return std::string("\"") + std::get<ValueTypes::str_t>(v.v) + "\"";
@@ -52,18 +44,17 @@ class JSONStringifyFn : public NativeFunction {
 				std::stringstream ss;
 				ss <<v.get<ValueTypes::float_t>();
 				return ss.str();
-
-				return std::to_string(std::get<ValueTypes::float_t>(v.v));
+				// return std::to_string(std::get<ValueTypes::float_t>(v.v));
 			}
 			case ValueTypes::VType::INT:
 				return std::to_string(std::get<ValueTypes::int_t>(v.v));
 
-				// Can't do functions
+			// Can't do functions
 			case ValueTypes::VType::N_FN:
 			case ValueTypes::VType::LAM:
 				return std::nullopt;
 
-				// Arrays
+			// Arrays
 			case ValueTypes::VType::LIST: {
 				// Extract list
 				auto& l = *std::get<ValueTypes::list_ref>(v.v);
@@ -97,13 +88,14 @@ class JSONStringifyFn : public NativeFunction {
 				return ret;
 			};
 
-				// Objects
+			// Objects
 			case ValueTypes::VType::OBJ: {
 				auto& o = *std::get<ValueTypes::obj_ref>(v.v);
 				if (o.empty())
 					return "{}";
 
 				// Custom to_json method/value
+				/* either need better infrastructure or non-native impl
 				if (o.contains("__to_json")) {
 					auto& val = o["__to_json"];
 					if (val.type() == ValueTypes::VType::LAM || val.type() == ValueTypes::VType::LAM) {
@@ -113,6 +105,7 @@ class JSONStringifyFn : public NativeFunction {
 						return std::nullopt;
 					}
 				}
+				*/
 
 				// Normal object stringify same algorithm as for list
 				auto it = o.begin();
@@ -158,8 +151,8 @@ class JSONStringifyFn : public NativeFunction {
 public:
 	void operator()(Frame& f) override {
 		auto &arg = f.eval_stack.back();
-		std::unordered_set<const Value*> s;
 		try {
+			std::unordered_set<const Value*> s;
 			auto ret = JSONStringifyFn::act(arg, f, s);
 			f.eval_stack.back() = !ret ? Value() : Value(*ret);
 		} catch (CyclicRefsEx& e) {

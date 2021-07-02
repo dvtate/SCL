@@ -225,7 +225,7 @@ public:
 
 	// Instanitiate object in place
 	template<class T, class ... Args>
-	[[nodiscard]] T* gc_make(Args&& ... args){
+	[[nodiscard]] T* gc_make(Args&& ... args) {
 		return ::new(this->rt->gc.alloc<T>()) T(args...);
 	}
 };

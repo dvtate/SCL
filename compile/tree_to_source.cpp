@@ -61,7 +61,6 @@ static inline std::string src_macro(AST& tree) {
 }
 
 std::string tree_to_source(AST& tree) {
-
 	switch (tree.type) {
 		case AST::NodeType::OPERATION:
 		case AST::NodeType::COMMA_SERIES:
@@ -83,6 +82,8 @@ std::string tree_to_source(AST& tree) {
 		case AST::NodeType::OBJECT:
 			if (tree.members.size() > 1)
 				std::cerr <<"tree_to_src: bad object - " <<tree.members.size() <<std::endl;
+			if (tree.members.empty())
+				return "{}";
 			return "{" + tree_to_source(tree.members[0]) + "}";
 
 		case AST::NodeType::KV_PAIR:
