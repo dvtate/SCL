@@ -10,13 +10,6 @@
 #include "cyclic_refs_exception.hpp"
 #include "stringify.hpp"
 
-std::string operator*(const std::string& str, int n) {
-	std::string ret;
-	for (int i = 0; i < n; i++)
-		ret += str;
-	return ret;
-}
-
 static NativeFunction* encoder_ctr_fn;
 
 class JSONPrettyStrFn : public NativeFunction {
@@ -128,7 +121,7 @@ class JSONPrettyStrFn : public NativeFunction {
 
 				// Normal object stringify same algorithm as for list
 				auto it = o.begin();
-				std::string ret = "{\n";
+				std::string ret = "{";
 				try {
 					// Put first kv pair into ret
 					auto val = this->act(it->second, f, indent_level + 1, s);
@@ -147,7 +140,7 @@ class JSONPrettyStrFn : public NativeFunction {
 						auto val = this->act(it->second, f, indent_level + 1,s);
 						if (val) {
 							ret += ",\n" + this->indent_str(indent_level)
-									+ "\"" + it->first + "\":" + *val;
+									+ "\"" + it->first + "\": " + *val;
 						}
 					} catch (CyclicRefsEx& e) {
 						e.push("-- in field '" + it->first + "' of object");
@@ -212,6 +205,10 @@ public:
 					indent = ind_arg.get<ValueTypes::str_t>();
 				} else if (std::holds_alternative<ValueTypes::empty_t>(ind_arg.v)) {
 					indent = "\t";
+				} else if (std::holds_alternative<ValueTypes::int_t>(ind_arg.v)) {
+					const auto n = ind_arg.get<ValueTypes::int_t>();
+					for (int i = 0; i < n; i++)
+						indent += ' ';
 				} else {
 					f.rt->running->throw_error(gen_error_object(
 						"TypeError",
