@@ -25,29 +25,25 @@ Useful for debugging compiler. Also prints compile errors/warnings.
 	<summary>See demo</summary>
 
 The following example shows the bytecode text for `print("Hi")`
-	
 ```
-$ echo 'print("Hi")' > test.s && ./dlang -ftest.s -O
+[SCL/build]$ echo 'print("Hi")' > test.scl && ./scl -ftest.s -o
 # Literal 0:
 String: "Hi"
 # Literal 1:
 Macro: (:
-        LET_ID 10
-        LET_ID 11
-        USE_LIT 0
-        USE_ID 1
-        INVOKE
+	DECL_ID 20
+	DECL_ID 21
+	USE_LIT 0
+	USE_ID 1
+	INVOKE
 )
 #### Begin Fault Table ####
-ID_NAME o : ID_ID 11
-ID_NAME print : ID_ID 0
-ID_NAME i : ID_ID 10
-ID_NAME input : ID_ID 1
+ID_NAME i : ID_ID 20
+ID_NAME o : ID_ID 21
+INVOKE_POS 6 : INVOKE_REPR print
 In file: test.s
-Compiled Line#3 came from Source Pos#6
-Compiled Line#4 came from Source Pos#0
+Compiled Line#6 came from Source Pos#10
 ```
-
 </details>
 
 #### Bytecode bin
