@@ -1,11 +1,10 @@
 cmake_minimum_required(VERSION 3.17)
+
 project(scl
         LANGUAGES C CXX)
 enable_language(CXX)
 enable_language(C)
-
 set(CMAKE_CXX_STANDARD 20)
-
 
 find_package(Threads REQUIRED)
 link_libraries(dl)
@@ -40,11 +39,12 @@ set(SOURCE_FILES
 
         )
 
+# VM linking library
 add_library(scl_vm SHARED
         ${SOURCE_FILES}
 )
 
-
+# Main binary
 add_executable(scl
         main.cpp # ${SOURCE_FILES}
 )
@@ -52,7 +52,16 @@ target_compile_features(scl PUBLIC cxx_std_20)
 target_link_libraries(scl PRIVATE Threads::Threads)
 target_link_libraries(scl PUBLIC scl_vm)
 
-add_library(json_module SHARED
+######
+# Builtin, native libraries
+######
+
+add_library(json SHARED
         builtin_libs/json/main.cpp builtin_libs/json/parse.hpp builtin_libs/json/stringify.hpp builtin_libs/json/pretty.hpp builtin_libs/json/cyclic_refs_exception.hpp)
-target_link_libraries(json_module PUBLIC scl_vm)
+target_link_libraries(json PUBLIC scl_vm)
+
+
+add_library(time SHARED
+        builtin_libs/time/main.cpp builtin_libs/time/delay.hpp builtin_libs/time/timepoint.hpp)
+target_link_libraries(json PUBLIC scl_vm)
 

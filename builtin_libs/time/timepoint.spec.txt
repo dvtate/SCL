@@ -1,0 +1,30 @@
+-- when: either date string, epoch ms, or empty for current local time
+class TimePoint(when?: Str | Int):
+	-- unix timestamp (epoch ms)
+	timestamp: Int
+
+	-- read: timezone interpreted from the string
+	-- write: same instant in time just different location
+	timezone: String
+
+	-- ?? same time but different location
+	-- returns new Date object
+	localize(Str)
+
+	-- Convert to pretty formatted string using string formatter
+	-- probably via strftime
+	format(Str): Str
+
+	-- default format utc time
+	__str(): Str
+
+	-- I want to make this a single funciton that returns an object but eh
+	get_sec(): Int
+	get_min(): Int
+	get_hour(): Int
+	get_mday(): Int
+	get_mon(): Int
+	get_year(): Int
+	get_wday(): Int
+	get_yday(): Int
+	get_isdst(): Bool
