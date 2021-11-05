@@ -128,7 +128,7 @@ void ParsedMacro::read_decl(AST& tree) {
 		tree.members = tree.members[0]->members;
 
 	for (auto& d : tree.members) {
-		SCL_DEBUG_MSG("read_decl:" << debug_AST(d) << std::endl);
+		SCL_DEBUG_MSG("read_decl:" << debug_AST(*d) << std::endl);
 		if (d->type == AST::NodeType::IDENTIFIER) {
 			if (keyword_values.find(d->token.token) != keyword_values.end()) {
 				this->errors.emplace_back(SemanticError(
@@ -149,7 +149,7 @@ void ParsedMacro::read_decl(AST& tree) {
 				const auto idid = this->declare_id(d->members[0]->token.token);
 				this->body.emplace_back(Command(Command::OPCode::DECL_ID, idid));
 				this->read_tree(*d);
-				SCL_DEBUG_MSG("read_decl: " << d.members[0].token.token << " = " << idid << std::endl);
+				SCL_DEBUG_MSG("read_decl: " << d->members[0]->token.token << " = " << idid << std::endl);
 			} else {
 				this->errors.emplace_back(SemanticError(
 						"invalid assignment, expected identifier, got: " + (
@@ -185,7 +185,7 @@ void ParsedMacro::read_id(AST& tree) {
 	const MutilatedSymbol id = this->find_id(tree.token.token);
 	if (id.id < 0) {
 		this->errors.emplace_back(SemanticError(
-				"Identifier used before declaration",
+				"Identifier used before declaration: " + tree.token.token,
 				tree.token.pos,
 				this->file_name));
 		return;
@@ -306,6 +306,7 @@ void ParsedMacro::read_operation(AST& t){
 		this->errors.emplace_back(SemanticError(
 				"Unexpected lexical operator: " + t.token.token,
 				t.token.pos, this->file_name));
+		std::cout <<debug_AST(t) <<std::endl;
 		return;
 	}
 

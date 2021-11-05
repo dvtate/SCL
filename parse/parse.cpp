@@ -17,7 +17,6 @@
  */
 
 
-
 // convert AST to lisp
 /// TODO: indentation + depth tracking
 std::string debug_AST(const AST& tree) {
@@ -90,7 +89,7 @@ static inline bool isOperand(const AST& n) {
 
 // Get the next AST node from the list of tokens
 //   Also finish lexers job as some tokens combine into single nodes
-static inline AST next_node(const std::vector<Token>& tokens, size_t& i, std::vector<AST> stack) {
+static inline AST next_node(const std::vector<Token>& tokens, size_t& i, std::vector<AST>& stack) {
 	// Mutable copy of token
 	Token t = tokens[i];
 
@@ -123,8 +122,14 @@ static inline AST next_node(const std::vector<Token>& tokens, size_t& i, std::ve
 	i++;
 
 	// Literals
-	if (t.type == Token::t::NUMBER)
+	if (t.type == Token::t::NUMBER) {
+		// Merge negative sign into number literals
+		if (stack.back().type == AST::NodeType::OPERATOR && stack.back().token.token == "neg") {
+			t.token = "-" + t.token;
+			stack.pop_back();
+		}
 		return AST(AST::NodeType::NUM_LITERAL, t);
+	}
 	if (t.type == Token::t::STRING)
 		return AST(AST::NodeType::STR_LITERAL, t);
 

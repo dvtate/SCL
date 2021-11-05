@@ -277,23 +277,22 @@ let delay2 = (:
 let delay3 = (: set_timeout(i, o)() )
 ```
 
-### Yielding
-TODO
-
 ## Core values
 - Unclear operators should be avoided, use functions instead
-	- ie - `return`, `break`, `continue`, `export`, `import`, etc.
+	- ie - `return`, `break`, `continue`, `export`, etc. don't exist here
 - No redundant language features
-	- User should be able to create their own tools to improve clarity or use those from a standard library
-- Don't force opinions on the user
+- Avoid strong opinions
 
-## Duct Tape and Bubble Gum
+## Refactoring targets
 Targets for refactoring
 ### Garbage Collection
-The language features a stop the world, tracing garbage collector. Because my goal was to make a cool language and not an impressive GC, the current implementation is a pretty bad rough draft. Eventually I'd like to make it directly manage the heap instead of using `malloc`/`free` and there's some other gross things going on. I think I could easily double the performance of this rough draft but it's not a high priority at the moment.
+- Tracing, STW, GC
+- Should directly manage the heap itself instead of relying on malloc+free
+- Optimizations to space efficiency and performance
+- Improving it is lower priority than other language features
 
 ### Parser
-I made a custom shift-reduce parser that works for most programs, however because I didn't write a fully speccd out language grammer or use a compiler-compiler, there are likely some edge cases that I did't consider and performance could be better.
+I made a custom shift reduce parser. Which seems to work well, but it would probably be a good idea to fully spec out the grammar and make it more readable. Also, probably room for improvements to performance. 
 
 ## More coming soon
 Most of these features are at least working. There are some things that are implemented haven't made their way into this guide and even more that I haven't implemented but [have planned](https://docs.google.com/spreadsheets/d/1HZEsRAPhoAOnP-zT70_9bgLTrJVC9NmNyxKYWxsTT8Q/edit?usp=sharing). If there's anything you want to see added, lmk.

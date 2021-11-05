@@ -9,8 +9,11 @@ set(CMAKE_CXX_STANDARD 20)
 find_package(Threads REQUIRED)
 link_libraries(dl)
 
+# Debug
 #set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -lefence -g -Wall -Wextra")
-#set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 ")
+
+# Production
+set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 
 set(SOURCE_FILES
         util.cpp util.hpp debug.hpp
