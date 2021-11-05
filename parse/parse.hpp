@@ -9,6 +9,7 @@
 #include <iostream>
 #include <unordered_map>
 #include <variant>
+#include <memory>
 
 #include "lex.hpp"
 
@@ -54,17 +55,24 @@ public:
 	Token token;
 
 	// TODO should be std::vector<AST*>
-	std::vector<AST> members;
+	std::vector<std::shared_ptr<AST>> members;
 
 	// value added after the fact
-	int64_t num;
+	int64_t num{-1};
 
 	AST():
 		type(INVALID), token(Token()), members() {}
 	AST(const NodeType type, const Token& token):
 			type(type), token(token), members() {}
-	AST(const NodeType type, const Token& token, std::vector<AST> children):
+	AST(const NodeType type, const Token& token, std::vector<std::shared_ptr<AST>> children):
 			type(type), token(token), members(std::move(children)) {}
+	AST(const NodeType type, const Token& token, const std::vector<AST>& children):
+			type(type), token(token)
+	{
+		this->members.reserve(children.size());
+		for (const auto& c : children)
+			this->members.emplace_back(std::make_shared<AST>(c));
+	}
 	AST(const AST& other) = default;
 
 	// std::variant<std::string, int64_t, double> val;

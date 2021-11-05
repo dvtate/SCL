@@ -84,22 +84,22 @@ void ParsedMacro::read_dot_op(AST& tree) {
 	auto& obj = tree.members[0];
 	auto& mem = tree.members[1];
 
-	this->read_tree(obj);
+	this->read_tree(*obj);
 
 	// parser allows things like `obj.[1 + 2]` or `obj.(abc[1+2] + Str(66))`
 	// but for now at least we only want statically
-	if (mem.type != AST::NodeType::IDENTIFIER) {
+	if (mem->type != AST::NodeType::IDENTIFIER) {
 		this->errors.emplace_back(SemanticError(
-				"Unsupported expression on right hand side of dot operator (.): " + mem.type_name(),
-				mem.token.pos, this->file_name));
+				"Unsupported expression on right hand side of dot operator (.): " + mem->type_name(),
+				mem->token.pos, this->file_name));
 
 		// Scan subtrees to see if there are other errors
-		this->read_tree(mem);
+		this->read_tree(*mem);
 		return;
 	}
 
 	// add member name to lit header
-	const std::string req = mem.token.token;
+	const std::string req = mem->token.token;
 	const auto lit_num = this->compiler->empl_lit(
 			ParsedLiteral(ParsedLiteral::LitType::STRING, req));
 
@@ -111,7 +111,7 @@ void ParsedMacro::read_dot_op(AST& tree) {
 void ParsedMacro::read_index_op(AST& tree){
 	// put args on stack
 	for (auto& m : tree.members)
-		this->read_tree(m);
+		this->read_tree(*m);
 	this->body.emplace_back(Command(Command::OPCode::USE_INDEX));
 }
 
@@ -124,42 +124,42 @@ void ParsedMacro::read_decl(AST& tree) {
 	}
 
 	// support multiple declarations separated by commas
-	if (tree.members[0].type == AST::NodeType::COMMA_SERIES)
-		tree.members = tree.members[0].members;
+	if (tree.members[0]->type == AST::NodeType::COMMA_SERIES)
+		tree.members = tree.members[0]->members;
 
 	for (auto& d : tree.members) {
 		SCL_DEBUG_MSG("read_decl:" << debug_AST(d) << std::endl);
-		if (d.type == AST::NodeType::IDENTIFIER) {
-			if (keyword_values.find(d.token.token) != keyword_values.end()) {
+		if (d->type == AST::NodeType::IDENTIFIER) {
+			if (keyword_values.find(d->token.token) != keyword_values.end()) {
 				this->errors.emplace_back(SemanticError(
-					"Redefinition of global keyword "+ d.token.token,
-					d.token.pos, this->file_name, true
+					"Redefinition of global keyword "+ d->token.token,
+					d->token.pos, this->file_name, true
 				));
 			}
-			const auto idid = this->declare_id(d.token.token);
+			const auto idid = this->declare_id(d->token.token);
 			this->body.emplace_back(Command(Command::OPCode::DECL_ID, idid));
-		} else if (d.type == AST::NodeType::OPERATION && d.token.token == "=") {
-			if (!d.members.empty() && d.members[0].type == AST::NodeType::IDENTIFIER) {
-				if (keyword_values.find(d.members[0].token.token) != keyword_values.end()) {
+		} else if (d->type == AST::NodeType::OPERATION && d->token.token == "=") {
+			if (!d->members.empty() && d->members[0]->type == AST::NodeType::IDENTIFIER) {
+				if (keyword_values.find(d->members[0]->token.token) != keyword_values.end()) {
 					this->errors.emplace_back(SemanticError(
-							"Redefinition of global keyword "+ d.members[0].token.token,
-							d.members[0].token.pos, this->file_name, true
+							"Redefinition of global keyword "+ d->members[0]->token.token,
+							d->members[0]->token.pos, this->file_name, true
 					));
 				}
-				const auto idid = this->declare_id(d.members[0].token.token);
+				const auto idid = this->declare_id(d->members[0]->token.token);
 				this->body.emplace_back(Command(Command::OPCode::DECL_ID, idid));
-				this->read_tree(d);
+				this->read_tree(*d);
 				SCL_DEBUG_MSG("read_decl: " << d.members[0].token.token << " = " << idid << std::endl);
 			} else {
 				this->errors.emplace_back(SemanticError(
 						"invalid assignment, expected identifier, got: " + (
-								d.members.empty() ? d.type_name() : d.members[0].type_name()),
-						d.token.pos, this->file_name));
+								d->members.empty() ? d->type_name() : d->members[0]->type_name()),
+						d->token.pos, this->file_name));
 			}
 		} else {
 			this->errors.emplace_back(SemanticError(
-					"Invalid declaration, unexpected " + d.type_name(),
-					d.token.pos, this->file_name));
+					"Invalid declaration, unexpected " + d->type_name(),
+					d->token.pos, this->file_name));
 		}
 	}
 }
@@ -202,19 +202,17 @@ void ParsedMacro::read_assignment(AST& t) {
 	SCL_DEBUG_MSG("read_assignment\n");
 
 	// a = 123
-	if (t.members[0].type == AST::NodeType::IDENTIFIER) {
-		auto sym = this->find_id(t.members[0].token.token);
+	if (t.members[0]->type == AST::NodeType::IDENTIFIER) {
+		auto sym = this->find_id(t.members[0]->token.token);
 		if (sym.id < 0) {
 			this->errors.emplace_back(SemanticError(
 					"Left-hand side of equals not in scope", t.token.pos, this->file_name));
 			return;
 		}
-
 		if (sym.type == MutilatedSymbol::SymbolType::CONSTANT) {
 			this->errors.emplace_back(SemanticError(
 					std::string("Cannot assign to constant `") + t.token.token + "`",
 					t.token.pos, this->file_name));
-
 		}
 		if (sym.type == MutilatedSymbol::SymbolType::NO_REASSIGN) {
 			this->errors.emplace_back(SemanticError(
@@ -225,32 +223,32 @@ void ParsedMacro::read_assignment(AST& t) {
 		// If lhs is an alias insert the compiled code
 		// TODO alias should use different type than ParsedMacro
 		if (sym.type == MutilatedSymbol::SymbolType::ALIAS) {
-			read_tree(t.members[0]);
-			read_tree(t.members[1]);
+			read_tree(*t.members[0]);
+			read_tree(*t.members[1]);
 			// NOTE:
 			this->body.emplace_back(Command(Command::OPCode::BUILTIN_OP, (uint16_t) 1));
 		} else if (sym.type == MutilatedSymbol::SymbolType::VARIABLE) {
 			// Set id
-			read_tree(t.members[1]);
+			read_tree(*t.members[1]);
 			this->body.emplace_back(Command(Command::OPCode::SET_ID, (int64_t) sym.id));
 		}
 
 		return;
-	} else if (t.members[0].type == AST::NodeType::INDEX) {
+	} else if (t.members[0]->type == AST::NodeType::INDEX) {
 		// list[index] = 5;  => <list> <index> <value> SET_INDEX
 
 		// put args on stack
-		for (auto &m : t.members[0].members)
-			this->read_tree(m);
-		this->read_tree(t.members[1]);
+		for (auto &m : t.members[0]->members)
+			this->read_tree(*m);
+		this->read_tree(*t.members[1]);
 		// args: list index value
 		this->body.emplace_back(Command(Command::OPCode::SET_INDEX));
 
-	} else if (t.members[0].type == AST::NodeType::OPERATION && t.members[0].token.token == ".") {
+	} else if (t.members[0]->type == AST::NodeType::OPERATION && t.members[0]->token.token == ".") {
 		// obj.name = value; => <obj> <value> SET_MEM_L(litnum(member_name))
 
 		// Read member request (USE_MEM_L), the syntax is basically correct but need to change operand order
-		this->read_tree(t.members[0]);
+		this->read_tree(*t.members[0]);
 
 		// Pop USE_MEM_L from the stack
 		auto instr = this->body.back();
@@ -258,7 +256,7 @@ void ParsedMacro::read_assignment(AST& t) {
 		this->body.pop_back();
 
 		// read value ("steve")
-		this->read_tree(t.members[1]);
+		this->read_tree(*t.members[1]);
 
 		this->body.emplace_back(instr);
 
@@ -270,7 +268,7 @@ void ParsedMacro::read_assignment(AST& t) {
 
 		// compile arguments
 		for (auto& arg : t.members)
-			read_tree(arg);
+			read_tree(*arg);
 
 		// Equals operator
 		this->body.emplace_back(Command(Command::OPCode::BUILTIN_OP, (uint16_t) 1));
@@ -313,7 +311,7 @@ void ParsedMacro::read_operation(AST& t){
 
 	// compile arguments
 	for (auto& arg : t.members)
-		read_tree(arg);
+		read_tree(*arg);
 
 	std::size_t lpos = this->body.size();
 	this->body.emplace_back(Command(
@@ -332,12 +330,12 @@ void ParsedMacro::read_macro_invoke(AST& t) {
 
 	// load arg
 	if (t.members.size() == 2)
-		read_tree(t.members.back());
+		this->read_tree(*t.members.back());
 	else // no arg
 		this->body.emplace_back(Command(Command::OPCode::VAL_EMPTY));
 
 	// load macro
-	read_tree(t.members[0]);
+	this->read_tree(*t.members[0]);
 
 	// TODO: typecheck
 	const auto new_pos = this->body.size();
@@ -348,10 +346,10 @@ void ParsedMacro::read_macro_invoke(AST& t) {
 
 	// TODO capture what is being assigned
 	std::string lhs_depiction;
-	if (t.members[0].type == AST::NodeType::MACRO) {
+	if (t.members[0]->type == AST::NodeType::MACRO) {
 		lhs_depiction = "(: ... )";
 	} else {
-		lhs_depiction = tree_to_source(t.members[0]);
+		lhs_depiction = tree_to_source(*t.members[0]);
 		if (lhs_depiction.size() > 50)
 			lhs_depiction = lhs_depiction.substr(0, 40) + "...";
 	}
@@ -366,7 +364,7 @@ void ParsedMacro::read_macro_lit(AST& tree) {
 	pps.emplace_back(this);
 	auto* mac = new ParsedMacro(tree, tree.token.file, pps, this->compiler, this->declarations);
 	for (auto& m : tree.members)
-		mac->read_tree(m);
+		mac->read_tree(*m);
 
 	// put it in literals header
 	auto litnum = this->compiler->load_macro(*mac);
@@ -379,20 +377,20 @@ void ParsedMacro::read_list_lit(AST& tree) {
 	SCL_DEBUG_MSG("read_list_lit\n");
 
 	// Handle comma-series
-	if (!tree.members.empty() && tree.members[0].type == AST::NodeType::COMMA_SERIES)
-		tree.members = tree.members[0].members;
+	if (!tree.members.empty() && tree.members[0]->type == AST::NodeType::COMMA_SERIES)
+		tree.members = tree.members[0]->members;
 
 	// put elements onto stack
 	for (auto& m : tree.members)
-		read_tree(m);
+		read_tree(*m);
 
 	this->body.emplace_back(Command::OPCode::MK_LIST, (int32_t) tree.members.size());
 }
 
 void ParsedMacro::read_statements(AST& tree) {
 	SCL_DEBUG_MSG("read_statements\n");
-	for (AST& statement : tree.members) {
-		read_tree(statement);
+	for (auto& statement : tree.members) {
+		read_tree(*statement);
 		this->body.emplace_back(Command(Command::OPCode::CLEAR_STACK));
 	}
 
@@ -412,61 +410,56 @@ void ParsedMacro::read_obj_lit(AST& tree) {
 	if (tree.members.empty())
 		return;
 
-//	this->errors.emplace_back(SemanticError(
-//			"Multi-item object literals currently not supported, please use {} and then initialize members",
-//			tree.token.pos, this->file_name));
-
-
-	std::vector<AST>& members = tree.members[0].type == AST::NodeType::COMMA_SERIES
-			? tree.members[0].members
+	auto& members = tree.members[0]->type == AST::NodeType::COMMA_SERIES
+			? tree.members[0]->members
 			: tree.members;
 
 	// Add members
 	for (auto& m : members) {
-		if (m.type == AST::NodeType::KV_PAIR) {
-			auto& k = m.members[0];
-			auto& v = m.members[1];
+		if (m->type == AST::NodeType::KV_PAIR) {
+			auto k = m->members[0];
+			auto v = m->members[1];
 
 			// { a : 5, 'b' : 6 }
-			if (k.type == AST::NodeType::IDENTIFIER || k.type == AST::NodeType::STR_LITERAL) {
+			if (k->type == AST::NodeType::IDENTIFIER || k->type == AST::NodeType::STR_LITERAL) {
 				// add member name to lit header
 				const auto lit_num = this->compiler->empl_lit(
-						ParsedLiteral(ParsedLiteral::LitType::STRING, k.token.token));
+						ParsedLiteral(ParsedLiteral::LitType::STRING, k->token.token));
 
 				// Compile value into next item on the stack
-				this->read_tree(v);
+				this->read_tree(*v);
 
 				// Set member
 				this->body.emplace_back(Command(Command::OPCode::SET_MEM_L, lit_num));
 
 			// { [a] : 5 }
-			} else if (k.type == AST::NodeType::LIST) {
+			} else if (k->type == AST::NodeType::LIST) {
 				// key is the value of expression, need to use SET_INDEX instr
 
 				// <obj>* <key> <value> SET_INDEX => <obj>
-				this->read_tree(k.members[0]);
-				this->read_tree(v);
+				this->read_tree(*k->members[0]);
+				this->read_tree(*v);
 				this->body.emplace_back(Command(Command::OPCode::SET_INDEX));
 			} else {
 				this->errors.emplace_back(SemanticError(
-						std::string("Invalid object member key:") + debug_AST(m),
+						std::string("Invalid object member key:") + debug_AST(*m),
 						tree.token.pos, this->file_name));
 				return;
 			}
 
 			// Key and value from identifier
-		} else if (m.type == AST::NodeType::IDENTIFIER) {
+		} else if (m->type == AST::NodeType::IDENTIFIER) {
 			// Get value from var
-			this->read_tree(m);
+			this->read_tree(*m);
 
 			// Make instruction
 			const auto lit_num = this->compiler->empl_lit(
-				ParsedLiteral(ParsedLiteral::LitType::STRING, m.token.token));
+				ParsedLiteral(ParsedLiteral::LitType::STRING, m->token.token));
 			this->body.emplace_back(Command(Command::OPCode::SET_MEM_L, lit_num));
 		} else {
 			this->errors.emplace_back(SemanticError(
 					std::string("Invalid object member expected keys and values to be"
-				 	" separated by `:` and pairs with `,` got ") + debug_AST(m),
+				 	" separated by `:` and pairs with `,` got ") + debug_AST(*m),
 					tree.token.pos, this->file_name));
 			return;
 		}

@@ -138,10 +138,9 @@ class JSONPrettyStrFn : public NativeFunction {
 				for (; it != o.end(); ++it) {
 					try {
 						auto val = this->act(it->second, f, indent_level + 1,s);
-						if (val) {
+						if (val)
 							ret += ",\n" + this->indent_str(indent_level)
 									+ "\"" + it->first + "\": " + *val;
-						}
 					} catch (CyclicRefsEx& e) {
 						e.push("-- in field '" + it->first + "' of object");
 						throw e;

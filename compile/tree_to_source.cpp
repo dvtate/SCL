@@ -32,21 +32,21 @@ static inline std::string src_operator(AST& tree) {
 
 	// Unary prefix
 	if (op == "!")
-		return "!" + operand(tree.members[0]);
+		return "!" + operand(*tree.members[0]);
 	if (op == "neg")
-		return "-" + operand(tree.members[0]);
+		return "-" + operand(*tree.members[0]);
 
 	// Join on op
-	std::string ret = operand(tree.members[0]);
+	std::string ret = operand(*tree.members[0]);
 	for (int i = 1; i < tree.members.size(); i++)
-		ret += op + operand(tree.members[i]);
+		ret += op + operand(*tree.members[i]);
 	return ret;
 }
 
 static inline std::string src_statements(AST& tree) {
 	std::string ret;
 	for (auto& m : tree.members)
-		ret += tree_to_source(m) + ";";
+		ret += tree_to_source(*m) + ";";
 	return ret;
 }
 
@@ -54,9 +54,9 @@ static inline std::string src_macro(AST& tree) {
 	if (tree.members.empty())
 		return "(:)";
 
-	std::string ret = "(:" + tree_to_source(tree.members[0]);
+	std::string ret = "(:" + tree_to_source(*tree.members[0]);
 	for (unsigned i = 1; i < tree.members.size(); i++)
-		ret += (is_debug_mode ? "\n" : " ") + tree_to_source(tree.members[i]);
+		ret += (is_debug_mode ? "\n" : " ") + tree_to_source(*tree.members[i]);
 	return ret + ")";
 }
 
@@ -77,28 +77,28 @@ std::string tree_to_source(AST& tree) {
 		case AST::NodeType::LIST:
 			if (tree.members.size() > 1)
 				std::cerr <<"tree_to_src: bad list - " <<tree.members.size() <<std::endl;
-			return "[" + tree_to_source(tree.members[0]) + "]";
+			return "[" + tree_to_source(*tree.members[0]) + "]";
 
 		case AST::NodeType::OBJECT:
 			if (tree.members.size() > 1)
 				std::cerr <<"tree_to_src: bad object - " <<tree.members.size() <<std::endl;
 			if (tree.members.empty())
 				return "{}";
-			return "{" + tree_to_source(tree.members[0]) + "}";
+			return "{" + tree_to_source(*tree.members[0]) + "}";
 
 		case AST::NodeType::KV_PAIR:
-			return tree_to_source(tree.members[0]) + ":" + tree_to_source(tree.members[1]);
+			return tree_to_source(*tree.members[0]) + ":" + tree_to_source(*tree.members[1]);
 		case AST::NodeType::DECLARATION:
-			return "let " + tree_to_source(tree.members[0]);
+			return "let " + tree_to_source(*tree.members[0]);
 		case AST::NodeType::STATEMENTS:
 			return src_statements(tree);
 		case AST::NodeType::INVOKE:
 			if (tree.members.size() == 1)
-				return tree_to_source(tree.members[0]) + "()";
+				return tree_to_source(*tree.members[0]) + "()";
 			else
-				return tree_to_source(tree.members[0]) + "(" + tree_to_source(tree.members[1]) + ")";
+				return tree_to_source(*tree.members[0]) + "(" + tree_to_source(*tree.members[1]) + ")";
 		case AST::INDEX:
-			return tree_to_source(tree.members[0]) + "[" + tree_to_source(tree.members[1]) + "]";
+			return tree_to_source(*tree.members[0]) + "[" + tree_to_source(*tree.members[1]) + "]";
 
 //		case AST::NodeType::OPERATOR:
 //		case AST::NodeType::CONT_CLOSE:

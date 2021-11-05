@@ -26,8 +26,8 @@ std::string debug_AST(const AST& tree) {
 	ret += "<";
 	ret += tree.short_type_name();
 	ret += ">";
-	for (const AST& m : tree.members)
-		ret += " " + debug_AST(m);
+	for (const auto& m : tree.members)
+		ret += " " + debug_AST(*m);
 	ret += ')';
 	return ret;
 }
@@ -252,8 +252,8 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 		stack.pop_back();
 		const AST l = stack.back();
 		n.type = AST::NodeType::KV_PAIR;
-		n.members.emplace_back(l);
-		n.members.emplace_back(r);
+		n.members.emplace_back(std::make_shared<AST>(l));
+		n.members.emplace_back(std::make_shared<AST>(r));
 		stack.back() = n;
 		return nullptr;
 	}
@@ -263,7 +263,7 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 		if (stack.size() - i != 2)
 			return "invalid unary operation";
 		n.type = AST::OPERATION;
-		n.members.emplace_back(stack.back());
+		n.members.emplace_back(std::make_shared<AST>(stack.back()));
 		stack.pop_back();
 		stack.back() = n;
 		return nullptr;
@@ -274,7 +274,7 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 		if (stack.size() - i != 2)
 			return "invalid declaration";
 		n.type = AST::NodeType::DECLARATION;
-		n.members.emplace_back(stack.back());
+		n.members.emplace_back(std::make_shared<AST>(stack.back()));
 		stack.pop_back();
 		stack.back() = n;
 		return nullptr;
@@ -304,7 +304,7 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 		}
 		// Combine with previous statements
 		if (stack.back().type == AST::NodeType::STATEMENTS)
-			stack.back().members.emplace_back(expr);
+			stack.back().members.emplace_back(std::make_shared<AST>(expr));
 		return nullptr;
 
 	}
@@ -318,8 +318,8 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 	// convert paren exprs
 	if (stack.back().type == AST::NodeType::PAREN_EXPR) {
 		auto m = stack.back().members[0];
-		if (isOperand(m))
-			stack.back() = m;
+		if (isOperand(*m))
+			stack.back() = *m;
 	}
 
 	// invalid operand
@@ -346,12 +346,12 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
 	if (l.type == AST::NodeType::OPERATION && l.token.token == n.token.token)
 		n.members = l.members;
 	else
-		n.members.emplace_back(l);
+		n.members.emplace_back(std::make_shared<AST>(l));
 
 	if (r.type == AST::NodeType::OPERATION && r.token.token == n.token.token)
 		n.members.insert(n.members.end(), r.members.begin(), r.members.end());
 	else
-		n.members.emplace_back(r);
+		n.members.emplace_back(std::make_shared<AST>(r));
 
 	// replace l with our new operation
 	stack.back() = n;
@@ -456,7 +456,7 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 				const AST e = stack.back();
 				stack.pop_back();
 				stack.back().type = AST::NodeType::LIST;
-				stack.back().members.emplace_back(e);
+				stack.back().members.emplace_back(std::make_shared<AST>(e));
 			} else {
 				// [] empty list
 				stack.back().type = AST::NodeType::LIST;
@@ -484,7 +484,7 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 				const AST e = stack.back();
 				stack.pop_back();
 				stack.back().type = AST::NodeType::PAREN_EXPR;
-				stack.back().members.emplace_back(e);
+				stack.back().members.emplace_back(std::make_shared<AST>(e));
 			} else {
 				// () empty parenexpr
 				stack.back().type = AST::NodeType::PAREN_EXPR;
@@ -505,7 +505,7 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 				};
 			stack.pop_back();
 			for (unsigned short m = i + 1; m < stack.size(); m++)
-				stack[i].members.emplace_back(stack[m]);
+				stack[i].members.emplace_back(std::make_shared<AST>(stack[m]));
 			while (stack.size() > (unsigned long) i + 1UL)
 				stack.pop_back();
 			stack.back().type = AST::NodeType::MACRO;
@@ -533,7 +533,7 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 				const AST e = stack.back();
 				stack.pop_back();
 				stack.back().type = AST::NodeType::OBJECT;
-				stack.back().members.emplace_back(e);
+				stack.back().members.emplace_back(std::make_shared<AST>(e));
 			} else {
 				// {} empty obj
 				stack.back().type = AST::NodeType::OBJECT;
@@ -562,17 +562,22 @@ static inline bool reduce_invocations(std::vector<AST>& stack) {
 		if (isOperand(stack[stack.size() - 2])) {
 			stack.pop_back();
 
-			std::vector<AST> children { stack.back() };
+			std::vector<std::shared_ptr<AST>> children {
+				std::make_shared<AST>(stack.back()),
+			};
 			if (!arg.members.empty()) {
 				children.emplace_back(arg.members[0]);
 				// if they pass csv args convert them to list
-				if (children.back().type == AST::NodeType::OPERATION && children.back().token.token == ",")
-					children.back().type =  AST::NodeType::LIST;
+				if (children.back()->type == AST::NodeType::OPERATION && children.back()->token.token == ",")
+					children.back()->type =  AST::NodeType::LIST;
 			}
 			if (arg.members.size() > 1)
 				throw std::vector<SyntaxError>{SyntaxError(arg.token, "Invalid parenthesised expression")};
 
-			stack.back() = AST(AST::NodeType::INVOKE, Token(Token::t::OPERATOR, "@", arg.token.file, arg.token.pos), children);
+			stack.back() = AST(
+					AST::NodeType::INVOKE,
+					Token(Token::t::OPERATOR, "@", arg.token.file, arg.token.pos),
+					children);
 			return true;
 		}
 	}
@@ -583,7 +588,7 @@ static inline bool reduce_invocations(std::vector<AST>& stack) {
 			return false;
 		if (isOperand(stack[stack.size() - 2])) {
 			AST ind(AST::NodeType::INDEX, stack.back().token);
-			ind.members.emplace_back(stack[stack.size() - 2]);
+			ind.members.emplace_back(std::make_shared<AST>(stack[stack.size() - 2]));
 			ind.members.emplace_back(stack.back().members.back()); // expr inside brackets
 			stack.pop_back();
 			stack.back() = ind;
@@ -606,7 +611,10 @@ static inline bool reduce_asi(std::vector<AST>& stack, const AST& n) {
 	// Put them all in a global statements node
 	AST program = n;
 	program.type = AST::NodeType::STATEMENTS;
-	program.members = stack;
+	program.members.clear();
+	program.members.reserve(stack.size());
+	for (const AST& m : stack)
+		program.members.emplace_back(std::make_shared<AST>(m));
 	stack.clear();
 	stack.emplace_back(program);
 	return true;

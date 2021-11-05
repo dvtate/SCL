@@ -17,10 +17,10 @@ class ImportedFile {
 public:
 	const char* absolute_path_str;
 	std::filesystem::path path;
-	AST tree;
+	std::shared_ptr<AST> tree;
 
-	ImportedFile(const char* absolute_path, std::filesystem::path path, AST tree):
-		absolute_path_str(absolute_path), path(path), tree(tree)
+	ImportedFile(const char* absolute_path, std::filesystem::path path, std::shared_ptr<AST> tree):
+		absolute_path_str(absolute_path), path(std::move(path)), tree(std::move(tree))
 	{}
 };
 
@@ -88,7 +88,7 @@ protected:
 
 		// Generate hiden identifier
 		const auto ret = this->imports.size();
-		std::string hidden_id = this->import_hidden_identifier(ret);
+		std::string hidden_id = import_hidden_identifier(ret);
 
 		// Wrap file in a closure and assign it to a global hidden identifier
 		// All future imports of this module will refer to this identifier
@@ -109,7 +109,7 @@ protected:
 		std::filesystem::current_path(cp);
 
 		//
-		this->imports.emplace_back(ImportedFile(full_path_name, p, assignment));
+		this->imports.emplace_back(ImportedFile(full_path_name, p, std::make_shared<AST>(assignment)));
 
 		//
 		return ret;
@@ -118,7 +118,7 @@ protected:
 	inline AST& convert_syntax_branch(AST& t);
 	inline AST& convert_syntax_leaf(AST& t) { return t; }
 
-	inline std::string import_hidden_identifier(size_t index) {
+	static inline std::string import_hidden_identifier(const size_t index) {
 		if (index == 0)
 			return "empty";
 		return std::string(" import ") + std::to_string(index);
@@ -133,11 +133,14 @@ public:
 			*head = AST(AST::NodeType::STATEMENTS, head->token, { *head });
 
 		// Import zero special
-		this->imports.emplace_back(ImportedFile(head->token.file, head->token.file, AST()));
+		this->imports.emplace_back(
+				ImportedFile(head->token.file,
+				head->token.file,
+				std::make_shared<AST>()));
 
 		// Put import declarations at start of file
 		*head = process_tree(*head);
-		std::vector<AST> mems;
+		std::vector<std::shared_ptr<AST>> mems;
 		for (unsigned i = 1; i < this->imports.size(); i++) {
 			mems.emplace_back(this->imports[i].tree);
 		}
@@ -182,23 +185,23 @@ AST& SemanticProcessor::convert_syntax_branch(AST& t) {
 			this->add_error(SemanticError("Invalid parenthesized expression", t.token.pos));
 			return t;
 		}
-		return this->convert_syntax_branch(t.members[0]);
+		return convert_syntax_branch(*t.members[0]);
 	}
 
 	// Handle import function
 	if (t.type == AST::NodeType::INVOKE) {
 		const auto& fxn = t.members[0];
-		if (fxn.type == AST::NodeType::IDENTIFIER && fxn.token.token == "import") {
+		if (fxn->type == AST::NodeType::IDENTIFIER && fxn->token.token == "import") {
 			const auto& file = t.members[1];
-			if (file.type != AST::NodeType::STR_LITERAL) {
-				this->add_error(SemanticError("import() expected a string literal", file.token.pos));
+			if (file->type != AST::NodeType::STR_LITERAL) {
+				this->add_error(SemanticError("import() expected a string literal", file->token.pos));
 			} else {
-				const auto idx = this->import(file.token, file.token.token);
+				const auto idx = this->import(file->token, file->token.token);
 				if (idx >= 0) {
 					// Note this makes
 					t.type = AST::NodeType::IDENTIFIER;
 					t.token.type = Token::t::IDENTIFIER;
-					t.token.token = this->import_hidden_identifier(idx);
+					t.token.token = import_hidden_identifier(idx);
 					t.members.clear();
 					return this->convert_syntax_leaf(t);
 				}
@@ -225,7 +228,7 @@ AST& SemanticProcessor::convert_syntax_branch(AST& t) {
 				AST tmp = (mem);
 				mem = t;
 				mem.members.clear();
-				mem.members.emplace_back(tmp);
+				mem.members.emplace_back(std::make_shared<AST>(tmp));
 			}
 			mem.members.emplace_back(t.members[0]);
 			t = mem;
@@ -236,16 +239,16 @@ AST& SemanticProcessor::convert_syntax_branch(AST& t) {
 		} else {
 			// left-associative ((1+2)+3)
 			const auto nn = AST(AST::NodeType::OPERATION, t.token);
-			AST ret = t;
-			ret.members.clear();
-			AST* np = &ret;
+			auto ret = std::make_shared<AST>(t);
+			ret->members.clear();
+			std::shared_ptr<AST> np = ret;
 			for (auto i = t.members.size() - 1; i > 0; i--) {
-				np->members.push_back(nn);
+				np->members.push_back(std::make_shared<AST>(nn));
 				np->members.push_back(t.members[i]);
-				np = &np->members[0];
+				np = np->members[0];
 			}
-			*np = t.members[0];
-			t = ret;
+			np = t.members[0];
+			t = *ret;
 		}
 	}
 
@@ -255,7 +258,7 @@ AST& SemanticProcessor::convert_syntax_branch(AST& t) {
 	// map members
 	AST& ret = t;
 	for (unsigned int i = 0; i < t.members.size(); i++) {
-		ret.members[i] = this->convert_syntax_branch(t.members[i]);
+		*ret.members[i] = this->convert_syntax_branch(*t.members[i]);
 	}
 	return ret;
 }
