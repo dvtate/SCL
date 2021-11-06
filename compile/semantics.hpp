@@ -48,28 +48,28 @@ public:
 	// if only I could just do
 	// template <typename FILE_PATH_T> ...
 	SemanticError(
-			const std::string& message,
+			std::string message,
 			const unsigned long long position,
 			const char* file_name,
 			bool is_warning = false):
-			msg(message), pos(position), file(file_name), is_warn(is_warning) {}
+			msg(std::move(message)), pos(position), file(file_name), is_warn(is_warning) {}
 	SemanticError(
-			const std::string& message,
+			std::string message,
 			const unsigned long long position,
 			std::string file_name,
 			bool is_warning = false):
-			msg(message), pos(position), file(file_name), is_warn(is_warning) {}
+			msg(std::move(message)), pos(position), file(std::move(file_name)), is_warn(is_warning) {}
 	SemanticError(
-			const std::string& message,
+			std::string message,
 			const unsigned long long position,
 			std::filesystem::path file = std::filesystem::current_path(),
 			bool is_warning = false):
-			msg(message), pos(position), file(file), is_warn(is_warning) {}
+			msg(std::move(message)), pos(position), file(std::move(file)), is_warn(is_warning) {}
 	SemanticError(
-			const std::string& message,
+			std::string message,
 			const Token& t,
 			bool is_warning = false):
-			msg(message), pos(t.pos), file(t.file), is_warn(is_warning) {}
+			msg(std::move(message)), pos(t.pos), file(t.file), is_warn(is_warning) {}
 };
 
 std::vector<SemanticError> process_tree(AST& tree);

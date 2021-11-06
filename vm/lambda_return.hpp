@@ -47,7 +47,7 @@ public:
 			std::shared_ptr<Frame> frame_target,
 			std::shared_ptr<SyncCallStack> stack_target,
 			Value& return_value):
-		frame_target(std::move(frame_target)), stack_target(std::move(stack_target)), ret(return_value)
+		stack_target(std::move(stack_target)), frame_target(std::move(frame_target)), ret(return_value)
 		{}
 
 	void action(Runtime& rt) override {
@@ -117,7 +117,6 @@ public:
 		this->frame_target = f.rt->running->stack.back();
 		this->stack_target = f.rt->running;
 	}
-
 
 	void operator()(Frame& f) override {
 		SCL_DEBUG_MSG("o() called\n");

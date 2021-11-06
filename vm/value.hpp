@@ -15,13 +15,11 @@
 
 class Value {
 public:
-	// TODO remove these
+	// TODO remove these aliases
 	using int_t 	= ValueTypes::int_t;
 	using float_t 	= ValueTypes::float_t;
-
 	using str_t 	= ValueTypes::str_t;
 	using n_fn_t 	= ValueTypes::n_fn_t;
-
 	using list_t	= ValueTypes::list_t;
 	using list_ref	= ValueTypes::list_ref;
 	using obj_ref	= ValueTypes::obj_ref;
@@ -31,7 +29,7 @@ public:
 	// only attribute... could simply extend variant_t...
 	ValueTypes::variant_t v;
 
-	Value(){};
+	Value() = default;
 	explicit Value(const ValueTypes::empty_t in):		v(in) {}
 	explicit Value(const ValueTypes::float_t in):		v(in) {}
 	explicit Value(const str_t& in): 					v(in) {}
@@ -93,10 +91,6 @@ public:
 
 // Tracing
 namespace GC {
-
-	void mark(Value& v);
-	void mark(Value* v);
-
 	inline void mark(ValueTypes::obj_t& obj) {
 		for (auto& p : obj)
 			mark((Value&) p.second);
@@ -114,14 +108,12 @@ namespace GC {
 			mark(*obj);
 	}
 
-	void mark(NativeFunction& fn);
 	inline void mark(ValueTypes::n_fn_t fn) {
 		if (mark((void*) fn))
 			mark(*fn);
 	}
 
 	// TODO switch to ValueTypes::lam_t
-	void mark(Closure& l);
 	inline void mark(ValueTypes::lam_ref l) {
 		if (mark((void*) l))
 			mark(*l);

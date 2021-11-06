@@ -87,8 +87,9 @@ public:
 
 	Program* compiler;
 
-	ParsedMacro(AST& tree, std::string file_name,
-			std::vector<ParsedMacro*> parents, Program* prog,
+	ParsedMacro(std::string file_name,
+			std::vector<ParsedMacro*> parents,
+			Program* prog,
 			std::unordered_map<std::string, MutilatedSymbol> locals = {});
 	ParsedMacro(const ParsedMacro& other) = default;
 	ParsedMacro() = default;

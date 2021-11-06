@@ -9,7 +9,6 @@ namespace util {
 	const char* term_eff_red = "\x1B[31m";
 	const char* term_eff_reset = "\x1B[0m";
 
-
 	std::pair<long, long> pos_to_line_offset(std::istream& file, const unsigned long long pos) {
 		std::string line;
 		long i = 0;

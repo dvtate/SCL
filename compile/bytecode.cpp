@@ -23,10 +23,10 @@ std::vector<char> compile_bin(std::vector<Command> cmds)
 {
 	std::vector<char> ret;
 	char* buff = (char*) malloc(50);
-	int n;
+	size_t n;
 	for (Command& cmd : cmds) {
 		n = cmd.compile(buff);
-		for (int i = 0; i < n; i++)
+		for (size_t i = 0; i < n; i++)
 			ret.push_back(buff[i]);
 	}
 	return ret;

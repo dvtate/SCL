@@ -10,39 +10,39 @@
 
 #include "semantics.hpp"
 
-#include "../parse/lex.hpp"
-#include "../parse/parse.hpp"
-
+// Represents a file that has been imported
 class ImportedFile {
 public:
-	const char* absolute_path_str;
+	// Location of file
 	std::filesystem::path path;
+
+	// This Cstring version of path will be same pointer used in all tokens from this file
+	// So keeping it here in case it's of use later
+	const char* absolute_path_str;
+
+	// Code contained in file
 	std::shared_ptr<AST> tree;
 
 	ImportedFile(const char* absolute_path, std::filesystem::path path, std::shared_ptr<AST> tree):
-		absolute_path_str(absolute_path), path(std::move(path)), tree(std::move(tree))
+		path(std::move(path)), absolute_path_str(absolute_path), tree(std::move(tree))
 	{}
 };
 
 // This class only really exists to capture state associated with the semantic analysis...
-//   probably should have taken non-OOP approach but eh
+//   Really should just be some hidden functions
 class SemanticProcessor {
 protected:
 	// Imports
 	std::vector<ImportedFile> imports;
 
-	// Path before we fuck with the paths
-	std::filesystem::path initial_current_path;
-
-	// Associated with imports
 	/**
-	 *
+	 * Import a source file
 	 * @param t - token of import
 	 * @param file_name - import file name
 	 * @return - -1 on error otherwise the index of the import object in this->imports
 	 */
 	ssize_t import(const Token& t, const std::string& file_name) {
-		// TODO something like node_modules/ or whatever
+		// TODO something like node_modules/ or $PATH or something
 		if (file_name[0] != '.') {
 			this->add_error(SemanticError("Builtin/System imports not currently supported", t));
 			return -1;
@@ -52,7 +52,7 @@ protected:
 		std::filesystem::path p;
 		try {
 			p = std::filesystem::canonical(std::filesystem::path(file_name));
-		} catch (std::filesystem::filesystem_error e) {
+		} catch (const std::filesystem::filesystem_error& e) {
 			this->add_error(SemanticError(std::string("Invalid import, \"") + file_name + '"', t));
 			return -1;
 		}
@@ -77,17 +77,17 @@ protected:
 		memcpy(full_path_name, p.string().c_str(), len);
 
 		// Parse
-		SCL_DEBUG_MSG("import: lexing...");
+		SCL_DEBUG_MSG("import: lexing...")
 		auto is = std::ifstream(p);
 		auto tokens = tokenize_stream(is, full_path_name);
-		SCL_DEBUG_MSG("done\n");
+		SCL_DEBUG_MSG("done\n")
 
-		SCL_DEBUG_MSG("import: parsing...");
+		SCL_DEBUG_MSG("import: parsing...")
 		AST tree = parse(tokens);
-		SCL_DEBUG_MSG("done\n");
+		SCL_DEBUG_MSG("done\n")
 
 		// Generate hiden identifier
-		const auto ret = this->imports.size();
+		const ssize_t ret = this->imports.size();
 		std::string hidden_id = import_hidden_identifier(ret);
 
 		// Wrap file in a closure and assign it to a global hidden identifier
@@ -116,7 +116,7 @@ protected:
 	}
 
 	inline AST& convert_syntax_branch(AST& t);
-	inline AST& convert_syntax_leaf(AST& t) { return t; }
+	static inline AST& convert_syntax_leaf(AST& t) { return t; }
 
 	static inline std::string import_hidden_identifier(const size_t index) {
 		if (index == 0)
@@ -127,7 +127,7 @@ protected:
 public:
 	AST* head;
 
-	SemanticProcessor(AST* head): head(head) {
+	explicit SemanticProcessor(AST* head): head(head) {
 		// Need to be able to expect that top level consists of statements
 		if (head->type != AST::NodeType::STATEMENTS)
 			*head = AST(AST::NodeType::STATEMENTS, head->token, { *head });
@@ -177,7 +177,7 @@ public:
 // Finish up job of parser
 AST& SemanticProcessor::convert_syntax_branch(AST& t) {
 	if (t.type != AST::NodeType::PAREN_EXPR && t.members.empty())
-		return this->convert_syntax_leaf(t);
+		return SemanticProcessor::convert_syntax_leaf(t);
 
 	// convert paren exprs
 	if (t.type == AST::NodeType::PAREN_EXPR) {
@@ -203,7 +203,7 @@ AST& SemanticProcessor::convert_syntax_branch(AST& t) {
 					t.token.type = Token::t::IDENTIFIER;
 					t.token.token = import_hidden_identifier(idx);
 					t.members.clear();
-					return this->convert_syntax_leaf(t);
+					return SemanticProcessor::convert_syntax_leaf(t);
 				}
 			}
 		}
@@ -237,23 +237,24 @@ AST& SemanticProcessor::convert_syntax_branch(AST& t) {
 			// non-associative
 			// no action
 		} else {
-			// left-associative ((1+2)+3)
-			const auto nn = AST(AST::NodeType::OPERATION, t.token);
-			auto ret = std::make_shared<AST>(t);
-			ret->members.clear();
-			std::shared_ptr<AST> np = ret;
-			for (auto i = t.members.size() - 1; i > 0; i--) {
-				np->members.push_back(std::make_shared<AST>(nn));
-				np->members.push_back(t.members[i]);
-				np = np->members[0];
+			// left-associative 1+2+3 => ((1+2)+3)
+			// Populate from right to left
+			const auto n = AST(AST::NodeType::OPERATION, t.token);
+			auto ret = std::make_shared<AST>(AST::NodeType::OPERATION, t.token);
+			auto cur = ret;
+			for (auto i = t.members.size() - 1; i > 1; i--) {
+				cur->members.push_back(std::make_shared<AST>(n));
+				cur->members.push_back(t.members[i]);
+				cur = cur->members[0];
 			}
-			np = t.members[0];
+			cur->members.push_back(t.members[0]);
+			cur->members.push_back(t.members[1]);
 			t = *ret;
 		}
 	}
 
 	if (t.members.empty())
-		return this->convert_syntax_leaf(t);
+		return SemanticProcessor::convert_syntax_leaf(t);
 
 	// map members
 	AST& ret = t;

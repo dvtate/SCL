@@ -74,7 +74,6 @@ void ParsedMacro::read_string_lit(AST& tree) {
 			ParsedLiteral(ParsedLiteral::LitType::STRING, v));
 
 	// add command and update relocations
-	const size_t new_pos = this->body.size();
 	this->body.emplace_back(Command(Command::OPCode::USE_LIT, lit_num));
 }
 
@@ -104,7 +103,6 @@ void ParsedMacro::read_dot_op(AST& tree) {
 			ParsedLiteral(ParsedLiteral::LitType::STRING, req));
 
 	// add
-	const auto pos = this->body.size();
 	this->body.emplace_back(Command(Command::OPCode::USE_MEM_L, lit_num));
 }
 
@@ -190,7 +188,8 @@ void ParsedMacro::read_id(AST& tree) {
 				this->file_name));
 		return;
 	}
-	const size_t n_pos = this->body.size();
+
+//	const size_t n_pos = this->body.size();
 	this->body.emplace_back(Command(Command::OPCode::USE_ID, (int64_t) id.id));
 //	this->relocation.emplace_back(
 //			std::pair<std::size_t, unsigned long long>{
@@ -321,7 +320,7 @@ void ParsedMacro::read_operation(AST& t){
 }
 
 void ParsedMacro::read_macro_invoke(AST& t) {
-	SCL_DEBUG_MSG("read_macro_invoke\n");
+	SCL_DEBUG_MSG("read_macro_invoke\n")
 
 	if (t.members.size() < 1) {
 		this->errors.emplace_back(SemanticError(
@@ -358,12 +357,12 @@ void ParsedMacro::read_macro_invoke(AST& t) {
 }
 
 void ParsedMacro::read_macro_lit(AST& tree) {
-	SCL_DEBUG_MSG("read_macro_lit\n");
+	SCL_DEBUG_MSG("read_macro_lit\n")
 
 	// compile macro
 	std::vector<ParsedMacro*> pps = this->parents;
 	pps.emplace_back(this);
-	auto* mac = new ParsedMacro(tree, tree.token.file, pps, this->compiler, this->declarations);
+	auto* mac = new ParsedMacro(tree.token.file, pps, this->compiler, this->declarations);
 	for (auto& m : tree.members)
 		mac->read_tree(*m);
 
@@ -375,7 +374,7 @@ void ParsedMacro::read_macro_lit(AST& tree) {
 }
 
 void ParsedMacro::read_list_lit(AST& tree) {
-	SCL_DEBUG_MSG("read_list_lit\n");
+	SCL_DEBUG_MSG("read_list_lit\n")
 
 	// Handle comma-series
 	if (!tree.members.empty() && tree.members[0]->type == AST::NodeType::COMMA_SERIES)
@@ -389,7 +388,7 @@ void ParsedMacro::read_list_lit(AST& tree) {
 }
 
 void ParsedMacro::read_statements(AST& tree) {
-	SCL_DEBUG_MSG("read_statements\n");
+	SCL_DEBUG_MSG("read_statements\n")
 	for (auto& statement : tree.members) {
 		read_tree(*statement);
 		this->body.emplace_back(Command(Command::OPCode::CLEAR_STACK));
@@ -402,7 +401,7 @@ void ParsedMacro::read_statements(AST& tree) {
 }
 
 void ParsedMacro::read_obj_lit(AST& tree) {
-	SCL_DEBUG_MSG("read_obj_lit");
+	SCL_DEBUG_MSG("read_obj_lit")
 
 	// Start with empty object
 	this->body.emplace_back(Command(Command::OPCode::MK_OBJ, (int32_t) 0));
@@ -468,7 +467,7 @@ void ParsedMacro::read_obj_lit(AST& tree) {
 }
 
 void ParsedMacro::read_tree(AST& tree) {
-	SCL_DEBUG_MSG("read_tree: " << tree.type_name() << std::endl);
+	SCL_DEBUG_MSG("read_tree: " << tree.type_name() << std::endl)
 	switch (tree.type) {
 		case AST::NodeType::STATEMENTS:
 			read_statements(tree);
@@ -527,27 +526,13 @@ ParsedMacro* ParsedMacro::compile_expr(AST& t) {
 	return pm;
 }
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-//
-ParsedMacro::ParsedMacro(AST &tree, std::string file_name, std::vector<ParsedMacro *> parents,
-		Program* prog, std::unordered_map<std::string, MutilatedSymbol> locals):
-	file_name(std::move(file_name)), parents(std::move(parents)), compiler(prog), declarations(std::move(locals))
+ParsedMacro::ParsedMacro(
+		std::string file_name,
+		std::vector<ParsedMacro *> parents,
+		Program* prog,
+		std::unordered_map<std::string, MutilatedSymbol> locals
+):
+	declarations(std::move(locals)), file_name(std::move(file_name)), parents(std::move(parents)), compiler(prog)
 {
 	MutilatedSymbol i("i"), o("o");
 	declarations["o"] = o;
@@ -555,7 +540,6 @@ ParsedMacro::ParsedMacro(AST &tree, std::string file_name, std::vector<ParsedMac
 	this->body.emplace_back(Command(Command::OPCode::DECL_ID, i.id));
 	this->body.emplace_back(Command(Command::OPCode::DECL_ID, o.id));
 }
-
 
 MutilatedSymbol ParsedMacro::find_id(const std::string& name) {
 
@@ -625,20 +609,20 @@ void Program::load_file(const char* file_name) {
 	// parse main file
 	std::ifstream file = std::ifstream(file_name);
 
-	SCL_DEBUG_MSG("lexing...");
+	SCL_DEBUG_MSG("lexing...")
 	const auto toks = tokenize_stream(file, file_name);
-	SCL_DEBUG_MSG("done\n");
+	SCL_DEBUG_MSG("done\n")
 
-	SCL_DEBUG_MSG("parsing...");
+	SCL_DEBUG_MSG("parsing...")
 	this->main = parse(toks);
-	SCL_DEBUG_MSG("done\n");
+	SCL_DEBUG_MSG("done\n")
 
 	// semantic analysis
 	std::vector<SemanticError> errs = process_tree(main);
-	SCL_DEBUG_MSG("After Semantics: " << debug_AST(main) << std::endl);
+	SCL_DEBUG_MSG("After Semantics: " << debug_AST(main) << std::endl)
 
 	// implicit main macro
-	ParsedMacro entry(this->main, file_name, std::vector<ParsedMacro*>{}, this);
+	ParsedMacro entry(file_name, std::vector<ParsedMacro*>{}, this);
 	entry.read_tree(this->main);
 
 	// literals.back() == main()
@@ -673,13 +657,13 @@ std::vector<SemanticError> Program::compile(std::vector<Command>& ret) {
 				ret.emplace_back(Command(
 						Command::OPCode::START_LIT_STRING,
 						std::get<std::string>(lit.v)));
-				break; // switch
+				break;
 
 			case ParsedLiteral::LitType::JSON:
 				ret.emplace_back(Command(
 						Command::OPCode::START_LIT_JSON,
 						std::get<std::string>(lit.v)));
-				break; // switch
+				break;
 
 			case ParsedLiteral::LitType::MACRO: {
 				const auto macro = std::get<ParsedMacro>(lit.v);
@@ -699,8 +683,7 @@ std::vector<SemanticError> Program::compile(std::vector<Command>& ret) {
 
 				// recombine errors
 				errs.insert(errs.end(), macro.errors.begin(), macro.errors.end());
-
-				break; // switch
+				break;
 			}
 		}
 	}

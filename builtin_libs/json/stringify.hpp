@@ -19,8 +19,6 @@
 static NativeFunction* stringify_nfn;
 
 class JSONStringifyFn : public NativeFunction {
-
-	// TODO handle cyclic references...
 	static std::optional<std::string> act(
 			const Value& v,
 			Frame& f,
@@ -73,7 +71,7 @@ class JSONStringifyFn : public NativeFunction {
 				}
 
 				// Add more comma separated elements
-				for (int i = 1; i < l.size(); i++) {
+				for (size_t i = 1; i < l.size(); i++) {
 					ret += ",";
 					try {
 						ret += JSONStringifyFn::act(l[i], f, s).value_or("null");
@@ -86,7 +84,7 @@ class JSONStringifyFn : public NativeFunction {
 				// End list
 				ret += "]";
 				return ret;
-			};
+			}
 
 			// Objects
 			case ValueTypes::VType::OBJ: {

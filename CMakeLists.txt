@@ -11,7 +11,6 @@ link_libraries(dl)
 
 # Debug
 #set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O0 -lefence -g -Wall -Wextra")
-
 # Production
 set( CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O3")
 

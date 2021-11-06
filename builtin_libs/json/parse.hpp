@@ -21,15 +21,19 @@ class JSONParseFn : public NativeFunction {
 	/// Thrown on invalid JSON input
 	class ParseError : public std::exception {
 	public:
-		long pos;
+		// Character index
+		size_t pos;
+
+		// Why it's bad
 		std::string message;
-		ParseError(long pos, std::string message):
+
+		ParseError(size_t pos, std::string message):
 			pos(pos), message(std::move(message))
 		{}
 	};
 
 	/// Skip whitespaces
-	static void ws(const std::string& s, long& i) {
+	static void ws(const std::string& s, size_t& i) {
 		while (i < s.size() && isspace(s[i]))
 			if (s[i] != ' ' && s[i] != '\t' && s[i] != '\n' && s[i] != '\r')
 				return;
@@ -38,7 +42,7 @@ class JSONParseFn : public NativeFunction {
 	}
 
 	/// Parse keyword
-	static std::optional<Value> keyword(const std::string& s, long& i) {
+	static std::optional<Value> keyword(const std::string& s, size_t& i) {
 		const char* sptr = s.c_str() + i;
 		if (strncmp(sptr, "true", 4) == 0)
 			return Value(true);
@@ -50,12 +54,11 @@ class JSONParseFn : public NativeFunction {
 	}
 
 	/// Parse string literal
-	static std::optional<Value> str(const std::string& s, long& i) {
+	static std::optional<Value> str(const std::string& s, size_t& i) {
 		// Read start
 		if (s[i] != '"')
 			return std::nullopt;
 		i++;
-		long start = i;
 		std::string ret;
 
 		while (i < s.size()) {
@@ -132,7 +135,7 @@ class JSONParseFn : public NativeFunction {
 	}
 
 	/// Parse number literal
-	static std::optional<Value> num(const std::string& s, long& i) {
+	static std::optional<Value> num(const std::string& s, size_t& i) {
 		// Read minus
 		auto start = i;
 		bool minus = false;
@@ -199,7 +202,7 @@ class JSONParseFn : public NativeFunction {
 	}
 
 	/// Parse Array
-	static std::optional<Value> array(const std::string& s, long& i, Frame& f) {
+	static std::optional<Value> array(const std::string& s, size_t& i, Frame& f) {
 		// Arrays start with '['
 		if (s[i] != '[')
 			return std::nullopt;
@@ -240,7 +243,7 @@ class JSONParseFn : public NativeFunction {
 	}
 
 	/// Read Object
-	static std::optional<Value> object(const std::string& s, long& i, Frame& f) {
+	static std::optional<Value> object(const std::string& s, size_t& i, Frame& f) {
 		// Objects start with '{'
 		if (s[i] != '{')
 			return std::nullopt;
@@ -290,7 +293,7 @@ class JSONParseFn : public NativeFunction {
 	}
 
 	/// Parse JSON value
-	static std::optional<Value> value(const std::string& s, long& i, Frame& f) {
+	static std::optional<Value> value(const std::string& s, size_t& i, Frame& f) {
 		ws(s, i);
 		auto ret = str(s, i);
 		if (!ret) ret = array(s, i, f);
@@ -316,7 +319,7 @@ public:
 		// Parse value
 		// Translate errors
 		// Throw if any remaining content
-		long i = 0;
+		size_t i = 0;
 		const auto& str = arg.get<ValueTypes::str_t>();
 		try {
 			auto ret = value(str, i, f);

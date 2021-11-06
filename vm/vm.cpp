@@ -28,7 +28,7 @@ void SyncCallStack::mark() {
 }
 
 void SyncCallStack::throw_error(Value thrown)  {
-	for (int i = this->stack.size() - 1; i >= 0; i--) {
+	for (auto i = this->stack.size() - 1; i >= 0; i--) {
 		auto* h = this->stack[i]->error_handler;
 		if (h != nullptr) {
 			// Pop the stack back one level behind that of the handler

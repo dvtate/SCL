@@ -16,7 +16,6 @@
 #include "bc/bc.hpp"
 #include "value.hpp"
 
-
 class ClosureDef {
 public:
 
@@ -27,10 +26,11 @@ public:
 	std::vector<int64_t> decl_ids;
 
 	// instruction code
-	std::vector<BCInstr>* body;
+	// NOTE must be freed by owner (or more likely at end of program since few instances)
+	std::vector<BCInstr>* body{};
 
 	// Position in the bytecode that the macro starts at
-	std::size_t start_pos;
+	std::size_t start_pos{};
 
 	ClosureDef(
 			std::vector<int64_t> capture_ids,
@@ -43,9 +43,7 @@ public:
 		start_pos(start_pos)
 		{}
 	ClosureDef() = default;
-	~ClosureDef() {
-		// NOTE need to manually delete body
-	}
+	~ClosureDef() = default;
 
 	[[nodiscard]] inline int64_t i_id()
 		const noexcept { return this->decl_ids[0]; }
@@ -66,11 +64,11 @@ public:
 		VAL = 2,
 	};
 
-	inline Ltype type() const {
+	[[nodiscard]] inline Ltype type() const {
 		return (Ltype) v.index();
 	}
 
-	Literal() {}
+	Literal() = default;
 	explicit Literal(const ClosureDef& c): v(c) {}
 	explicit Literal(const std::string& str, bool is_json = false);
 

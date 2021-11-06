@@ -283,16 +283,5 @@ let delay3 = (: set_timeout(i, o)() )
 - No redundant language features
 - Avoid strong opinions
 
-## Refactoring targets
-Targets for refactoring
-### Garbage Collection
-- Tracing, STW, GC
-- Should directly manage the heap itself instead of relying on malloc+free
-- Optimizations to space efficiency and performance
-- Improving it is lower priority than other language features
-
-### Parser
-I made a custom shift reduce parser. Which seems to work well, but it would probably be a good idea to fully spec out the grammar and make it more readable. Also, probably room for improvements to performance. 
-
 ## More coming soon
 Most of these features are at least working. There are some things that are implemented haven't made their way into this guide and even more that I haven't implemented but [have planned](https://docs.google.com/spreadsheets/d/1HZEsRAPhoAOnP-zT70_9bgLTrJVC9NmNyxKYWxsTT8Q/edit?usp=sharing). If there's anything you want to see added, lmk.

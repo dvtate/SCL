@@ -56,6 +56,7 @@ int main(int argc, char** argv) {
 			break;
 		case 'm':
 			out_minified = true;
+			[[fallthrough]];
 		default:
 			b = true;
 			break;

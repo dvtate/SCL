@@ -15,7 +15,7 @@ namespace vm_util {
 
 	// Get the value stored in another value with given key
 	Value index_value(Frame& f, Value& v, ValueTypes::int_t index);
-	Value index_value(Frame& f, Value& v, ValueTypes::str_t index);
+	Value index_value(Frame& f, Value& v, const ValueTypes::str_t& index);
 	Value index_value(Frame& f, Value& v, Value& index);
 }
 

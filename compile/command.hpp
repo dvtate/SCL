@@ -321,11 +321,7 @@ public:
 				strncpy(ret + 1, (char *) &n, sizeof(double));
 				break;
 			}
-			case ArgType::NO_ARG: {
-				ret = (char *) realloc(ret, s);
-				ret[0] = this->instr;
-				break;
-			}
+			case ArgType::NO_ARG:
 			default: {
 				ret = (char *) realloc(ret, s);
 				ret[0] = this->instr;
@@ -341,7 +337,7 @@ public:
 	 *
 	 * @returns true if valid false if something's wrong
 	 */
-	bool check_arg() {
+	[[nodiscard]] bool check_arg() const {
 		const auto ind = this->arg.index();
 		switch (this->arg_type()) {
 			case ArgType::INT16:	return ind == 0;

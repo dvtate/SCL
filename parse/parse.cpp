@@ -178,7 +178,7 @@ static inline AST next_node(const std::vector<Token>& tokens, size_t& i, std::ve
  * @returns -1 if passed invalid close character
  * @throws {SyntaxError} if no matching container start
  */
-static inline int prev_matching_container_index(std::vector<AST>& stack, const AST& nn) {
+static inline ssize_t prev_matching_container_index(std::vector<AST>& stack, const AST& nn) {
 	if (nn.type != AST::NodeType::CONT_CLOSE)
 		return -1;
 	ssize_t ret = stack.size();
@@ -213,8 +213,8 @@ static inline int prev_matching_container_index(std::vector<AST>& stack, const A
  * @param n - lookahead node
  * @return - index of operator or -1 if none found
  */
-static inline int prev_operator(std::vector<AST>& stack, const AST& lookahead) {
-	int min_i = 0;
+static inline ssize_t prev_operator(std::vector<AST>& stack, const AST& lookahead) {
+	ssize_t min_i = 0;
 	// only reduce operators within current container scope (ie - parens)
 	if (lookahead.type == AST::NodeType::CONT_CLOSE) {
 		min_i = prev_matching_container_index(stack, lookahead);
@@ -370,7 +370,7 @@ static inline const char* reduce_operator(std::vector<AST>& stack, const size_t 
  * @param n - lookahead
  * @return - true/false depending on if a reduction was made
  */
-static inline bool reduce_operators(std::vector<struct AST>& stack, const AST& n) {
+static inline bool reduce_operators(std::vector<AST>& stack, const AST& n) {
 	// dont reduce if given neg
 	if (n.type == AST::NodeType::OPERATOR && n.token.token == "neg")
 		return false;
@@ -378,7 +378,7 @@ static inline bool reduce_operators(std::vector<struct AST>& stack, const AST& n
 	// lookahead is an operator
 	if (!isOperand(n)) {
 		// find last operator
-		const int i = prev_operator(stack, n);
+		const ssize_t i = prev_operator(stack, n);
 		if (i < 0)
 			return false;
 
@@ -390,7 +390,7 @@ static inline bool reduce_operators(std::vector<struct AST>& stack, const AST& n
 		if (prec_n <= prec_p || stack[i].token.token == ";") {
 			// NOTE reduction can fail in normal course of parse ://///
 			const auto ret = reduce_operator(stack, i);
-			SCL_DEBUG_MSG("Parser reduce operator(" << stack[i].token.token << "): " << (ret ? ret : "null") << std::endl);
+			SCL_DEBUG_MSG("Parser reduce operator(" << stack[i].token.token << "): " << (ret ? ret : "null") << std::endl)
 
 			return !ret;
 		} else {
@@ -411,7 +411,7 @@ static inline bool reduce_operators(std::vector<struct AST>& stack, const AST& n
 
 		// try to reduce it
 		const auto ret = reduce_operator(stack, p_op_i);
-		SCL_DEBUG_MSG("Parser ASI reduce operator(" << stack[p_op_i].token.token << "): " << (ret ? ret : "null") << std::endl);
+		SCL_DEBUG_MSG("Parser ASI reduce operator(" << stack[p_op_i].token.token << "): " << (ret ? ret : "null") << std::endl)
 		return !ret;
 	}
 
@@ -609,8 +609,8 @@ static inline bool reduce_asi(std::vector<AST>& stack, const AST& n) {
 		return false;
 
 	// Verify that all tokens are fully parsed
-	for (auto n : stack)
-		if (n.type > AST::NodeType::LIST)
+	for (const auto& nn : stack)
+		if (nn.type > AST::NodeType::LIST)
 			return false;
 
 	// Put them all in a global statements node
@@ -626,7 +626,7 @@ static inline bool reduce_asi(std::vector<AST>& stack, const AST& n) {
 }
 
 // Follow rules to form parse tree
-static inline bool reduce(const std::vector<Token>& tokens, size_t& i, std::vector<AST>& stack, const AST& n) {
+static inline bool reduce(std::vector<AST>& stack, const AST& n) {
 	if (stack.empty())
 		return false;
 
@@ -688,7 +688,7 @@ AST parse(const std::vector<Token>& tokens) {
 		}
 #endif
 		// call reduce until it stops making changes
-		while (reduce(tokens, i, stack, tok));
+		while (reduce(stack, tok));
 
 		// shift node onto parse stack
 		if (can_shift(tok))
@@ -712,6 +712,7 @@ AST parse(const std::vector<Token>& tokens) {
 		// Point to everything on stack in their code
 		// TODO mark statements groups as safe and/or other regions as bad
 		std::vector<SyntaxError> errs;
+		errs.reserve(stack.size());
 		for (auto& t : stack)
 			errs.emplace_back(SyntaxError(t.token,
 					"Unable to parse to single item (maybe bad syntax here?)"));

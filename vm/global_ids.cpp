@@ -72,7 +72,7 @@ class IfFn : public NativeFunction {
 	void operator()(Frame& f) override {
 		Value i = f.eval_stack.back();
 		f.eval_stack.back() = Value();
-		SCL_DEBUG_MSG("if(" << i.to_string() << ") called");
+		SCL_DEBUG_MSG("if(" << i.to_string() << ") called")
 		// invalid arg
 		if (i.type() != Value::VType::LIST)
 			return;
@@ -221,7 +221,6 @@ class SizeFn : public NativeFunction {
 class CopyFn : public NativeFunction {
 	// TODO move this to Value class
 	static Value copy_value(const Value& v, Frame& f) {
-		do_branch:
 		switch (v.type()) {
 			// non-reference types
 			case ValueTypes::VType::FLOAT:
@@ -236,23 +235,23 @@ class CopyFn : public NativeFunction {
 				for (auto& e : *l)
 					ret->emplace_back(copy_value(e, f));
 				return Value(ret);
-			};
+			}
 			case ValueTypes::VType::OBJ: {
 				const auto* o = std::get<ValueTypes::obj_ref>(v.v);
 				auto* ret = f.gc_make<ValueTypes::obj_t>();
 				for (const auto& p : *o)
 					(*ret)[p.first] = copy_value(p.second, f);
 				return Value(ret);
-			};
+			}
 
 			// TODO closures, native functions:
 			case ValueTypes::VType::LAM: case ValueTypes::VType::N_FN:
 				return v;
 
 			case ValueTypes::VType::REF:
+			default:
 				throw "????";
 		}
-		return Value();
 	}
 
 public:
@@ -284,12 +283,14 @@ class ErrorFn : public NativeFunction {
 				std::string name = l[0].to_string();
 				std::string message = l[1].to_string();
 				f.eval_stack.back() = gen_error_object(name, message, f);
+				break;
 			}
 			case ValueTypes::VType::OBJ: {
 				ValueTypes::obj_t &o = *std::get<ValueTypes::obj_t *>(i.v);
 				std::string name = o["name"].to_string();
 				std::string message = o["message"].to_string();
 				f.eval_stack.back() = gen_error_object(name, message, f);
+				break;
 			}
 
 			// No arg = no message

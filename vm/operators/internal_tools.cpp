@@ -35,7 +35,7 @@ namespace vm_util {
 				//
 				f.rt->running->stack.emplace_back(new Frame(f.rt, c));
 				return;
-			};
+			}
 
 			default:
 				if (uncallable) {
@@ -75,7 +75,7 @@ namespace vm_util {
 	}
 
 	// String index, prolly object
-	Value index_value(Frame& f, Value& v, const ValueTypes::str_t index) {
+	Value index_value(Frame& f, Value& v, const ValueTypes::str_t& index) {
 		if (std::holds_alternative<ValueTypes::obj_ref>(v.v)) {
 			return (*std::get<ValueTypes::obj_ref>(v.v))[index];
 		} else {

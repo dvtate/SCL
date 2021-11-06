@@ -38,7 +38,7 @@ static inline std::string src_operator(AST& tree) {
 
 	// Join on op
 	std::string ret = operand(*tree.members[0]);
-	for (int i = 1; i < tree.members.size(); i++)
+	for (size_t i = 1; i < tree.members.size(); i++)
 		ret += op + operand(*tree.members[i]);
 	return ret;
 }

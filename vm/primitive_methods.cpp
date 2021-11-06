@@ -22,7 +22,7 @@ public:
 
 	void operator()(Frame& f) override {
 		// start = index of first non-space character
-		int start = 0;
+		size_t start = 0;
 		do {
 			if (!isspace(this->str[start]))
 				break;
@@ -74,7 +74,7 @@ public:
 	void mark() override {}
 };
 
-
 Value get_primitive_member(Frame& f, Value& v, const std::string& key) {
+	// TODO
 	return Value();
 }

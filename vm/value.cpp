@@ -8,7 +8,6 @@
 #include "closure.hpp"
 #include "value.hpp"
 
-
 // aka operator == or operator ?=
 bool Value::eq_value(const Value& other) const {
 	const Value* l = this;
@@ -100,7 +99,7 @@ bool Value::truthy() const {
 		case ValueTypes::VType::INT:
 			return std::get<ValueTypes::int_t>(val->v);
 		case ValueTypes::VType::FLOAT:
-			return std::get<ValueTypes::float_t>(val->v);
+			return (bool) std::get<ValueTypes::float_t>(val->v);
 		case ValueTypes::VType::STR:
 			return !std::get<ValueTypes::str_t>(val->v).empty();
 		case ValueTypes::VType::LIST:
@@ -130,7 +129,7 @@ std::string Value::to_string(bool recursive) const {
 			std::stringstream ss;
 			ss <<std::get<ValueTypes::float_t>(this->v);
 			return ss.str();
-		};
+		}
 		case VType::STR:
 			return recursive
 				? (std::string("\"") + std::get<ValueTypes::str_t>(this->v) + "\"")

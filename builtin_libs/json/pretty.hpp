@@ -53,7 +53,7 @@ class JSONPrettyStrFn : public NativeFunction {
 				ss <<v.get<ValueTypes::float_t>();
 				return ss.str();
 				// return std::to_string(std::get<ValueTypes::float_t>(v.v));
-			};
+			}
 
 			case ValueTypes::VType::INT:
 				return std::to_string(v.get<ValueTypes::int_t>());
@@ -83,7 +83,7 @@ class JSONPrettyStrFn : public NativeFunction {
 				}
 
 				// Add more comma separated elements
-				for (int i = 1; i < l.size(); i++) {
+				for (size_t i = 1; i < l.size(); i++) {
 					ret += ",\n";
 					ret += this->indent_str(indent_level);
 					try {
@@ -98,7 +98,7 @@ class JSONPrettyStrFn : public NativeFunction {
 				ret += "\n" + this->indent_str(indent_level - 1);
 				ret += "]";
 				return ret;
-			};
+			}
 
 			// Objects
 			case ValueTypes::VType::OBJ: {
@@ -163,7 +163,7 @@ class JSONPrettyStrFn : public NativeFunction {
 	}
 
 public:
-	explicit JSONPrettyStrFn(const std::string& indent = "\t"): indent(indent) {}
+	explicit JSONPrettyStrFn(std::string indent = "\t"): indent(std::move(indent)) {}
 
 	void operator()(Frame& f) override {
 		auto& arg = f.eval_stack.back();
