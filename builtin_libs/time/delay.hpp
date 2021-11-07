@@ -30,10 +30,10 @@ class DelayFn : public virtual NativeFunction {
 		// Get sleep duration from user
 		using namespace std::chrono_literals;
 		auto duration = 1ms;
-		if (f.eval_stack.back().type() == Value::VType::FLOAT) {
-			duration *= std::get<Value::float_t>(f.eval_stack.back().v);
-		} else if (f.eval_stack.back().type() == Value::VType::INT) {
-			duration *= std::get<Value::int_t>(f.eval_stack.back().v);
+		if (f.eval_stack.back().type() == ValueTypes::VType::FLOAT) {
+			duration *= std::get<ValueTypes::float_t>(f.eval_stack.back().v);
+		} else if (f.eval_stack.back().type() == ValueTypes::VType::INT) {
+			duration *= std::get<ValueTypes::int_t>(f.eval_stack.back().v);
 		} else {
 			f.rt->running->throw_error(gen_error_object("TypeError", "Expected a number", f));
 			return;
