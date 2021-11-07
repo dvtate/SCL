@@ -163,7 +163,7 @@ public:
 		SCL_DEBUG_MSG("invoked async wrapper");
 
 		// Invalid argument
-		if (this->v.type() != Value::VType::LAM) {
+		if (this->v.type() != ValueTypes::VType::LAM) {
 			f.rt->running->throw_error(gen_error_object("TypeError", "async expected a closure", f));
 			return;
 		}
@@ -174,7 +174,7 @@ public:
 		auto& c = *std::get<ValueTypes::lam_ref>(v.v);
 
 		// get input (pass by reference vs value
-		c.vars[c.i_id] =  f.eval_stack.back().type() == Value::VType::REF
+		c.vars[c.i_id] =  f.eval_stack.back().type() == ValueTypes::VType::REF
 			? std::get<ValueTypes::ref_t>(f.eval_stack.back().v)
 			: f.gc_make<Value>(f.eval_stack.back());
 		f.eval_stack.pop_back();

@@ -22,7 +22,7 @@ static inline void invoke(Frame& f) {
 // [ ... ]
 void make_list(Frame& f, uint32_t n) {
 	Value lv(f.gc_make<ValueTypes::list_t>());
-	auto* l = std::get<Value::list_ref>(lv.v);
+	auto* l = std::get<ValueTypes::list_ref>(lv.v);
 
 	// take items off stack and put them into lv -> l
 	l->reserve(n);
@@ -192,7 +192,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			}
 			switch (f.eval_stack.back().type()) {
 				case ValueTypes::VType::LIST:
-					(*std::get<Value::list_ref>(f.eval_stack.back().v))[ind] = v;
+					(*std::get<ValueTypes::list_ref>(f.eval_stack.back().v))[ind] = v;
 					break;
 				case ValueTypes::VType::STR:
 					try {
@@ -226,8 +226,8 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 		case BCInstr::OPCode::USE_MEM_L:
 			// Object member getter
 			try {
-				f.eval_stack.back() = (*std::get<Value::obj_ref>(f.eval_stack.back().v))
-					[std::get<Value::str_t>(std::get<Value>(f.rt->vm->literals[cmd.i].v).v)];
+				f.eval_stack.back() = (*std::get<ValueTypes::obj_ref>(f.eval_stack.back().v))
+					[std::get<ValueTypes::str_t>(std::get<Value>(f.rt->vm->literals[cmd.i].v).v)];
 			} catch (const std::bad_variant_access& e) {
 				f.rt->running->throw_error(gen_error_object(
 						"TypeError",
@@ -246,8 +246,8 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 
 			// Set object member
 			// TODO pre-hash the literal
-			(*std::get<Value::obj_ref>(f.eval_stack.back().v))
-				[std::get<Value::str_t>(std::get<Value>(f.rt->vm->literals[cmd.i].v).v)]
+			(*std::get<ValueTypes::obj_ref>(f.eval_stack.back().v))
+				[std::get<ValueTypes::str_t>(std::get<Value>(f.rt->vm->literals[cmd.i].v).v)]
 				= std::move(v);
 
 			// Object stays on the stack

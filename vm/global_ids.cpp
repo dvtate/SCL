@@ -74,11 +74,11 @@ class IfFn : public NativeFunction {
 		f.eval_stack.back() = Value();
 		SCL_DEBUG_MSG("if(" << i.to_string() << ") called")
 		// invalid arg
-		if (i.type() != Value::VType::LIST)
+		if (i.type() != ValueTypes::VType::LIST)
 			return;
 
 		// get values
-		auto& params = *std::get<Value::list_ref>(i.v);
+		auto& params = *std::get<ValueTypes::list_ref>(i.v);
 
 		// pick value
 		const bool cond = params[0].truthy();
@@ -118,7 +118,7 @@ class StrFn : public NativeFunction {
 class ImportFn : public NativeFunction {
 public:
 	void operator()(Frame& f) override {
-		const std::string path = std::get<Value::str_t>(f.eval_stack.back().v);
+		const std::string path = std::get<ValueTypes::str_t>(f.eval_stack.back().v);
 
 		// import file
 		void* dl = dlopen(path.c_str(), RTLD_LAZY);
@@ -148,18 +148,18 @@ class NumFn : public NativeFunction {
 		Value& in = f.eval_stack.back();
 
 		// already a Num => return is
-		if (std::holds_alternative<Value::int_t>(in.v) ||
-			std::holds_alternative<Value::float_t>(in.v))
+		if (std::holds_alternative<ValueTypes::int_t>(in.v) ||
+			std::holds_alternative<ValueTypes::float_t>(in.v))
 			return;
 
 		// parse strings
-		if (std::holds_alternative<Value::str_t>(in.v)) {
-			const auto& s = std::get<Value::str_t>(in.v);
+		if (std::holds_alternative<ValueTypes::str_t>(in.v)) {
+			const auto& s = std::get<ValueTypes::str_t>(in.v);
 			try {
-				f.eval_stack.back() = Value((Value::int_t) std::stoll(s));
+				f.eval_stack.back() = Value((ValueTypes::int_t) std::stoll(s));
 			} catch (...) {
 				try {
-					f.eval_stack.back() = Value((Value::float_t) std::stod(s));
+					f.eval_stack.back() = Value((ValueTypes::float_t) std::stod(s));
 				} catch (...) {
 					f.eval_stack.back() = Value();
 				}

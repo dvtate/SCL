@@ -15,24 +15,13 @@
 
 class Value {
 public:
-	// TODO remove these aliases
-	using int_t 	= ValueTypes::int_t;
-	using float_t 	= ValueTypes::float_t;
-	using str_t 	= ValueTypes::str_t;
-	using n_fn_t 	= ValueTypes::n_fn_t;
-	using list_t	= ValueTypes::list_t;
-	using list_ref	= ValueTypes::list_ref;
-	using obj_ref	= ValueTypes::obj_ref;
-
-	using VType = ValueTypes::VType;
-
 	// only attribute... could simply extend variant_t...
 	ValueTypes::variant_t v;
 
 	Value() = default;
 	explicit Value(const ValueTypes::empty_t in):		v(in) {}
 	explicit Value(const ValueTypes::float_t in):		v(in) {}
-	explicit Value(const str_t& in): 					v(in) {}
+	explicit Value(const ValueTypes::str_t& in): 					v(in) {}
 	explicit Value(const ValueTypes::int_t in): 		v(in) {}
 	explicit Value(ValueTypes::lam_t in): 				v(in) {}
 	explicit Value(ValueTypes::n_fn_t in):				v(in) {}
@@ -50,7 +39,7 @@ public:
 	}
 
 	[[nodiscard]] inline ValueTypes::VType type() const {
-		return (VType) this->v.index();
+		return (ValueTypes::VType) this->v.index();
 	}
 
 	[[nodiscard]] inline const std::string& type_name() const {

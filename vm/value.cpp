@@ -22,7 +22,7 @@ bool Value::eq_value(const Value& other) const {
 		return false;
 
 	if (std::holds_alternative<ValueTypes::str_t>(l->v))
-		return std::get<ValueTypes::str_t>(l->v) == std::get<Value::str_t>(r->v);
+		return std::get<ValueTypes::str_t>(l->v) == std::get<ValueTypes::str_t>(r->v);
 	if (std::holds_alternative<ValueTypes::int_t>(l->v))
 		return std::get<ValueTypes::int_t>(l->v) == std::get<ValueTypes::int_t>(r->v);
 	if (std::holds_alternative<ValueTypes::float_t>(l->v))
@@ -61,12 +61,12 @@ bool Value::eq_identity(const Value& other) const {
 
 	auto t = this->type();
 
-	if (t == Value::VType::STR)
+	if (t == ValueTypes::VType::STR)
 		return std::get<ValueTypes::str_t>(this->v) == std::get<ValueTypes::str_t>(other.v);
-	if (t == Value::VType::INT)
+	if (t == ValueTypes::VType::INT)
 		return std::get<ValueTypes::int_t >(this->v) == std::get<ValueTypes::int_t>(other.v);
-	if (t == Value::VType::FLOAT)
-		return std::get<ValueTypes::float_t >(this->v) == std::get<Value::float_t>(other.v);
+	if (t == ValueTypes::VType::FLOAT)
+		return std::get<ValueTypes::float_t >(this->v) == std::get<ValueTypes::float_t>(other.v);
 	if (t == ValueTypes::VType::EMPTY)
 		return true;
 	if (t == ValueTypes::VType::LIST) {
@@ -79,11 +79,11 @@ bool Value::eq_identity(const Value& other) const {
 				return false;
 		return true;
 	}
-	if (t == Value::VType::N_FN) {
+	if (t == ValueTypes::VType::N_FN) {
 		return std::get<ValueTypes::n_fn_t>(v) == std::get<ValueTypes::n_fn_t>(other.v);
 	}
 	// must be same instance of same function
-	if (t == Value::VType::LAM) {
+	if (t == ValueTypes::VType::LAM) {
 		return std::get<ValueTypes::lam_ref>(v) == std::get<ValueTypes::lam_ref>(other.v);
 	}
 
@@ -104,7 +104,7 @@ bool Value::truthy() const {
 			return !std::get<ValueTypes::str_t>(val->v).empty();
 		case ValueTypes::VType::LIST:
 			return !std::get<ValueTypes::list_ref>(val->v)->empty();
-		case ValueTypes::VType::LAM: case VType::N_FN:
+		case ValueTypes::VType::LAM: case ValueTypes::VType::N_FN:
 			return true;
 		case ValueTypes::VType::EMPTY:
 			return false;
@@ -113,32 +113,35 @@ bool Value::truthy() const {
 			std::cout <<"ERROR: Value::truthy typerror: " <<val->v.index() <<std::endl;
 			return false;
 	}
-//	if (std::holds_alternative<Value::bool_t>(val->v))
-//		return std::get<Value::bool_t>(val->v);
+//	if (std::holds_alternative<ValueTypes::bool_t>(val->v))
+//		return std::get<ValueTypes::bool_t>(val->v);
 }
 
-/// Create String representation of value
-// @param recursive: include quotes around strings
+/**
+ *  Create String representation of value
+ * @param recursive - include quotes around strings or not
+ * @return string representation of value
+ */
 std::string Value::to_string(bool recursive) const {
 	switch (this->type()) {
-		case VType::EMPTY:
+		case ValueTypes::VType::EMPTY:
 			return "empty";
-		case VType::INT:
+		case ValueTypes::VType::INT:
 			return std::to_string(std::get<ValueTypes::int_t>(this->v));
-		case VType::FLOAT: {
+		case ValueTypes::VType::FLOAT: {
 			std::stringstream ss;
 			ss <<std::get<ValueTypes::float_t>(this->v);
 			return ss.str();
 		}
-		case VType::STR:
+		case ValueTypes::VType::STR:
 			return recursive
 				? (std::string("\"") + std::get<ValueTypes::str_t>(this->v) + "\"")
 				: std::get<ValueTypes::str_t>(this->v);
-		case VType::LAM:
+		case ValueTypes::VType::LAM:
 			return "(: ... )";
-		case VType::N_FN:
+		case ValueTypes::VType::N_FN:
 			return "(: native )";
-		case VType::LIST: {
+		case ValueTypes::VType::LIST: {
 			auto& l = *std::get<ValueTypes::list_ref>(this->v);
 			std::string ret = "[ ";
 			if (!l.empty())
@@ -150,7 +153,7 @@ std::string Value::to_string(bool recursive) const {
 			ret += " ]";
 			return ret;
 		}
-		case VType::OBJ: {
+		case ValueTypes::VType::OBJ: {
 			std::string ret = "{";
 			auto& o = *std::get<ValueTypes::obj_ref>(this->v);
 			if (!o.empty())

@@ -61,8 +61,8 @@ class ExitProgramReturn : public NativeFunction {
 public:
 
 	void operator()(Frame& f) override {
-		if (std::holds_alternative<Value::int_t>(f.eval_stack.back().v))
-			exit(std::get<Value::int_t>(f.eval_stack.back().v));
+		if (std::holds_alternative<ValueTypes::int_t>(f.eval_stack.back().v))
+			exit(std::get<ValueTypes::int_t>(f.eval_stack.back().v));
 		else
 			exit(0);
 	}
@@ -168,8 +168,8 @@ void Runtime::run() {
 					// 	implicitly return value on top of stack
 					std::shared_ptr<Frame>& f = running->stack.back();
 					Value* ret_fn = f->closure.vars[f->closure.o_id];
-					if (std::holds_alternative<Value::n_fn_t>(ret_fn->v)) {
-						ValueTypes::n_fn_t receiver = std::get<Value::n_fn_t>(ret_fn->v);
+					if (std::holds_alternative<ValueTypes::n_fn_t>(ret_fn->v)) {
+						auto receiver = std::get<ValueTypes::n_fn_t>(ret_fn->v);
 						(*receiver)(*f);
 					} else {
 						freeze_running();
