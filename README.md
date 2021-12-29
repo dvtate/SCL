@@ -9,52 +9,13 @@ $ cd build
 $ cmake ..
 $ make -j `nproc`
 ```
-
-## Run
-Currently more focused on language stuff than main program, sorry this is ugly for now (feel free to send pr). Notice the separated compile and run operations.
-- `-f` : required input file
-- `-O` : compile and output bytecode text
-- `-o` : compile and output compressed bytecode
-- `-r` : run compressed bytecode
-- `-h` : print help msg
-
-### Compile
-#### Bytecode Text
-Useful for debugging compiler. Also prints compile errors/warnings.
-<details>
-	<summary>See demo</summary>
-
-The following example shows the bytecode text for `print("Hi")`
-```
-[SCL/build]$ echo 'print("Hi")' > test.scl && ./scl -ftest.s -o
-# Literal 0:
-String: "Hi"
-# Literal 1:
-Macro: (:
-	DECL_ID 20
-	DECL_ID 21
-	USE_LIT 0
-	USE_ID 1
-	INVOKE
-)
-#### Begin Fault Table ####
-ID_NAME i : ID_ID 20
-ID_NAME o : ID_ID 21
-INVOKE_POS 6 : INVOKE_REPR print
-In file: test.s
-Compiled Line#6 came from Source Pos#10
-```
-</details>
-
-#### Bytecode bin
-The following command will compile  `print("Hi")` in test.s. If it doesn't have any syntax errors it will output a file `o.bin` which you can run with the `-r` flag
-```
-$ echo 'print("Hi")' > test.s && ./dlang -ftest.s -o
-compiled to o.bin
-$ ./dlang -fo.bin -r
-Hi
-$
-```
+This will give you a binary which you can do `./scl help` for documentation on how to use. The commands are as follows:
+- `build`: generate a bytecode file for given source code
+- `exec`: run a bytecode file
+- `eval`: compile and run given source code
+- `minify`: Minify input source code
+- `debug`: generate bytecode text for given source code
+Notice that all of these commands take one argument as their input file.
 
 ## Language Structure
 - Statements end with semicolons (`;`)
