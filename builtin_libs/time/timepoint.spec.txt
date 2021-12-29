@@ -1,4 +1,4 @@
--- when: either date string, epoch ms, or empty for current local time
+ -- when: either date string, epoch ms, or empty for current local time
 class TimePoint(when?: Str | Int):
 	-- unix timestamp (epoch ms)
 	timestamp: Int

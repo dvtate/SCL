@@ -1,7 +1,7 @@
 //
 // Created by tate on 03/07/2021.
 //
-
+#include <bitset>
 #include "../../vm/operators/internal_tools.hpp"
 
 #include "delay.hpp"

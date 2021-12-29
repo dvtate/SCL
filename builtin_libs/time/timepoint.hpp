@@ -23,7 +23,7 @@ class TimePointFn : public NativeFunction {
 public:
 	void operator()(Frame& f) override {
 		auto arg = f.eval_stack.back();
-
+		std::timeval tv;
 		std::timespec ts;
 		std::timespec_get(&ts, TIME_UTC)
 

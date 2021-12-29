@@ -1,5 +1,3 @@
-#include <unistd.h>
-#include <getopt.h>
 #include <iostream>
 
 #include "parse/lex.hpp"
@@ -14,64 +12,58 @@
 // scl <cmd> <in> options
 
 void print_help_msg(){
-	std::cout <<"For now these are options:\n"
-	   " -c : compile\n"
-	   " -r : run\n"
-	   " -o : output bytecode text\n"
-	   " -O : output compressed bytecode\n"
-	   " -f : required input file\n";
+	std::cout <<"scl <command> [flags]\n"
+		<<"\nUsage:\n"
+		<<"scl build <entry file>    # Generate bytecode binary\n"
+		<<"scl minify <entry file>   # Minify the input code\n"
+		<<"scl debug <entry file>    # Generate bytecode text\n"
+		<<"scl exec <bytecode file>  # Execute bytecode\n"
+		<<"scl eval <entry file>     # Build and Exect programs\n";
+
+#ifndef SCL_DEBUG_MSG
+	std::cout <<"\nRecompile with debugging enabled for verbose output\n";
+#else
+	std::cout <<"\nYou are using the debug version of SCL\n";
+#endif
 }
 
+// The main virtual machine instance
 VM* interpreter;
 
-
 int main(int argc, char** argv) {
-	/* For now these are options
-	 * -c : compile
-	 * -r : run(let return right)
-
-	 * -o : output bytecode text
-	 * -O : output compressed bytecode
-	 * -f : required input file
-	 */
-
-	bool run, out_bc, out_bct, out_minified;
-	run = out_bc = out_bct = out_minified = false;
-	char* fname = nullptr;
-	int opt;
-	while ((opt = getopt(argc, argv, "croOmf:"))) {
-		int b = false;
-		switch (opt) {
-		case 'r':
-			run = true;
-			break;
-		case 'o':
-			out_bct = true;
-			break;
-		case 'O':
-			out_bc = true;
-			break;
-		case 'f':
-			fname = optarg;
-			break;
-		case 'm':
-			out_minified = true;
-			[[fallthrough]];
-		default:
-			b = true;
-			break;
-		}
-		if (b) break;
-	}
-
-	// they want a shell
-	if (fname == nullptr || !(run || out_bc || out_bct || out_minified)) {
+	// Not enough arguments
+	if (argc < 3) {
 		print_help_msg();
 		return 1;
 	}
 
-	if (run) {
-		std::ifstream bc_src = std::ifstream(fname);
+	const char* cmd = argv[1];
+	const char* arg = argv[2];
+	if (!arg) {
+		print_help_msg();
+		return 1;
+	}
+
+	bool exec, out_bc, out_bct, out_minified, eval;
+	exec = out_bc = out_bct = out_minified = eval = false;
+
+	if (strcmp(cmd, "build") == 0)
+		out_bc = true;
+	else if (strcmp(cmd, "minify") == 0)
+		out_minified = true;
+	else if (strcmp(cmd, "debug") == 0)
+		out_bct = true;
+	else if (strcmp(cmd, "exec") == 0)
+		exec = true;
+	else if (strcmp(cmd, "eval") == 0)
+		eval = true;
+	else {
+		std::cerr <<"unknown command \"" <<cmd <<"\"\n";
+		print_help_msg();
+	}
+
+	if (exec) {
+		std::ifstream bc_src = std::ifstream(arg);
 #ifdef SCL_DEBUG
 		std::cout <<"reading lit header... ";
 #endif
@@ -90,11 +82,11 @@ int main(int argc, char** argv) {
 
 	Program p;
 	try {
-		p = Program(fname);
+		p = Program(arg);
 	} catch (std::vector<SyntaxError>& es) {
 		for (auto& e : es)
 			std::cout <<"Syntax Error: " <<e.msg <<std::endl
-				<<util::show_line_pos(fname, e.token.pos) <<std::endl;
+				<<util::show_line_pos(arg, e.token.pos) <<std::endl;
 	}
 	std::vector<Command> bytecode;
 	std::vector<SemanticError> errs = p.compile(bytecode);
@@ -102,14 +94,14 @@ int main(int argc, char** argv) {
 	//
 	if (!errs.empty()) {
 		bool fatal = false;
-		auto fis = std::ifstream(fname); // reuse istream
+		auto fis = std::ifstream(arg); // reuse istream
 		for (auto& e : errs)
 			if (e.is_warn) {
 				std::cout <<util::term_eff_red <<"Compiler Warning: " <<util::term_eff_reset <<e.msg <<std::endl
-						  << util::show_line_pos(fis, e.pos, fname);
+						  << util::show_line_pos(fis, e.pos, e.file.string());
 			} else {
 				std::cout <<util::term_eff_red <<"Compiler Error: " <<util::term_eff_reset <<e.msg <<std::endl
-						<<util::show_line_pos(fis, e.pos, fname) <<std::endl;
+						<<util::show_line_pos(fis, e.pos, e.file.string()) <<std::endl;
 				fatal = true;
 			}
 
@@ -128,5 +120,28 @@ int main(int argc, char** argv) {
 		std::cout <<compile_text(bytecode) <<std::endl;
 	if (out_minified) {
 		std::cout <<tree_to_source(p.main) <<std::endl;
+	}
+
+	if (eval) {
+		// Compile file
+		std::stringstream bin{"o.bin"};
+		for (const char c : compile_bin(bytecode))
+			bin << c;
+
+		// Run file
+#ifdef SCL_DEBUG
+		std::cout <<"reading lit header... ";
+#endif
+		std::vector<Literal>&& lits = read_lit_header(bin);
+
+#ifdef SCL_DEBUG
+		std::cout <<"done\n";
+#endif
+		std::vector<std::string> args(argc);
+		for (int i = 0; i < argc; i++)
+			args.emplace_back(argv[i]);
+		interpreter = new VM{lits, args, bin};
+		interpreter->run();
+		return 0; // never gets called... (hopefully)
 	}
 }
