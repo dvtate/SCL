@@ -39,7 +39,7 @@ set(SOURCE_FILES
 
         vm/gc/gc.cpp vm/gc/gc.hpp
 
-        )
+        vm/gc/sync_for_gc.cpp vm/gc/sync_for_gc.hpp)
 
 # VM linking library
 add_library(scl_vm SHARED

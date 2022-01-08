@@ -28,7 +28,7 @@ void SyncCallStack::mark() {
 }
 
 void SyncCallStack::throw_error(Value thrown)  {
-	for (auto i = this->stack.size() - 1; i >= 0; i--) {
+	for (long i = (long) this->stack.size() - 1; i >= 0; i--) {
 		auto* h = this->stack[i]->error_handler;
 		if (h != nullptr) {
 			// Pop the stack back one level behind that of the handler
@@ -97,25 +97,25 @@ VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv, st
 	// capture global variables
 	for (const int64_t id : entry.capture_ids) {
 		SCL_DEBUG_MSG("capture global id # " << id << std::endl);
-		main.vars[id] = ::new(this->main_thread->gc.alloc<Value>()) Value(get_global_id(id));
+		main.vars[id] = ::new(this->gc.alloc<Value>()) Value(get_global_id(id));
 	}
 
 	// Load argv
-	auto* args = ::new(this->main_thread->gc.alloc<ValueTypes::list_t>()) ValueTypes::list_t();
+	auto* args = ::new(this->gc.alloc<ValueTypes::list_t>()) ValueTypes::list_t();
 	for (const std::string& s : argv)
 		args->emplace_back(Value(s));
 
-	main.vars[main.i_id] = ::new(this->main_thread->gc.alloc<Value>()) Value(args);
-	main.vars[main.o_id] = ::new(this->main_thread->gc.alloc<Value>()) Value(
-			::new(this->main_thread->gc.alloc<NativeFunction>()) ExitProgramReturn());
+	main.vars[main.i_id] = ::new(this->gc.alloc<Value>()) Value(args);
+	main.vars[main.o_id] = ::new(this->gc.alloc<Value>()) Value(
+			::new(this->gc.alloc<NativeFunction>()) ExitProgramReturn());
 
 	// Capture command line arguments
-	auto* argv_list = ::new(this->main_thread->gc.static_alloc<ValueTypes::list_t>()) ValueTypes::list_t;
+	auto* argv_list = ::new(this->gc.static_alloc<ValueTypes::list_t>()) ValueTypes::list_t;
 	argv_list->reserve(argv.size());
 	for (auto& str : argv)
 		argv_list->emplace_back(str);
 
-	main.vars[main.i_id] = ::new(this->main_thread->gc.alloc<Value>()) Value(argv_list);
+	main.vars[main.i_id] = ::new(this->gc.alloc<Value>()) Value(argv_list);
 }
 
 void VM::run() {
@@ -135,16 +135,16 @@ void Runtime::run() {
 		}
 
 		// Maybe we need to GC
-		if (this->gc.need_gc()) {
+		if (this->vm->gc.need_gc()) {
 			// TODO benchmark time and stuff
-			const auto before = this->gc.size();
+			const auto before = this->vm->gc.size();
 
 			// Mark and sweep
 			// TODO stop all other processes and trigger gc event
 			this->vm->mark();
-			this->gc.sweep();
+			this->vm->gc.sweep();
 
-			const auto after = this->gc.size();
+			const auto after = this->vm->gc.size();
 			std::cout <<"before: " <<before <<" after: " <<after <<std::endl;
 			std::cout <<"diff: " <<(before - after) <<std::endl;
 		}

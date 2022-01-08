@@ -32,9 +32,9 @@ class VM;
 // abstract type used for ITC/IPC/Synchronization
 class RTMessage {
 public:
-	virtual ~RTMessage(){};
+	virtual ~RTMessage() { }
 	virtual void action(Runtime&) = 0;
-	virtual void mark() { };
+	virtual void mark() { }
 };
 
 // TODO
@@ -68,9 +68,6 @@ public:
 
 	// Thread safety as messages can come from different procs/ISR's
 	std::mutex msg_queue_mtx;
-
-	// Each process gets it's own garbage collector
-	GarbageCollector gc;
 
 	explicit Runtime(VM* vm): vm(vm) { }
 
@@ -178,6 +175,54 @@ public:
 
 };
 
+class VM {
+public:
+	// Literals from the binary
+	std::vector<Literal> literals;
+
+	// Initial user process
+	std::shared_ptr<Runtime> main_thread;
+
+	// Child Processes
+	std::list<std::shared_ptr<Runtime>> worker_threads;
+
+	// Used for generating errors
+	FaultTable* fault_table{nullptr};
+
+	// Stream of bytecode to execute
+	std::istream& bytecode_source;
+
+	// One garbage collector shared by all the threads.
+	GarbageCollector gc;
+
+	VM(std::vector<Literal> lit_header, const std::vector<std::string>&  argv, std::istream& bytecode_source);
+	~VM() {
+		delete fault_table;
+	}
+
+	void run();
+
+	void mark() {
+		// TODO these shouldn't have to be marked
+		for (auto& l : this->literals)
+			l.mark();
+		this->main_thread->mark();
+		for (auto& sp : this->worker_threads)
+			sp->mark();
+	}
+};
+
+// GC tracing
+namespace GC {
+	inline void mark(RTMessage& msg) {
+		msg.mark();
+	}
+	inline void mark(RTMessage* msg) {
+		if (mark((void*) msg))
+			msg->mark();
+	}
+}
+
 class Frame {
 public:
 	Runtime* rt;
@@ -226,48 +271,9 @@ public:
 	// Instanitiate object in place
 	template<class T, class ... Args>
 	[[nodiscard]] T* gc_make(Args&& ... args) {
-		return ::new(this->rt->gc.alloc<T>()) T(args...);
+		return ::new(this->rt->vm->gc.alloc<T>()) T(args...);
 	}
 };
-
-class VM {
-public:
-	std::vector<Literal> literals;
-
-	std::shared_ptr<Runtime> main_thread;
-	std::list<std::shared_ptr<Runtime>> worker_threads;
-
-	FaultTable* fault_table{nullptr};
-
-	std::istream& bytecode_source;
-
-	VM(std::vector<Literal> lit_header, const std::vector<std::string>&  argv, std::istream& bytecode_source);
-	~VM() {
-		delete fault_table;
-	}
-
-	void run();
-
-	void mark() {
-		// TODO these shouldn't have to be marked
-		for (auto& l : this->literals)
-			l.mark();
-		this->main_thread->mark();
-		for (auto& sp : this->worker_threads)
-			sp->mark();
-	}
-};
-
-// GC tracing
-namespace GC {
-	inline void mark(RTMessage& msg) {
-		msg.mark();
-	}
-	inline void mark(RTMessage* msg) {
-		if (mark((void*) msg))
-			msg->mark();
-	}
-}
 
 /* Original plan:
 	Making calls:
