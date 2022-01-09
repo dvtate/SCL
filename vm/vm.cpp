@@ -8,6 +8,7 @@
 #include <cassert>
 
 #include "vm.hpp"
+#include "gc/sync_for_gc.hpp"
 
 inline void fatal_exception(Frame& f) {
 	std::cout <<"Fatal Exception:\n";
@@ -134,28 +135,26 @@ void Runtime::run() {
 			}
 		}
 
-		// Maybe we need to GC
-		if (this->vm->gc.need_gc()) {
-			// TODO benchmark time and stuff
-			const auto before = this->vm->gc.size();
-
-			// Mark and sweep
-			// TODO stop all other processes and trigger gc event
-			this->vm->mark();
-			this->vm->gc.sweep();
-
-			const auto after = this->vm->gc.size();
-			std::cout <<"before: " <<before <<" after: " <<after <<std::endl;
-			std::cout <<"diff: " <<(before - after) <<std::endl;
+		// Main thread needs to check if we need to run GC
+		if (this->vm->main_thread.get() == this) {
+			if (this->vm->gc.need_gc()) {
+				// Propigate GC event to other procs so that they can wait for gc to run
+				const auto sync = std::make_shared<GCBarrier>(this->vm->processes.size());
+				for (const auto& rt : this->vm->processes)
+					rt->recv_msg(new SyncForGCMsg(sync));
+				this->recv_msg(new SyncForGCMsg(sync));
+				continue;
+			}
 		}
 
 		// make sure we have something to do
 		if (this->running == nullptr) {
 			if (this->active.empty()) {
+				// Nothing to do, sleep for 1ms
 				using namespace std::chrono_literals;
 				std::this_thread::sleep_for(1ms);
-
 			} else {
+				// Pull next task
 				SCL_DEBUG_MSG("VM:RT:Pulled Stack from active\n");
 				this->running = this->active.back();
 				this->active.pop_back();
@@ -179,5 +178,4 @@ void Runtime::run() {
 			}
 		}
 	}
-
 }

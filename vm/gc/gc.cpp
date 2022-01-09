@@ -97,9 +97,11 @@ void GarbageCollector::sweep() {
 }
 
 // do we need to gc?
+// TODO change algorithm: if size > threshold or size > last_gc_size
 [[nodiscard]] bool GarbageCollector::need_gc() const {
 	static constexpr unsigned THRESHOLD = 1 << 14;
-	return this->size() - this->last_gc_size > THRESHOLD;
+	const auto size = this->size();
+	return size > 10000 && size - this->last_gc_size > THRESHOLD;
 }
 
 // print heap summary

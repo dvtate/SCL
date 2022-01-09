@@ -184,7 +184,7 @@ public:
 	std::shared_ptr<Runtime> main_thread;
 
 	// Child Processes
-	std::list<std::shared_ptr<Runtime>> worker_threads;
+	std::list<std::shared_ptr<Runtime>> processes;
 
 	// Used for generating errors
 	FaultTable* fault_table{nullptr};
@@ -207,21 +207,10 @@ public:
 		for (auto& l : this->literals)
 			l.mark();
 		this->main_thread->mark();
-		for (auto& sp : this->worker_threads)
+		for (auto& sp : this->processes)
 			sp->mark();
 	}
 };
-
-// GC tracing
-namespace GC {
-	inline void mark(RTMessage& msg) {
-		msg.mark();
-	}
-	inline void mark(RTMessage* msg) {
-		if (mark((void*) msg))
-			msg->mark();
-	}
-}
 
 class Frame {
 public:
@@ -275,11 +264,21 @@ public:
 	}
 };
 
+// GC tracing
+namespace GC {
+	inline void mark(RTMessage& msg) {
+		msg.mark();
+	}
+	inline void mark(RTMessage* msg) {
+		if (mark((void*) msg))
+			msg->mark();
+	}
+}
 /* Original plan:
 	Making calls:
 	- on sync call, new Frame is pushed onto running.call_stack()
 	- on async call, new thread is created and pushed to top of active stack
-	- on parallel call, new Runtime is pushed onto VM.worker_threads()
+	- on parallel call, new Runtime is pushed onto VM.processes()
 
 	Sync Detailed Operation:
 	- on sync call: new Frame is pushed onto Runtime.running

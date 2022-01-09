@@ -6,6 +6,7 @@
 #define SCL_ASYNC_HPP
 
 #include <iostream>
+
 #include "../debug.hpp"
 #include "vm.hpp"
 #include "value.hpp"
@@ -26,7 +27,7 @@ public:
 	std::shared_ptr<SyncCallStack> stack_target;
 	bool is_error;
 
-	AsyncResultMsg(std::shared_ptr<Value> ret, std::shared_ptr<SyncCallStack> stack_target, bool is_error):
+	AsyncResultMsg(const std::shared_ptr<Value>& ret, std::shared_ptr<SyncCallStack> stack_target, bool is_error):
 		ret(*ret), stack_target(std::move(stack_target)), is_error(is_error) {}
 
 	void action(Runtime& rt) override {

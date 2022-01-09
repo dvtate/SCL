@@ -18,8 +18,8 @@ class Closure;
 class LambdaReturnNativeFn;
 class GarbageCollector;
 namespace GC {
-	template <class T>	T* alloc(GarbageCollector&);
-	template <class T>	T* static_alloc();
+	template <class T> T* alloc(GarbageCollector&);
+	template <class T> T* static_alloc();
 }
 
 // GC instance variables
@@ -51,6 +51,9 @@ class GarbageCollector {
 	std::vector<void*> static_objects; // any reason to track these?
 
 	std::size_t last_gc_size{0};
+
+	// Alloc is not thread safe :(
+	std::mutex alloc_mtx;
 
 public:
 	// Tracking data
@@ -86,6 +89,7 @@ public:
 	// namespace scope so we have to do this BS
 	template <class T>
 	T* alloc() {
+		std::lock_guard<std::mutex> guard(this->alloc_mtx);
 		return GC::alloc<T>(*this);
 	}
 
