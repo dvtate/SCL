@@ -9,6 +9,7 @@
 #include <memory>
 #include <cstdlib>
 #include <cstring>
+#include <mutex>
 
 #include "../value_types.hpp"
 
