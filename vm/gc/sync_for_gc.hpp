@@ -24,7 +24,7 @@ public:
 
 	void action(Runtime& rt) {
 		{
-			std::lock_guard<std::mutex> guard(this->counter_mtx);
+			std::lock_guard<std::mutex> guard{this->counter_mtx};
 
 //			std::cout <<"counter lock\n";
 

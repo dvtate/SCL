@@ -73,7 +73,7 @@ public:
 
 	// pushes msg onto msg queue
 	void recv_msg(RTMessage* msg) {
-		std::lock_guard<std::mutex> m(this->msg_queue_mtx);
+		std::lock_guard<std::mutex> guard{this->msg_queue_mtx};
 		this->_msg_queue.emplace_back(msg);
 		SCL_DEBUG_MSG("VM:RT: msg received\n");
 	}
@@ -82,7 +82,7 @@ public:
 	// NOTE: expects caller to free() pointers
 	std::vector<RTMessage*> clear_msg_queue() {
 		std::vector<RTMessage*> cpy = {};
-		std::lock_guard<std::mutex> m(this->msg_queue_mtx);
+		std::lock_guard<std::mutex> m{this->msg_queue_mtx};
 		std::swap(cpy, this->_msg_queue);
 		SCL_DEBUG_MSG("VM:RT: cleared msg queue\n");
 		return cpy;
@@ -166,9 +166,9 @@ public:
 		for (auto sp : this->undead) {
 			sp->mark();
 		}
-
+	
 		// Some messages have gc'd properties even though they're not gc'd
-		std::lock_guard<std::mutex> m(this->msg_queue_mtx);
+		std::lock_guard<std::mutex> m{this->msg_queue_mtx};
 		for (auto* msg : this->_msg_queue)
 			msg->mark();
 	}
