@@ -1,0 +1,15 @@
+// Import character function
+let Character = import('./character.scl')
+
+// List of characters
+let lain = Character('Lain'), chisa = Character('Chisa'),
+	mika = Character('Mika'), alice = Character('Alice')
+
+// Write a script
+chisa['say']("I don't need to stay in a place like this.")
+chisa.die()
+chisa.say("I've uploaded my concious to the wired!")
+alice.say('Hey, ' + lain.name + ', did you get that email from '
+	 + chisa.name + '?')
+lain.say("Umm... no.. what's that?")
+mika['say']('Beep. Beep. Beep. Duuuurrrrr.')
