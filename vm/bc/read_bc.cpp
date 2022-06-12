@@ -24,7 +24,7 @@ static inline void ignore_until(std::istream& is, BCInstr::OPCode instr) {
 }
 
 
-// convert escaped characters into proper ascii codes
+/// convert escaped characters into proper ascii codes
 static inline std::string parse_str(std::string in) {
 	// TODO: implement (can steal code from ys)
 	return in;

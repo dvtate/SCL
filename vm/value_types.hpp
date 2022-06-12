@@ -14,13 +14,13 @@
 
 class Closure;
 class Value;
-
-// Native functions acessable to user
 class Frame;
+
+/// Native functions acessable to user
 class NativeFunction {
 public:
 	virtual ~NativeFunction() = default;
-	// Invoke function
+	/// Invoke function
 	virtual void operator()(Frame& f) = 0;
 	virtual void mark() = 0;
 };
@@ -62,7 +62,7 @@ namespace ValueTypes {
 	// The only datatype for this lang
 	using variant_t = std::variant<empty_t, float_t, int_t, str_t, lam_t, n_fn_t, obj_ref, list_ref, ref_t>;
 
-	// Alligned with variant_t index
+	/// \remark Aligned with variant_t index
 	enum class VType {
 		EMPTY = 0,
 		FLOAT = 1,

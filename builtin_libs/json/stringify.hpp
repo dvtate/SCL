@@ -15,7 +15,7 @@
 
 #include "cyclic_refs_exception.hpp"
 
-// Exported native funciton
+/// Exported native funciton
 static NativeFunction* stringify_nfn;
 
 class JSONStringifyFn : public NativeFunction {

@@ -48,7 +48,7 @@ namespace vm_util {
 	}
 
 
-	// Numeric index, prolly list
+	/// Numeric index, prolly list
 	Value index_value(Frame& f, Value& v, ValueTypes::int_t index) {
 		// Only accepts lists
 		if (!std::holds_alternative<ValueTypes::list_ref>(v.v)) {
@@ -74,7 +74,7 @@ namespace vm_util {
 		return list[index];
 	}
 
-	// String index, prolly object
+	/// String index, prolly object
 	Value index_value(Frame& f, Value& v, const ValueTypes::str_t& index) {
 		if (std::holds_alternative<ValueTypes::obj_ref>(v.v)) {
 			return (*std::get<ValueTypes::obj_ref>(v.v))[index];

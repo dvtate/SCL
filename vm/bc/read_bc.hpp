@@ -10,7 +10,7 @@
 #include "../../debug.hpp"
 #include "../literal.hpp"
 
-// middle section where user code lives
+/// middle section where user code lives
 std::vector<Literal> read_lit_header(std::istream& is);
 
 // TODO: metadata section   (top)

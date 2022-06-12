@@ -21,13 +21,13 @@ public:
 	int64_t i_id;
 	int64_t o_id;
 
-	// captured identifiers
+	/// captured identifiers
 	std::unordered_map<int64_t, Value*> vars;
 
-	// body points to implementation defined by relevant closureDef
+	/// body points to implementation defined by relevant closureDef
 	std::vector<BCInstr>* body{nullptr};
 
-	// rn this only shows if they came from same literal...
+	/// rn this only shows if they came from same literal
 	bool operator==(const Closure& other) const {
 		return this->body == other.body;
 	}

@@ -20,7 +20,7 @@ const static std::unordered_map<std::string, Command> keyword_values = {
 };
 
 
-// First few symbol ids are reserved
+/// First few symbol ids are reserved
 int64_t MutilatedSymbol::_uid = 20;
 
 // ParsedMacro::read_* : recursively convert the AST of the macro into a list of commands and populate structures
@@ -277,7 +277,7 @@ void ParsedMacro::read_assignment(AST& t) {
 	this->relocation.emplace_back(std::pair { lpos, t.token.pos });
 }
 
-// operators defined only for convenience
+/// operators defined only for convenience
 void ParsedMacro::read_operation(AST& t){
 	SCL_DEBUG_MSG("read_operation\n");
 	// TODO: replace with actual operator ID's from VM
@@ -515,7 +515,7 @@ void ParsedMacro::read_tree(AST& tree) {
 	}
 }
 
-// Returns a new parsed macro containing compiled contents of arg
+/// Returns a new parsed macro containing compiled contents of arg
 ParsedMacro* ParsedMacro::compile_expr(AST& t) {
 	auto* pm = new ParsedMacro();
 	pm->parents = this->parents;
@@ -629,9 +629,9 @@ void Program::load_file(const char* file_name) {
 	this->load_macro(entry);
 }
 
-// emplace a parsed literal into literals header
-// return index of parsed literal
-// if its already in header send index
+/// emplace a parsed literal into literals header
+/// return index of parsed literal
+/// if its already in header send index
 int64_t Program::empl_lit(ParsedLiteral&& lit) {
 	auto it = std::find(
 			this->literals.begin(),

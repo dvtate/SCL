@@ -8,9 +8,9 @@
 
 #include "primitive_methods.hpp"
 
-/** TODO
+/* TODO
  * Really there needs to be a bit more planning here
- * I'm trying to make an OOP style  solution in a lang that doesn't
+ * I'm trying to make an OOP-style solution in a lang that doesn't
  * have a clear, organized approach to OOP...
  */
 

@@ -91,7 +91,6 @@ int main(int argc, char** argv) {
 	std::vector<Command> bytecode;
 	std::vector<SemanticError> errs = p.compile(bytecode);
 
-	//
 	if (!errs.empty()) {
 		bool fatal = false;
 		auto fis = std::ifstream(arg); // reuse istream

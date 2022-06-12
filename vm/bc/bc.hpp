@@ -7,7 +7,7 @@
 
 #include "../../compile/command.hpp"
 
-// command that falls within a
+/// command that falls within a
 class BCInstr {
 public:
 	using OPCode = Command::OPCode;

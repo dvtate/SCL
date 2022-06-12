@@ -10,7 +10,7 @@
 #include "../../vm/vm.hpp"
 #include "../../vm/error.hpp"
 
-// Exported native function
+/// Exported native function
 static NativeFunction* parse_nfn;
 
 class JSONParseFn : public NativeFunction {

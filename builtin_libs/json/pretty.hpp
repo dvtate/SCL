@@ -13,7 +13,7 @@
 static NativeFunction* encoder_ctr_fn;
 
 class JSONPrettyStrFn : public NativeFunction {
-	// String to use for indentation
+	/// String to use for indentation
 	std::string indent;
 
 	/// Generate indentation string

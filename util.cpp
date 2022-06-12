@@ -21,7 +21,6 @@ namespace util {
 		return { -1L , -1L };
 	}
 
-	//
 	std::string show_line_pos(std::istream &file, unsigned long long pos, const std::string fname) {
 		// rewind
 		file.clear();

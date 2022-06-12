@@ -19,17 +19,17 @@
 class ClosureDef {
 public:
 
-	// all outside, lexical ids used by this closure and it's nested members
+	/// all outside, lexical ids used by this closure and it's nested members
 	std::vector<int64_t> capture_ids;
 
-	// identifiers declared in scope of this closure (sorted)
+	/// identifiers declared in scope of this closure (sorted)
 	std::vector<int64_t> decl_ids;
 
-	// instruction code
-	// NOTE must be freed by owner (or more likely at end of program since few instances)
+	/// instruction code
+	/// \remark must be freed by owner (or more likely at end of program since few instances)
 	std::vector<BCInstr>* body{};
 
-	// Position in the bytecode that the macro starts at
+	/// Position in the bytecode that the macro starts at
 	std::size_t start_pos{};
 
 	ClosureDef(

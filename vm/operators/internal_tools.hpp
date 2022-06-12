@@ -10,7 +10,7 @@
 
 // TODO move these to be methods of the Frame class
 namespace vm_util {
-	// Execute a value
+	/// Execute a value
 	void invoke_value_sync(Frame& f, Value& v, bool uncallable);
 
 	// Get the value stored in another value with given key

@@ -147,7 +147,7 @@ extern std::unordered_map<std::string, signed char> operator_precedence;
 //
 AST parse(const std::vector<Token>& tokens);
 
-// Lisp representation
+/// Lisp representation
 std::string debug_AST(const AST& tree);
 
 #endif //SCL_PARSE_HPP

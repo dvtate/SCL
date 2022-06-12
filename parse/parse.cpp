@@ -31,11 +31,11 @@ std::string debug_AST(const AST& tree) {
 	return ret;
 }
 
-// using a shift-reduce parser
+/// using a shift-reduce parser
 std::vector<std::string> keywords;
 
 
-// Operator Precedence
+/// Operator Precedence
 std::unordered_map<std::string, signed char> operator_precedence = {
 		{ "(:", 22 },
 		{ "{", 22  },
@@ -81,14 +81,14 @@ std::unordered_map<std::string, signed char> operator_precedence = {
 		{ "eof", 0 }
 };
 
-// Is given node a valid expression with a resulting type
-//  enum entries ordered specifically to enable this
+/// Is given node a valid expression with a resulting type
+///  enum entries ordered specifically to enable this
 static inline bool isOperand(const AST& n) {
 	return n.type >= AST::NodeType::OPERATION && n.type <= AST::NodeType::LIST;
 }
 
-// Get the next AST node from the list of tokens
-//   Also finish lexers job as some tokens combine into single nodes
+/// Get the next AST node from the list of tokens
+///   Also finish lexers job as some tokens combine into single nodes
 static inline AST next_node(const std::vector<Token>& tokens, size_t& i, std::vector<AST>& stack) {
 	// Mutable copy of token
 	Token t = tokens[i];
@@ -550,8 +550,8 @@ static inline bool reduce_containers(std::vector<AST>& stack) {
 	return false;
 }
 
-// macro calls			abc(123)
-// bracket operator 	abc[123]
+/// macro calls			abc(123)
+/// bracket operator 	abc[123]
 static inline bool reduce_invocations(std::vector<AST>& stack) {
 	/* macro calls
 	 * takes something that evaluates to a macro
@@ -625,7 +625,7 @@ static inline bool reduce_asi(std::vector<AST>& stack, const AST& n) {
 	return true;
 }
 
-// Follow rules to form parse tree
+/// Follow rules to form parse tree
 static inline bool reduce(std::vector<AST>& stack, const AST& n) {
 	if (stack.empty())
 		return false;
@@ -662,7 +662,7 @@ static inline bool reduce(std::vector<AST>& stack, const AST& n) {
 			reduce_asi(stack, n);
 }
 
-// [placeholder] Can we put node onto stack?
+/// [placeholder] Can we put node onto stack?
 static inline bool can_shift(const AST& n) {
 	return n.type != AST::NodeType::INVALID;
 }

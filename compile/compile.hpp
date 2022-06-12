@@ -17,23 +17,23 @@
 #include "command.hpp"
 
 /*
- * main program file is implicitly converted into a macro and all the global identifiers are loaded
+ * entry file is implicitly converted into a macro and all the global identifiers are loaded
  *
  */
 
 class ParsedMacro;
 
-// all identifiers are replaced with numbers so we don't have to do hashes or put strings in bytecode
+/// all identifiers are replaced with numbers so we don't have to do hashes or put strings in bytecode
 class MutilatedSymbol {
 public:
 
-	// unique numeric identifier for user-defined symbol
-	// hash(int) is faster than hash(string)
+	/// unique numeric identifier for user-defined symbol
+	/// hash(int) is faster than hash(string)
 	static int64_t _uid;
 	int64_t id;
 	std::string name;
 
-	// Alias substitution
+	/// Alias substitution
 	std::shared_ptr<ParsedMacro> substitution;
 	// TODO alias should use different type than ParsedMacro as we only want to have symbols bound and not change syntax meaning/context
 
@@ -58,31 +58,30 @@ public:
 
 class Program;
 
-// everything is a macro
-// bulk of compilation effort is done here as all user-level code is inside macros
+/// everything is a macro
+/// bulk of compilation effort is done here as all user-level code is inside macros
 class ParsedMacro {
 public:
-	// identifiers declared in macro scope
+	/// identifiers declared in macro scope
 	std::unordered_map<std::string, MutilatedSymbol> declarations;
 
 	// TODO: input/output types
 
-	// code in body
+	/// code in body
 	std::vector<Command> body;
 
-	// file name of definition
+	/// file name of definition
 	std::string file_name;
 
-	// Lexical parents
+	/// Lexical parents
 	std::vector<ParsedMacro*> parents;
 
-	// Where did different commands originate in source program
+	/// Where did different commands originate in source program
 	std::vector<std::pair<std::size_t, unsigned long long>> relocation;
 
-	// What value is being invoked?
+	/// What value is being invoked?
 	std::vector<std::pair<std::size_t, std::string>> invoked_exprs;
 
-	//
 	std::vector<SemanticError> errors;
 
 	Program* compiler;
@@ -113,7 +112,7 @@ public:
 	void read_dot_op(AST&);
 	void read_obj_lit(AST&);
 
-	// Returns a new parsed macro containing compiled contents of arg
+	/// Returns a new parsed macro containing compiled contents of arg
 	ParsedMacro* compile_expr(AST&);
 };
 
@@ -147,10 +146,10 @@ public:
 
 };
 
-// combining different systems and converting different data to desired formats
+/// combining different systems and converting different data to desired formats
 class Program {
 public:
-	// literals.back() == main entry point
+	/// literals.back() == main entry point
 	std::vector<ParsedLiteral> literals;
 
 	// these are used for making the fault table
@@ -158,13 +157,13 @@ public:
 	std::unordered_map<std::string, std::vector<std::pair<std::size_t, unsigned long long>>> translated_positions;
 	std::vector<std::pair<std::size_t, std::string>> invoked_exprs;
 
-	// Parsed syntax tree
+	/// Parsed syntax tree
 	AST main;
 
 	std::vector<SemanticError> compile(std::vector<Command>& ret);
 
-	// emplace a parsed literal into literals header
-	// return literal index
+	/// emplace a parsed literal into literals header
+	/// \returns literal index
 	int64_t empl_lit(ParsedLiteral&& lit);
 
 	// used to populate internal structures

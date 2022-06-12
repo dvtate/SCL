@@ -48,13 +48,13 @@ public:
 /// typeof o within async call
 class AsyncReturnNativeFn : public NativeFunction {
 public:
-	// store return value if frame_target not set
+	/// store return value if frame_target not set
 	std::shared_ptr<Value> ret{nullptr};
 
-	// does ret store an error?
+	/// does ret store an error?
 	bool is_error{false};
 
-	// this gets set when user invokes the future functor
+	/// this gets set when user invokes the future functor
 	std::shared_ptr<SyncCallStack> stack_target{nullptr}; //
 
 	// TODO mutex
@@ -159,7 +159,7 @@ public:
 	Value v;
 	explicit AsyncWrapperNativeFn(const Value& callable): v(callable) {}
 
-	// Async await invoke
+	/// Async await invoke
 	void operator()(Frame& f) override {
 		SCL_DEBUG_MSG("invoked async wrapper");
 

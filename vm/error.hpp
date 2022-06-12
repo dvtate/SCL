@@ -32,16 +32,15 @@ class SyncCallStack;
 
 class ErrorTrace {
 public:
-	// array of pairs of instruction positions and macro body pointers so that we can reconstruct
-	// absolute position later
+	/// array of pairs of instruction positions and macro body pointers so that we can reconstruct
+	/// absolute position later
 	std::vector<std::pair <uint64_t, std::vector < BCInstr>*>> trace;
 
 	ErrorTrace(SyncCallStack& cs);
 
-	//
 	std::string depict(Frame& f, const std::string& name, const std::string& message);
 
-	// Add another call stack to the error object
+	/// Add another call stack to the error object
 	void extend(SyncCallStack& cs);
 };
 
@@ -57,8 +56,6 @@ public:
 	void mark() override;
 };
 
-
-//
 Value gen_error_object(const std::string& name, const std::string& message, Frame& f);
 Value gen_error_object(const std::string& name, const std::string& message, SyncCallStack& cs);
 

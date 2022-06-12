@@ -11,10 +11,10 @@
 
 namespace VM_ops {
 
-	// check equality
+	/// check equality
 	extern VMOperator dobule_equals;
 
-	// check identity
+	/// check identity
 	extern VMOperator triple_equals;
 
 	extern VMOperator lt;

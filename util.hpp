@@ -16,7 +16,7 @@ namespace util {
 	extern const char* term_eff_red;
 	extern const char* term_eff_reset;
 
-	// show full line at position pos in file
+	/// show full line at position pos in file
 	std::string show_line_pos(std::istream& file, unsigned long long pos, std::string fname);
 
 	inline std::string show_line_pos(const std::string& fname, const unsigned long long pos)

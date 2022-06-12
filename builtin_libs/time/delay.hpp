@@ -8,7 +8,7 @@
 #include "../../vm/vm.hpp"
 #include "../../vm/error.hpp"
 
-// Unfreezes thread, VM will decide when to resume running it
+/// Unfreezes thread, VM will decide when to resume running it
 class UnfreezeThread : public virtual RTMessage {
 public:
 	std::shared_ptr<SyncCallStack> cs;
@@ -22,8 +22,8 @@ public:
 	void mark() override {}
 };
 
-// This will be our export, it sleeps the current thread for given number of ms
-//  but also lets other
+/// This will be our export, it sleeps the current thread for given number of ms
+///  but also lets other
 class DelayFn : public virtual NativeFunction {
 	void operator()(Frame& f) override {
 //		std::cout <<"delay\n";

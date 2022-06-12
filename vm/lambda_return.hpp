@@ -11,7 +11,7 @@
 #include "vm.hpp"
 #include "value.hpp"
 
-/*
+/**
  * 	- when o() called:
  		- o is an id that corresponds to a native functor that when run,
  			creates a RTMessage Object and sends it to Runtime.recv_msg()
@@ -34,7 +34,7 @@
  */
 
 
-// executed by rt event loop
+/// executed by rt event loop
 class LambdaReturnMsg : public RTMessage {
 public:
 	std::shared_ptr<SyncCallStack> stack_target; // from
@@ -57,7 +57,6 @@ public:
 			std::cout <<"invalid lambda return msg call ";
 		}
 
-		//
 		while (this->stack_target->stack.back() != this->frame_target && !this->stack_target->stack.empty())
 			this->stack_target->stack.pop_back();
 
@@ -106,7 +105,7 @@ public:
 	}
 };
 
-// user-callable
+/// user-callable
 class LambdaReturnNativeFn : public NativeFunction {
 	std::shared_ptr<Frame> frame_target;
 	std::shared_ptr<SyncCallStack> stack_target;

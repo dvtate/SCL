@@ -10,7 +10,7 @@
 #include "../vm.hpp"
 
 class GCBarrier {
-	// Number of thread
+	/// Number of thread
 	uint16_t counter;
 
 	std::mutex counter_mtx;
@@ -49,14 +49,14 @@ public:
 	}
 };
 
-// When the VM is running multiple threads, they have to all sync before we can GC
-// This RT message makes the thread hang until the GC is finished
+/// When the VM is running multiple threads, they have to all sync before we can GC
+/// This RT message makes the thread hang until the GC is finished
 class SyncForGCMsg : public RTMessage {
 	std::shared_ptr<GCBarrier> mgr;
 public:
 	explicit SyncForGCMsg(std::shared_ptr<GCBarrier> mgr): mgr(std::move(mgr)) {}
 
-	// Run once for each thread
+	/// Run once for each thread
 	virtual void action(Runtime& rt) override {
 		mgr->action(rt);
 	}

@@ -8,7 +8,7 @@
 
 #include "gc.hpp"
 
-// Free items not in use
+/// Free items not in use
 void GarbageCollector::sweep() {
 	// Sweep the segregated heaps
 	// TODO parallelize?
@@ -84,7 +84,7 @@ void GarbageCollector::sweep() {
 	this->last_gc_size = this->size();
 }
 
-// Rough heap size
+/// Rough heap size
 [[nodiscard]] std::size_t GarbageCollector::size() const {
 	return this->generic_ptrs.size()
 	+ this->_heap_value.size()
@@ -96,7 +96,7 @@ void GarbageCollector::sweep() {
 	// Not going to factor in the sizes of the recycle-bins
 }
 
-// do we need to gc?
+/// do we need to gc?
 // TODO change algorithm: if size > threshold or size > last_gc_size
 [[nodiscard]] bool GarbageCollector::need_gc() const {
 	static constexpr unsigned THRESHOLD = 1 << 14;
@@ -104,7 +104,7 @@ void GarbageCollector::sweep() {
 	return size > 10000 && size - this->last_gc_size > THRESHOLD;
 }
 
-// print heap summary
+/// print heap summary
 void GarbageCollector::debug() {
 	std::cout <<"Generic: \n\tsize: " <<this->generic_ptrs.size()
 			  <<"\nValue: \n\tSize: " <<this->_heap_value.size()

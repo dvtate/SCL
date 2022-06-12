@@ -12,14 +12,14 @@
 #include "exec_bc_instr.hpp"
 
 
-// (())
+/// Call macro
 static inline void invoke(Frame& f) {
 	Value v = f.eval_stack.back();
 	f.eval_stack.pop_back();
 	vm_util::invoke_value_sync(f, v, false);
 }
 
-// [ ... ]
+/// [ ... ]
 void make_list(Frame& f, uint32_t n) {
 	Value lv(f.gc_make<ValueTypes::list_t>());
 	auto* l = std::get<ValueTypes::list_ref>(lv.v);

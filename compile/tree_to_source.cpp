@@ -4,15 +4,13 @@
 
 #include "tree_to_source.hpp"
 
-
-//
 #ifdef SCL_DEBUG_MODE
 static constexpr bool is_debug_mode = true;
 #else
 static constexpr bool is_debug_mode = false;
 #endif
 
-// Note that this is also used for COMMA_SERIES
+/// Note that this is also used for COMMA_SERIES
 static inline std::string src_operator(AST& tree) {
 	const auto& op = tree.token.token;
 

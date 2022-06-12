@@ -10,11 +10,11 @@
 
 #include "command.hpp"
 
-// convert to text representation
+/// convert to text representation
 std::string compile_text(std::vector<Command>);
 
 
-// convert to compressed binary format
+/// convert to compressed binary format
 std::vector<char> compile_bin(std::vector<Command>);
 
 

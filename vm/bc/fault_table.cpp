@@ -26,10 +26,6 @@ static inline void debug_fault_table(FaultTable& ft) {
 }
 #endif
 
-
-
-
-
 FaultTable* FaultTable::read(std::istream& is) {
 	auto* ret = new FaultTable;
 

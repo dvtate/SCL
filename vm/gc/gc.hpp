@@ -23,7 +23,7 @@ namespace GC {
 	template <class T> T* static_alloc();
 }
 
-// GC instance variables
+/// GC State management
 class GarbageCollector {
 	/// Needed to track destructor for object because &Type::~Type is not allowed
 	/// This seems like a hack but it works ig...
@@ -38,7 +38,7 @@ class GarbageCollector {
 			obj->~T();
 		}
 	};
-	// generic finalizer that does nothing
+	/// generic finalizer that does nothing
 	struct _Destructor {
 		virtual void destroy(void* obj) const {
 			(void)(obj); // Suppress unused parameter warning
@@ -57,7 +57,7 @@ class GarbageCollector {
 	std::mutex alloc_mtx;
 
 public:
-	// Tracking data
+	/// Tracking data
 	enum class UsageColor : char {
 		WHITE = 0,        // Candidate for GC
 		GREY,            // Not a candidate for GC
@@ -65,19 +65,19 @@ public:
 		FREE,            // This object is in recycle bin
 	};
 
-	// Free items not in use
+	/// Free items not in use
 	void sweep();
 
-	// Rough heap size
+	/// Rough heap size
 	[[nodiscard]] std::size_t size() const;
 
-	// do we need to gc?
+	/// do we need to gc?
 	[[nodiscard]] bool need_gc() const;
 
-	// Print heap summary
+	/// Print heap summary
 	void debug();
 
-	// Allocate an object that isn't garbage collected or tracked
+	/// Allocate an object that isn't garbage collected or tracked
 	template <class T>
 	T* static_alloc() {
 		T* ret = GC::static_alloc<T>();
@@ -87,14 +87,14 @@ public:
 
 	/// Allocate a garbage collected object
 	// Note that C++ only allows explicit template specialization at
-	// namespace scope so we have to do this BS
+	// namespace scope, so we have to do this BS
 	template <class T>
 	T* alloc() {
 		std::lock_guard<std::mutex> guard(this->alloc_mtx);
 		return GC::alloc<T>(*this);
 	}
 
-	// Make alloc a friend
+	/// Make alloc a friend
 	template <class T>
 	friend T* GC::alloc(GarbageCollector&);
 
@@ -152,7 +152,7 @@ namespace GC {
 	extern void mark(LambdaReturnNativeFn&);
 	extern void mark(LambdaReturnNativeFn*);
 
-	// Allocate an object that isn't garbage collected or tracked
+	/// Allocate an object that isn't garbage collected or tracked
 	template <class T>
 	T* static_alloc() {
 		auto* p = (GarbageCollector::UsageColor*) ((char*) ::malloc(sizeof(T) + 1));
@@ -161,7 +161,7 @@ namespace GC {
 		return ret;
 	}
 
-	// Allocate a garbage collected object
+	/// Allocate a garbage collected object
 	template <class T>
 	T* alloc(GarbageCollector& gc) {
 		auto* p = (GarbageCollector::UsageColor*) ((char*) ::malloc(sizeof(T) + 1));

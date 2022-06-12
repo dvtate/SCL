@@ -15,7 +15,7 @@
 
 class Value {
 public:
-	// only attribute... could simply extend variant_t...
+	// only attribute... could alternatively extend variant_t...
 	ValueTypes::variant_t v;
 
 	Value() = default;
@@ -57,7 +57,7 @@ public:
 		return type_names[this->v.index()];
 	}
 
-	// Exact match
+	/// Exact match
 	bool operator==(const Value& other) const {
 		return this->v == other.v;
 	}

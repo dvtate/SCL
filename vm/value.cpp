@@ -8,7 +8,7 @@
 #include "closure.hpp"
 #include "value.hpp"
 
-// aka operator == or operator ?=
+/// aka operator == or operator ?=
 bool Value::eq_value(const Value& other) const {
 	const Value* l = this;
 	const Value* r = &other;

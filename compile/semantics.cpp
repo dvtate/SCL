@@ -10,17 +10,17 @@
 
 #include "semantics.hpp"
 
-// Represents a file that has been imported
+/// Represents a file that has been imported
 class ImportedFile {
 public:
-	// Location of file
+	/// Location of file
 	std::filesystem::path path;
 
-	// This Cstring version of path will be same pointer used in all tokens from this file
-	// So keeping it here in case it's of use later
+	/// This Cstring version of path will be same pointer used in all tokens from this file
+	/// So keeping it here in case it's of use later
 	const char* absolute_path_str;
 
-	// Code contained in file
+	/// Code contained in file
 	std::shared_ptr<AST> tree;
 
 	ImportedFile(const char* absolute_path, std::filesystem::path path, std::shared_ptr<AST> tree):
@@ -28,11 +28,11 @@ public:
 	{}
 };
 
-// This class only really exists to capture state associated with the semantic analysis...
-//   Really should just be some hidden functions
+/// This class only really exists to capture state associated with the semantic analysis...
+///   Really should just be some hidden functions
 class SemanticProcessor {
 protected:
-	// Imports
+	/// Imports
 	std::vector<ImportedFile> imports;
 
 	/**
@@ -111,7 +111,6 @@ protected:
 		//
 		this->imports.emplace_back(ImportedFile(full_path_name, p, std::make_shared<AST>(assignment)));
 
-		//
 		return ret;
 	}
 
@@ -154,7 +153,7 @@ public:
 		return this->convert_syntax_branch(t);
 	}
 
-	// Errors and Warnings
+	/// Errors and Warnings
 	std::vector<SemanticError> errs;
 
 	void add_error(SemanticError&& error) {
@@ -163,7 +162,7 @@ public:
 };
 
 
-/*
+/**
 * - Convert Builtin-identifiers/constants (ie - print)
 * - Handle operator associativity
 * - Convert complex let expressions
@@ -174,7 +173,7 @@ public:
 * - Convert function calls on CSV's to list
 */
 
-// Finish up job of parser
+/// Finish up job of parser
 AST& SemanticProcessor::convert_syntax_branch(AST& t) {
 	if (t.type != AST::NodeType::PAREN_EXPR && t.members.empty())
 		return SemanticProcessor::convert_syntax_leaf(t);

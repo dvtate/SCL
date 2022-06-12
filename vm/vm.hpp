@@ -29,7 +29,7 @@ class Frame;
 class Runtime;
 class VM;
 
-// abstract type used for ITC/IPC/Synchronization
+/// abstract type used for ITC/IPC/Synchronization
 class RTMessage {
 public:
 	virtual ~RTMessage() { }
@@ -52,34 +52,34 @@ public:
 };
 
 
-// different threads running on same process
+/// different threads running on same process
 class Runtime {
 public:
 	VM* vm;
 
-	// Currently running thread
+	/// Currently running thread
 	std::shared_ptr<SyncCallStack> running;
 
-	// Threads to execute [stack]
+	/// Threads to execute [stack]
 	std::vector<std::shared_ptr<SyncCallStack>> active;
 
-	// Threads that still have pending actions
+	/// Threads that still have pending actions
 	std::vector<std::shared_ptr<SyncCallStack>> undead;
 
-	// Thread safety as messages can come from different procs/ISR's
+	/// Thread safety as messages can come from different procs/ISR's
 	std::mutex msg_queue_mtx;
 
 	explicit Runtime(VM* vm): vm(vm) { }
 
-	// pushes msg onto msg queue
+	/// pushes msg onto msg queue
 	void recv_msg(RTMessage* msg) {
 		std::lock_guard<std::mutex> guard{this->msg_queue_mtx};
 		this->_msg_queue.emplace_back(msg);
 		SCL_DEBUG_MSG("VM:RT: msg received\n");
 	}
 
-	// clears msg queue and returns old contents
-	// NOTE: expects caller to free() pointers
+	/// clears msg queue and returns old contents
+	/// \remark caller frees
 	std::vector<RTMessage*> clear_msg_queue() {
 		std::vector<RTMessage*> cpy = {};
 		std::lock_guard<std::mutex> m{this->msg_queue_mtx};
@@ -90,7 +90,7 @@ public:
 
 	// TODO these memeber functions need to be renamed/deleted/refactored
 
-	// Replaces running with a new thread
+	/// Replaces running with a new thread
 	void spawn_thread(){
 		auto rcs = this->running;
 		this->freeze_running();
@@ -99,7 +99,6 @@ public:
 		this->undead.emplace_back(this->running);
 	}
 
-	//
 	void freeze_running() {
 		if (this->active.empty()) {
 			this->running = nullptr;
@@ -110,7 +109,6 @@ public:
 		SCL_DEBUG_MSG("VM:RT: froze running CallStack\n");
 	}
 
-	//
 	void freeze_active(const std::shared_ptr<SyncCallStack>& cs) {
 		for (auto it = this->active.begin(); it < this->active.end(); it += 1)
 			if (*it == cs) {
@@ -121,7 +119,7 @@ public:
 		SCL_DEBUG_MSG("VM:RT: froze pending CallStack\n");
 	}
 
-	// removes call stack from undead tracker
+	/// removes call stack from undead tracker
 	void kill(const std::shared_ptr<SyncCallStack>& cs){
 		// TODO replace undead with a std::set or sth
 		for (auto it = this->undead.begin(); it < this->undead.end(); it += 1)
@@ -158,7 +156,7 @@ private:
 	std::vector<RTMessage*> _msg_queue;
 
 public:
-	//
+	/// GC mark
 	void mark() {
 		if (this->running) {
 			this->running->mark();
@@ -177,22 +175,22 @@ public:
 
 class VM {
 public:
-	// Literals from the binary
+	/// Literals from the binary
 	std::vector<Literal> literals;
 
-	// Initial user process
+	/// Initial user process
 	std::shared_ptr<Runtime> main_thread;
 
-	// Child Processes
+	/// Child Processes
 	std::list<std::shared_ptr<Runtime>> processes;
 
-	// Used for generating errors
+	/// Used for generating errors
 	FaultTable* fault_table{nullptr};
 
-	// Stream of bytecode to execute
+	/// Stream of bytecode to execute
 	std::istream& bytecode_source;
 
-	// One garbage collector shared by all the threads.
+	/// One garbage collector shared by all the threads.
 	GarbageCollector gc;
 
 	VM(std::vector<Literal> lit_header, const std::vector<std::string>&  argv, std::istream& bytecode_source);
@@ -216,16 +214,16 @@ class Frame {
 public:
 	Runtime* rt;
 
-	// Policy when error occurs
+	/// Policy when error occurs
 	Value* error_handler{nullptr};
 
-	// closure we're running
+	/// closure we're running
 	Closure closure;
 
-	// index of bytecode read head
+	/// index of bytecode read head
 	uint_fast32_t pos;
 
-	// values we're working with
+	/// values we're working with
 	std::vector<Value> eval_stack;
 
 	Frame(Runtime* rt, Closure body, unsigned int pos = 0, std::vector<Value> eval_stack = {}):
@@ -234,7 +232,7 @@ public:
 
 	~Frame() {}
 
-	// run a single bytecode instruction and return
+	/// run a single bytecode instruction and return
 	inline bool tick() {
 		if (pos < this->closure.body->size()) {
 			exec_bc_instr(*this, (*this->closure.body)[this->pos++]);
@@ -243,7 +241,7 @@ public:
 		return true;
 	}
 
-	// GC mark
+	/// GC mark
 	void mark() {
 		// Mark Definition
 		GC::mark(this->closure);
@@ -257,7 +255,7 @@ public:
 			GC::mark(this->error_handler);
 	}
 
-	// Instanitiate object in place
+	/// Instanitiate object in place
 	template<class T, class ... Args>
 	[[nodiscard]] T* gc_make(Args&& ... args) {
 		return ::new(this->rt->vm->gc.alloc<T>()) T(args...);

@@ -13,7 +13,7 @@
 
 class Command {
 public:
-	// mnemonic instruction
+	/// mnemonic instruction
 	enum OPCode : unsigned char {
 		END_LIT_STRING = 0,
 		// these go in lit header
@@ -153,7 +153,7 @@ public:
 		}
 	}
 
-	// used for generating bytecode text format for debugging
+	/// used for generating bytecode text format for debugging
 	inline std::string to_text() {
 		switch (this->instr) {
 
@@ -238,7 +238,7 @@ public:
 		}
 	}
 
-	// check if it goes in literal header
+	/// check if it goes in literal header
 	[[nodiscard]] inline bool is_lit() const noexcept {
 		return this->instr < OPCode::END_LIT_SECTION;
 	}

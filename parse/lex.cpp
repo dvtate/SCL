@@ -13,14 +13,14 @@
 
 // TODO this should probably use regex instead
 
-// Returns true if char c is contained in sring s and false otherwise
+/// Returns true if char c is contained in sring s and false otherwise
 static inline constexpr bool strcont(const char* s, const char c) {
 	while (*s && *s != c)
 		s++;
 	return *s;
 }
 
-// Is the given quote escaped with backslashes?
+/// Is the given quote escaped with backslashes?
 template <class T>
 static inline bool quote_escaped(const T& buff, size_t offset) {
 	unsigned char bs = 0;
@@ -29,7 +29,7 @@ static inline bool quote_escaped(const T& buff, size_t offset) {
 	return bs % 2;
 }
 
-// Find the end of the string
+/// Find the end of the string
 template <class T, typename F>
 static inline bool end_str(T& buff, size_t& i, const F read, const char start_c = '"') {
 	// Keep reading file until the end of the string is found
@@ -49,7 +49,7 @@ static inline bool end_str(T& buff, size_t& i, const F read, const char start_c 
 }
 
 
-// ignore until newline
+/// ignore until newline
 template <class T>
 static inline bool end_line_comment(const T& s, size_t& i) {
 
@@ -60,7 +60,7 @@ static inline bool end_line_comment(const T& s, size_t& i) {
 }
 
 
-// ignore until end of multi-line comment
+/// ignore until end of multi-line comment
 template <class T, class F> static inline bool
 end_multi_comment(const T& buff,
 				  size_t& i,
@@ -84,7 +84,7 @@ end_multi_comment(const T& buff,
 	return false;
 }
 
-// Find the end of a number literal
+/// Find the end of a number literal
 template <class T> static inline bool
 end_num(const T& buff, size_t& i) {
 	size_t start = i;
@@ -150,7 +150,7 @@ end_num(const T& buff, size_t& i) {
 	return true;
 }
 
-// Lex identifier token
+/// Lex identifier token
 template <class T>
 static inline void end_id(const T& buff, size_t& i) {
 	static const char terminators[] = " .:(){}[]/*&|=^%$#@!~+-;?<>,\t\n\r\\";
@@ -158,7 +158,7 @@ static inline void end_id(const T& buff, size_t& i) {
 		i++;
 }
 
-// Generic function that returns a string consisting of a section of a stl contianer
+/// Generic function that returns a string consisting of a section of a stl contianer
 template <class T>
 static inline std::string stl_substr(const T& buff, size_t start, const size_t end) {
 	std::string ret;
@@ -168,7 +168,7 @@ static inline std::string stl_substr(const T& buff, size_t start, const size_t e
 	return ret;
 }
 
-// Tokenizer
+/// Tokenizer
 template <class T, class F>
 Token get_token(const T& buff, size_t& i, const F read) {
 	// skip spaces
@@ -238,7 +238,7 @@ Token get_token(const T& buff, size_t& i, const F read) {
 	return Token(Token::t::IDENTIFIER, stl_substr(buff, start, i));
 }
 
-// buffered read and tokenize on a line-by-line basis
+/// buffered read and tokenize on a line-by-line basis
 std::vector<Token> tokenize_stream(std::istream& in, const char* file_name = nullptr) {
 	// Temporary read buffer
 	std::deque<char> buff;

@@ -13,9 +13,7 @@
 #include "async.hpp"
 #include "error.hpp"
 
-
 //TODO: split this into multiple files...
-
 
 class UnfreezeCallStack : public RTMessage {
 public:
@@ -30,7 +28,7 @@ public:
 	void mark() override {}
 };
 
-// a -> a returns same as input
+/// a -> a returns same as input
 class PrintFn : public NativeFunction {
 public:
 	void operator()(Frame& f) override {
@@ -39,7 +37,7 @@ public:
 	void mark() override {}
 };
 
-// Empty -> Str
+/// Empty -> Str
 class InputFn : public NativeFunction {
 public:
 	void operator()(Frame& f) override {
@@ -67,7 +65,7 @@ public:
 	void mark() override {}
 };
 
-// Branching
+/// Branching
 class IfFn : public NativeFunction {
 	void operator()(Frame& f) override {
 		Value i = f.eval_stack.back();
@@ -93,7 +91,7 @@ class IfFn : public NativeFunction {
 	void mark() override {}
 };
 
-// Any -> Str
+/// Any -> Str
 class StrFn : public NativeFunction {
 	void operator()(Frame& f) override {
 		Value& v = f.eval_stack.back();
@@ -114,7 +112,7 @@ class StrFn : public NativeFunction {
 	void mark() override {}
 };
 
-// Load a .so file
+/// Load a .so file
 class ImportFn : public NativeFunction {
 public:
 	void operator()(Frame& f) override {
@@ -142,7 +140,7 @@ public:
 	void mark() override {}
 };
 
-// Any -> Int | Float | Empty
+/// Any -> Int | Float | Empty
 class NumFn : public NativeFunction {
 	void operator()(Frame& f) override {
 		Value& in = f.eval_stack.back();
@@ -173,7 +171,7 @@ class NumFn : public NativeFunction {
 	void mark() override {}
 };
 
-// Debug variables
+/// Debug variables
 class VarsFn : public NativeFunction {
 	void operator()(Frame& f) override {
 		for (const auto& scope : f.rt->running->stack) {
@@ -188,7 +186,7 @@ class VarsFn : public NativeFunction {
 	void mark() override {}
 };
 
-// Create async wrapper for closure (see async.hpp)
+/// Create async wrapper for closure (see async.hpp)
 class AsyncFn : public NativeFunction {
 	void operator()(Frame& f) override {
 		f.eval_stack.back() = Value((NativeFunction*)
@@ -197,6 +195,7 @@ class AsyncFn : public NativeFunction {
 	void mark() override {}
 };
 
+/// Gives the size of a non-scalar value
 class SizeFn : public NativeFunction {
 	void operator()(Frame& f) override {
 		Value& v = f.eval_stack.back();
@@ -211,6 +210,7 @@ class SizeFn : public NativeFunction {
 				v = Value((ValueTypes::int_t) std::get<ValueTypes::obj_ref>(v.v)->size());
 				break;
 			default:
+				// Scalar type, return Empty
 				v = Value();
 				break;
 		}
@@ -218,6 +218,7 @@ class SizeFn : public NativeFunction {
 	void mark() override {}
 };
 
+/// Deep copy
 class CopyFn : public NativeFunction {
 	// TODO move this to Value class
 	static Value copy_value(const Value& v, Frame& f) {
@@ -262,7 +263,7 @@ public:
 	void mark() override {}
 };
 
-// Throw an error
+/// Throw an error
 class ThrowFn : public NativeFunction {
 	void operator()(Frame& f) override {
 		Value e = f.eval_stack.back();
@@ -272,7 +273,7 @@ class ThrowFn : public NativeFunction {
 	void mark() override {}
 };
 
-// Error constructor
+/// Error constructor
 class ErrorFn : public NativeFunction {
 	void operator()(Frame& f) override {
 		Value& i = f.eval_stack.back();

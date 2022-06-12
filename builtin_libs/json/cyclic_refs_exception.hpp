@@ -7,7 +7,7 @@
 
 #include <string>
 
-// Error for cyclic references
+/// Error for cyclic references
 class CyclicRefsEx : public std::exception {
 public:
 	std::string trace {"Cyclic Reference: "};

@@ -83,10 +83,10 @@ namespace VM_ops {
 	SCL_CMP_FN_DEF(le_act, <=)
 	SCL_CMP_FN_DEF(ge_act, >=)
 
-	// check equality
+	/// check equality
 	VMOperator dobule_equals{"compare: equality operator (==)", check_equality};
 
-	// check Identity
+	/// check Identity
 	VMOperator triple_equals{"compare: identity operator (===)", check_identity};
 
 	VMOperator lt{"compare: less than (<)", lt_act};
