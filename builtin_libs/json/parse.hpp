@@ -185,7 +185,7 @@ class JSONParseFn : public NativeFunction {
 				size_t end_idx;
 				const auto ret = std::stol(s.substr(start, i - start), &end_idx);
 				if (end_idx + start != i)
-					std::cout << "stol() end not aligined " << i << ' ' << end_idx << std::endl;
+					std::cout << "stol() end not aligned " << i << ' ' << end_idx << std::endl;
 				return Value(ret);
 			} catch (const std::out_of_range&) {
 				// When too big for an int return float
@@ -197,7 +197,7 @@ class JSONParseFn : public NativeFunction {
 		size_t end_idx;
 		const auto ret = std::stod(s.substr(start, i - start), &end_idx);
 		if (end_idx + start != i)
-			std::cout <<"stod() end not aligined " <<i <<' ' <<end_idx <<std::endl;
+			std::cout <<"stod() end not aligned " <<i <<' ' <<end_idx <<std::endl;
 		return Value(ret);
 	}
 

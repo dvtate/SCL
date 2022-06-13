@@ -572,9 +572,13 @@ static inline bool reduce_invocations(std::vector<AST>& stack) {
 			};
 			if (!arg.members.empty()) {
 				children.emplace_back(arg.members[0]);
+
 				// if they pass csv args convert them to list
-				if (children.back()->type == AST::NodeType::OPERATION && children.back()->token.token == ",")
-					children.back()->type =  AST::NodeType::LIST;
+				if (children.back()->type == AST::NodeType::OPERATION && children.back()->token.token == ",") {
+					children.back()->type = AST::NodeType::COMMA_SERIES;
+					children.back() = std::make_shared<AST>(
+						AST(AST::NodeType::LIST, arg.token, { children.back() }));
+				}
 			}
 			if (arg.members.size() > 1)
 				throw std::vector<SyntaxError>{SyntaxError(arg.token, "Invalid parenthesised expression")};

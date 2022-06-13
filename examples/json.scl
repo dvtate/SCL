@@ -1,0 +1,34 @@
+let json = import('libjson.so')
+
+/*
+print(json.encode({
+	__to_json: (:
+		json.dumps(['test', 11, 22])
+	)
+}))
+*/
+
+let s = '{"employees":{"employee":[{"id":"1","firstName":"Tom","lastName":"Cruise","photo":"https://jsonformatter.org/img/tom-cruise.jpg"},{"id":"2","firstName":"Maria","lastName":"Sharapova","photo":"https://jsonformatter.org/img/Maria-Sharapova.jpg"},{"id":"3","firstName":"Robert","lastName":"Downey Jr.","photo":"https://jsonformatter.org/img/Robert-Downey-Jr.jpg"}]}}'
+
+let obj = json.decode(s)
+print(json.Encoder({ indent: '  ' }).encode(obj))
+
+
+
+let while = (:
+	let cond = i[0], act = i[1]
+	if (cond(), (:
+		act(o)
+		while(cond, act)
+	))
+)
+
+// JSON REPL
+while((: true ), (:
+	// Ignore errors
+	catch((: print(Str(i)) ))
+
+	let obj = json.decode(input())
+	print(obj)
+	print(json.encode(obj))
+))

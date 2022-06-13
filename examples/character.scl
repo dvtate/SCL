@@ -1,0 +1,17 @@
+// Kinda like a constructor
+let Character = (:
+	let name = i
+	let self = {
+		name,
+		['pres' + 'ence']: 'irl',
+		say: (: 
+			print(self.name + ' [' + self.presence + ']: ' + i)
+		),
+		'die': (:
+			self.presence = 'wired'
+		)
+	}
+	o(self)
+)
+
+o(Character)

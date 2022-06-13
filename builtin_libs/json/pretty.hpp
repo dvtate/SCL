@@ -133,7 +133,7 @@ class JSONPrettyStrFn : public NativeFunction {
 					throw e;
 				}
 
-				// Put the rest of the kv pairs into the ret
+				// Put the rest of the kv pairs into ret
 				++it;
 				for (; it != o.end(); ++it) {
 					try {

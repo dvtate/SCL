@@ -377,14 +377,15 @@ void ParsedMacro::read_list_lit(AST& tree) {
 	SCL_DEBUG_MSG("read_list_lit\n")
 
 	// Handle comma-series
-	if (!tree.members.empty() && tree.members[0]->type == AST::NodeType::COMMA_SERIES)
-		tree.members = tree.members[0]->members;
+	auto members = (!tree.members.empty() && tree.members[0]->type == AST::NodeType::COMMA_SERIES)
+		? tree.members[0]->members
+		: tree.members;
 
 	// put elements onto stack
-	for (auto& m : tree.members)
+	for (auto&& m : members)
 		read_tree(*m);
 
-	this->body.emplace_back(Command::OPCode::MK_LIST, (int32_t) tree.members.size());
+	this->body.emplace_back(Command::OPCode::MK_LIST, (int32_t) members.size());
 }
 
 void ParsedMacro::read_statements(AST& tree) {
@@ -608,6 +609,11 @@ int64_t Program::load_macro(ParsedMacro& macro) {
 void Program::load_file(const char* file_name) {
 	// parse main file
 	std::ifstream file = std::ifstream(file_name);
+	if (!file.is_open())
+		throw std::filesystem::filesystem_error(
+				"Failed to open file",
+				std::filesystem::path(file_name),
+				std::make_error_code(static_cast<std::errc>(ENOENT)));
 
 	SCL_DEBUG_MSG("lexing...")
 	const auto toks = tokenize_stream(file, file_name);

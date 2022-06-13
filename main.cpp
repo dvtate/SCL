@@ -84,9 +84,9 @@ int main(int argc, char** argv) {
 	try {
 		p = Program(arg);
 	} catch (std::vector<SyntaxError>& es) {
-		for (auto& e : es)
-			std::cout <<"Syntax Error: " <<e.msg <<std::endl
-				<<util::show_line_pos(arg, e.token.pos) <<std::endl;
+		for (auto &e: es)
+			std::cout << "Syntax Error: " << e.msg << std::endl
+					  << util::show_line_pos(arg, e.token.pos) << std::endl;
 	}
 	std::vector<Command> bytecode;
 	std::vector<SemanticError> errs = p.compile(bytecode);
