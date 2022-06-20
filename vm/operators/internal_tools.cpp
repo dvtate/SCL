@@ -50,28 +50,43 @@ namespace vm_util {
 
 	/// Numeric index, prolly list
 	Value index_value(Frame& f, Value& v, ValueTypes::int_t index) {
-		// Only accepts lists
-		if (!std::holds_alternative<ValueTypes::list_ref>(v.v)) {
+		if (std::holds_alternative<ValueTypes::list_ref>(v.v)) {
+			// Extract list
+			const auto &list = *std::get<ValueTypes::list_ref>(v.v);
+
+			// Python-style negative indices
+			if (index < 0)
+				index += list.size();
+
+			// Out of range
+			if (index >= list.size())
+				return Value();
+
+			// Return indexed value
+			return list[index];
+		} else if (std::holds_alternative<ValueTypes::str_t>(v.v)) {
+			// Extract string
+			const auto &str = std::get<ValueTypes::str_t>(v.v);
+
+			// Python-style negative indices
+			if (index < 0)
+				index += str.size();
+
+			// Out of range
+			if (index >= str.size())
+				return Value();
+
+			// Return indexed value
+			std::string ret = "a";
+			ret[0] = str[index];
+			return Value(ret);
+		} else {
 			f.rt->running->throw_error(gen_error_object(
 					"TypeError",
-					std::string("Numeric indicies only availible for lists, not ") + v.type_name(),
+					std::string("Numeric indices not available for type ") + v.type_name(),
 					f));
 			return Value();
 		}
-
-		// Extract list
-		const auto& list = *std::get<ValueTypes::list_ref>(v.v);
-
-		// Python-style negative indices
-		if (index < 0)
-			index += list.size();
-
-		// Out of range
-		if (index >= list.size())
-			return Value();
-
-		// Return indexed value
-		return list[index];
 	}
 
 	/// String index, prolly object

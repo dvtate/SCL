@@ -20,7 +20,7 @@ void print_help_msg(){
 		<<"scl exec <bytecode file>  # Execute bytecode\n"
 		<<"scl eval <entry file>     # Build and Exect programs\n";
 
-#ifndef SCL_DEBUG_MSG
+#ifndef SCL_DEBUG_MODE
 	std::cout <<"\nRecompile with debugging enabled for verbose output\n";
 #else
 	std::cout <<"\nYou are using the debug version of SCL\n";
