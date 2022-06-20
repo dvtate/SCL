@@ -1,4 +1,4 @@
-let time = import('libtime.so');
+let time = import('libtime.so')
 
 // Useful stuff
 let while = (:
@@ -89,8 +89,8 @@ let update_world = (:
 
 // main loop
 while ((: true ), (:
-    print_world()
-    update_world()
-    time.delay(0.04)
+	print_world()
+	update_world()
+	time.delay(0.04)
 ))
 

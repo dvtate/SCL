@@ -44,7 +44,7 @@ static inline std::string src_operator(AST& tree) {
 static inline std::string src_statements(AST& tree) {
 	std::string ret;
 	for (auto& m : tree.members)
-		ret += tree_to_source(*m) + ";";
+		ret += tree_to_source(*m) + " ";
 	return ret;
 }
 
@@ -86,8 +86,12 @@ std::string tree_to_source(AST& tree) {
 
 		case AST::NodeType::KV_PAIR:
 			return tree_to_source(*tree.members[0]) + ":" + tree_to_source(*tree.members[1]);
-		case AST::NodeType::DECLARATION:
-			return "let " + tree_to_source(*tree.members[0]);
+		case AST::NodeType::DECLARATION: {
+			std::string ret = "let " + tree_to_source(*tree.members[0]);
+			for (size_t i = 1; i < tree.members.size(); i++)
+				ret += "," + tree_to_source(*tree.members[i]);
+			return ret;
+		}
 		case AST::NodeType::STATEMENTS:
 			return src_statements(tree);
 		case AST::NodeType::INVOKE:
