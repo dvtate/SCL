@@ -114,7 +114,7 @@ These are currently defined as builtins/standard library functions, but in the f
 ### Conditionals
 For now `if` is just a function.
 - Note: comma separated arguments implicitly converted to list
-- 
+ 
 ```
 let gpa = Num(input()); // 3.86
 
