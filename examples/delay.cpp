@@ -1,6 +1,8 @@
 // Import runtime
 #include "../vm/vm.hpp"
 #include "../vm/gc/gc.hpp"
+#include "../vm/error.hpp"
+
 // g++ delay.cpp ../vm/vm.cpp ../vm/gc/gc.cpp -lpthread -shared -fPIC -o delay.so --std=c++20 -g -Wall -Wextra
 // delay :: Num -> Num
 // - freeze current thread so others can run
@@ -28,11 +30,15 @@ class DelayFn : public virtual NativeFunction {
 		// Get sleep duration from user
 		using namespace std::chrono_literals;
 		auto duration = 1ms;
-		if (f.eval_stack.back().type() == Value::VType::FLOAT)
-			duration *= std::get<Value::float_t>(f.eval_stack.back().v);
-		else if (f.eval_stack.back().type() == Value::VType::INT)
-			duration *= std::get<Value::int_t>(f.eval_stack.back().v);
-		else {}// TODO typerror
+		if (f.eval_stack.back().type() == ValueTypes::VType::FLOAT)
+			duration *= std::get<ValueTypes::float_t>(f.eval_stack.back().v);
+		else if (f.eval_stack.back().type() == ValueTypes::VType::INT)
+			duration *= std::get<ValueTypes::int_t>(f.eval_stack.back().v);
+		else
+			f.rt->running->throw_error(gen_error_object(
+				"TypeError",
+				"delay expected a number",
+				f));
 		std::cout <<"dur: " <<duration.count() <<std::endl;
 
 		// freeze thread
@@ -56,6 +62,6 @@ class DelayFn : public virtual NativeFunction {
 
 // Export action simply gives the user an instance of our function
 extern "C" void export_action(Frame* f) {
-	f->eval_stack.back() = Value(::new(GC::alloc<NativeFunction>()) DelayFn());
+	f->eval_stack.back() = Value(::new(GC::static_alloc<NativeFunction>()) DelayFn());
 }
 

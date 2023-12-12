@@ -8,6 +8,6 @@
 #include <string>
 #include "value.hpp"
 
-Value get_primitive_member(Frame& f, Value& v, std::string key);
+Value get_primitive_member(Frame& f, Value& v, const std::string& key);
 
 #endif //SCL_PRIMITIVE_METHODS_HPP

@@ -8,6 +8,7 @@
 #include "../operators/operators.hpp"
 #include "../operators/internal_tools.hpp"
 #include "../error.hpp"
+#include "../primitive_methods.hpp"
 
 #include "exec_bc_instr.hpp"
 
@@ -223,19 +224,27 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			f.eval_stack.emplace_back(f.gc_make<ValueTypes::obj_t>());
 			return;
 
-		case BCInstr::OPCode::USE_MEM_L:
+		case BCInstr::OPCode::USE_MEM_L: {
 			// Object member getter
-			try {
-				f.eval_stack.back() = (*std::get<ValueTypes::obj_ref>(f.eval_stack.back().v))
-					[std::get<ValueTypes::str_t>(std::get<Value>(f.rt->vm->literals[cmd.i].v).v)];
-			} catch (const std::bad_variant_access& e) {
-				f.rt->running->throw_error(gen_error_object(
+			Value& v = f.eval_stack.back();
+			const auto& str = std::get<ValueTypes::str_t>(std::get<Value>(f.rt->vm->literals[cmd.i].v).v);
+			switch (v.type()) {
+				case ValueTypes::VType::OBJ:
+					f.eval_stack.back() = (*std::get<ValueTypes::obj_ref>(v.v))
+						[str];
+					return;
+				case ValueTypes::VType::EMPTY:
+					f.rt->running->throw_error(gen_error_object(
 						"TypeError",
-						std::string("cannot request member of non-object type - ") + f.eval_stack.back().type_name(),
+						std::string("cannot accesss property") + str + " of empty",
 						f));
-				break;
+					return;
+				default:
+					f.eval_stack.back() = get_primitive_member(f, f.eval_stack.back(), str);
+
 			}
 			return;
+		}
 
 		case BCInstr::OPCode::SET_MEM_L:
 			// Object member setter

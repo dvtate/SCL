@@ -1,11 +1,11 @@
 // Import a native module
-let delay = import('./delay.so')
+let time = import('libtime.so')
 
 // This is equivalent to JavaScript's window.setTimeout
 let set_timeout = (:
 	let duration = i[0], action = i[1], arg = i[2]
 	async((:
-		delay(duration)
+		time.delay(duration)
 		action(arg)
 	))()
 )
@@ -14,7 +14,7 @@ let set_timeout = (:
 set_timeout(3000, print, "Hello 1")
 set_timeout(2000, (: print("Hello 2") ))
 async((:
-	delay(1000)
+	time.delay(1000)
 	print("Hello 3")
 ))()
 

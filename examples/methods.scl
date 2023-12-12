@@ -1,0 +1,15 @@
+
+let s = "  abc, 123, you and me  "
+
+print(s.split(','))
+
+print("abc,123,you and me".split(','))
+
+
+print(s = s.trim())
+print(s = s.trim())
+print(s = s.trim())
+print(s = s.trim())
+print(s = s.trim())
+print(s = s.trim())
+print(s = s.trim())

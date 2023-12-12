@@ -151,5 +151,6 @@ SCL__GC_SPEC(Value, value);
 SCL__GC_SPEC(obj_t, obj);
 SCL__GC_SPEC(list_t, list);
 SCL__GC_SPEC(NativeFunction, nfn);
+SCL__GC_SPEC(NativeClosure, nfc);
 SCL__GC_SPEC(Closure, closure);
 SCL__GC_SPEC(LambdaReturnNativeFn, lamret);

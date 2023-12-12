@@ -108,6 +108,8 @@ private:
 	std::vector<ValueTypes::obj_t*> _recycle_obj;
 	std::vector<NativeFunction*> _heap_nfn;
 	std::vector<NativeFunction*> _recycle_nfn;
+	std::vector<NativeClosure*> _heap_nfc;
+	std::vector<NativeClosure*> _recycle_nfc;
 	std::vector<Closure*> _heap_closure;
 	std::vector<Closure*> _recycle_closure;
 	std::vector<LambdaReturnNativeFn*> _heap_lamret;
@@ -118,6 +120,7 @@ private:
 	void destroy(ValueTypes::list_t*);
 	void destroy(ValueTypes::obj_t*);
 	void destroy(NativeFunction*);
+	void destroy(NativeClosure*);
 	void destroy(Closure*);
 	void destroy(LambdaReturnNativeFn*);
 };
@@ -180,6 +183,7 @@ namespace GC {
 	template<> ValueTypes::list_t* alloc<ValueTypes::list_t>(GarbageCollector&);
 	template<> ValueTypes::obj_t* alloc<ValueTypes::obj_t>(GarbageCollector&);
 	template<> NativeFunction* alloc<NativeFunction>(GarbageCollector&);
+	template<> NativeClosure* alloc<NativeClosure>(GarbageCollector&);
 	template<> Closure* alloc<Closure>(GarbageCollector&);
 	template<> LambdaReturnNativeFn* alloc<LambdaReturnNativeFn>(GarbageCollector&);
 }

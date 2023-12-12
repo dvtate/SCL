@@ -1,0 +1,10 @@
+
+Node {
+    tag: string,
+    children: (Node | string)[],
+    attributes: { string => string },
+}
+
+decode(string) => Node | null
+encode(Node) => string
+

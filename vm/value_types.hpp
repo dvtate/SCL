@@ -25,6 +25,12 @@ public:
 	virtual void mark() = 0;
 };
 
+class NativeClosure : public NativeFunction {
+public:
+	void* data{nullptr}; // Captured data
+	virtual ~NativeClosure() = default; // child class must define this
+};
+
 namespace ValueTypes {
 	using empty_t	= std::monostate;
 

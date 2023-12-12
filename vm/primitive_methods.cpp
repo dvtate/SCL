@@ -5,6 +5,7 @@
 #include "vm.hpp"
 #include "value.hpp"
 #include "error.hpp"
+#include "gc/gc.hpp"
 
 #include "primitive_methods.hpp"
 
@@ -15,36 +16,45 @@
  */
 
 // Remove leading and trailing whitespace
-class StrTrimFn : public NativeFunction {
-	std::string str;
+class StrTrimFn : public NativeClosure {
 public:
-	explicit StrTrimFn(std::string&& str): str(str) {}
+	explicit StrTrimFn(std::string str) {
+		this->data = (void*) new std::string(str);
+	}
+	virtual ~StrTrimFn() {
+		delete (std::string*) this->data;
+	}
 
 	void operator()(Frame& f) override {
 		// start = index of first non-space character
 		size_t start = 0;
+		std::string& str = *(std::string*)this->data;
 		do {
-			if (!isspace(this->str[start]))
+			if (!isspace(str[start]))
 				break;
-		} while (++start < this->str.size());
+		} while (++start < str.size());
 
 		// end = index of last non-space character
-		auto end = this->str.size() - 1;
+		auto end = str.size() - 1;
 		do {
-			if (!isspace(this->str[start]))
+			if (!isspace(str[end]))
 				break;
 		} while (--end > start);
 
 		// substring onto stack
-		f.eval_stack.back() = Value(str.substr(start, end - start));
+		f.eval_stack.back() = Value(str.substr(start, 1 + end - start));
 	}
 	void mark() override {}
 };
 
-class StrSplitFn : public NativeFunction {
-	std::string str;
+class StrSplitFn : public NativeClosure {
 public:
-	explicit StrSplitFn(std::string&& str): str(str) {}
+	explicit StrSplitFn(std::string str) {
+		this->data = (void*) new std::string(str);
+	}
+	virtual ~StrSplitFn() {
+		delete (std::string*) this->data;
+	}
 
 	void operator()(Frame& f) override {
 		// Get delimiter
@@ -62,6 +72,7 @@ public:
 		size_t last = 0;
 		size_t next;
 		auto* ret = f.gc_make<ValueTypes::list_t>();
+		std::string& str = *(std::string*)this->data;
 		while ((next = str.find(delimiter, last)) != std::string::npos) {
 			ret->emplace_back(Value(str.substr(last, next-last)));
 			last = next + 1;
@@ -74,7 +85,31 @@ public:
 	void mark() override {}
 };
 
+/* TODO
+Str: startsWith, endsWith, substr, find
+List: foreach, map, reduce, ?
+*/
+
 Value get_primitive_member(Frame& f, Value& v, const std::string& key) {
-	// TODO
+	switch (v.type())
+	{
+	case ValueTypes::VType::STR:
+		{			
+			auto s = v.get<std::string>();
+			if (key == "split")
+				return Value(::new(f.rt->vm->gc.alloc<NativeClosure>()) StrSplitFn(s));
+			else if (key == "trim")
+				return Value(::new(f.rt->vm->gc.alloc<NativeClosure>()) StrTrimFn(s));
+			else
+				f.rt->running->throw_error(gen_error_object(
+					"TypeError",
+					std::string("cannot accesss property") + key + " of Str",
+					f));
+		}
+		break;
+
+	default:
+		break;
+	}
 	return Value();
 }
