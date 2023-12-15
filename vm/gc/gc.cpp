@@ -47,6 +47,13 @@ void GarbageCollector::sweep() {
 		else if (*u == GarbageCollector::UsageColor::GREY)
 			*u = GarbageCollector::UsageColor::WHITE;
 	}
+	for (auto* ptr : this->_heap_nfc) {
+		auto* u = (GarbageCollector::UsageColor*) (((char*) ptr) - 1);
+		if (*u == GarbageCollector::UsageColor::WHITE)
+			destroy(ptr);
+		else if (*u == GarbageCollector::UsageColor::GREY)
+			*u = GarbageCollector::UsageColor::WHITE;
+	}
 	for (auto* ptr : this->_heap_lamret) {
 		auto* u = (GarbageCollector::UsageColor*) (((char*) ptr) - 1);
 		if (*u == GarbageCollector::UsageColor::WHITE)
@@ -91,6 +98,7 @@ void GarbageCollector::sweep() {
 	+ this->_heap_list.size()
 	+ this->_heap_obj.size()
 	+ this->_heap_nfn.size()
+	+ this->_heap_nfc.size()
 	+ this->_heap_closure.size()
 	+ this->_heap_lamret.size();
 	// Not going to factor in the sizes of the recycle-bins
@@ -113,6 +121,8 @@ void GarbageCollector::debug() {
 			  <<"\n\tRecyclable: " <<this->_recycle_obj.size()
 			  <<"\nNativeFunction: \n\tSize: " <<this->_heap_nfn.size()
 			  <<"\n\tRecyclable: " <<this->_recycle_nfn.size()
+			  <<"\nNativeFunction: \n\tSize: " <<this->_heap_nfc.size()
+			  <<"\n\tRecyclable: " <<this->_recycle_nfc.size()
 			  <<"\nClosure: \n\tSize: " <<this->_heap_closure.size()
 			  <<"\n\tRecyclable: " <<this->_recycle_closure.size()
 			  <<"\nValueTypes::list_t: \n\tSize: " <<this->_heap_list.size()

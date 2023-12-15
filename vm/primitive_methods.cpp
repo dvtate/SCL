@@ -10,9 +10,15 @@
 #include "primitive_methods.hpp"
 
 /* TODO
- * Really there needs to be a bit more planning here
+ * Maybe there should be a bit more planning here....
  * I'm trying to make an OOP-style solution in a lang that doesn't
- * have a clear, organized approach to OOP...
+ * have a clear, organized approach to OOP.
+ * 
+ * 1. Ideally methods would be associated with the constructor and not the object so that they aren't copied so much. (Like JavaScript prototypes)
+ * 2. Also it would be smart to have the symbols converted so that we don't have to hash so many strings. (lang design not conducive to this)
+ * 
+ * 1 is not how the solution below is implemented
+ * 2 would be very difficult without changing language. (ie - make json.decode access vm internals or operator . != [''])
  */
 
 // Remove leading and trailing whitespace
