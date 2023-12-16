@@ -2,8 +2,8 @@
 // Created by tate on 17-05-20.
 //
 
-#ifndef DLANG_VM_HPP
-#define DLANG_VM_HPP
+#ifndef SCL_VM_HPP
+#define SCL_VM_HPP
 
 #include <iostream>
 #include <thread>
@@ -314,4 +314,4 @@ namespace GC {
 */
 
 
-#endif //DLANG_VM_HPP
+#endif //SCL_VM_HPP

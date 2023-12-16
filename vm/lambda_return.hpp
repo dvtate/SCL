@@ -2,8 +2,8 @@
 // Created by tate on 23-05-20.
 //
 
-#ifndef DLANG_LAMBDA_RETURN_HPP
-#define DLANG_LAMBDA_RETURN_HPP
+#ifndef SCL_LAMBDA_RETURN_HPP
+#define SCL_LAMBDA_RETURN_HPP
 
 
 #include <iostream>
@@ -54,14 +54,14 @@ public:
 		// TODO: Once compiler is smart enough to detect BS, this can be optimized
 
 		if (!this->stack_target || !this->frame_target) {
-			std::cout <<"invalid lambda return msg call ";
+			std::cerr <<"invalid lambda return msg call ";
 		}
 
 		while (this->stack_target->stack.back() != this->frame_target && !this->stack_target->stack.empty())
 			this->stack_target->stack.pop_back();
 
 		if (this->stack_target->stack.empty()) {
-			std::cout <<"o() called out of frame???\n";
+			std::cerr <<"o() called out of frame???\n";
 			return;
 		}
 
@@ -77,7 +77,7 @@ public:
 //		i++; // don't pop frame_target...
 //		if (i <= 0) {
 //			// no longer on stack wtf??
-//			std::cout << "o() called out of scope???";
+//			std::cerr << "o() called out of scope???";
 //			// TODO: o() out of scope error
 //
 //
@@ -132,4 +132,4 @@ public:
 	void mark() override { }
 };
 
-#endif //DLANG_LAMBDA_RETURN_HPP
+#endif //SCL_LAMBDA_RETURN_HPP

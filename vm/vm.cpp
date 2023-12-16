@@ -104,7 +104,7 @@ VM::VM(std::vector<Literal> lit_header, const std::vector<std::string>& argv, st
 	// Load argv
 	auto* args = ::new(this->gc.alloc<ValueTypes::list_t>()) ValueTypes::list_t();
 	for (const std::string& s : argv)
-		args->emplace_back(Value(s));
+		args->emplace_back(s);
 
 	main.vars[main.i_id] = ::new(this->gc.alloc<Value>()) Value(args);
 	main.vars[main.o_id] = ::new(this->gc.alloc<Value>()) Value(

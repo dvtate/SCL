@@ -55,7 +55,7 @@ public:
 				cs->throw_error(gen_error_object("EOF-Error", "input not received", *cs));
 
 			// return value
-			cs->stack.back()->eval_stack.emplace_back(Value(inp));
+			cs->stack.back()->eval_stack.emplace_back(inp);
 			// unfreeze origin thread
 			cs->stack.back()->rt->recv_msg(new UnfreezeCallStack(cs));
 			// die

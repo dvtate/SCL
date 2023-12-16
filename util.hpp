@@ -2,8 +2,8 @@
 // Created by tate on 02-05-20.
 //
 
-#ifndef DLANG_UTIL_HPP
-#define DLANG_UTIL_HPP
+#ifndef SCL_UTIL_HPP
+#define SCL_UTIL_HPP
 
 #include <string>
 #include <istream>
@@ -28,4 +28,4 @@ namespace util {
 	std::pair<long, long> pos_to_line_offset(std::istream& file, const unsigned long long pos);
 }
 
-#endif //DLANG_UTIL_HPP
+#endif //SCL_UTIL_HPP

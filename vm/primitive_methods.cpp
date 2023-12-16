@@ -80,10 +80,10 @@ public:
 		auto* ret = f.gc_make<ValueTypes::list_t>();
 		std::string& str = *(std::string*)this->data;
 		while ((next = str.find(delimiter, last)) != std::string::npos) {
-			ret->emplace_back(Value(str.substr(last, next-last)));
+			ret->emplace_back(str.substr(last, next-last));
 			last = next + 1;
 		}
-		ret->emplace_back(Value(str.substr(last)));
+		ret->emplace_back(str.substr(last));
 
 		// Return list of tokens
 		f.eval_stack.back() = Value(ret);

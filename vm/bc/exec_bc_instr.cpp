@@ -116,7 +116,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 			return;
 
 		case BCInstr::OPCode::VAL_EMPTY:
-			f.eval_stack.emplace_back(Value());
+			f.eval_stack.emplace_back();
 			return;
 		case BCInstr::OPCode::VAL_TRUE:
 			f.eval_stack.emplace_back((ValueTypes::int_t) 1);
@@ -264,7 +264,7 @@ void exec_bc_instr(Frame& f, BCInstr cmd) {
 		}
 
 		case BCInstr::OPCode::VAL_CATCH:
-			f.eval_stack.emplace_back(Value((NativeFunction*) f.gc_make<CatchFn>(f)));
+			f.eval_stack.emplace_back((NativeFunction*) f.gc_make<CatchFn>(f));
 			break;
 
 		default:
