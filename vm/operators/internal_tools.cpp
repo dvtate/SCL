@@ -33,7 +33,7 @@ namespace vm_util {
 						f.gc_make<LambdaReturnNativeFn>(f));
 
 				//
-				f.rt->running->stack.emplace_back(new Frame(f.rt, c));
+				f.rt->running->stack.emplace_back(std::make_shared<Frame>(f.rt, c));
 				return;
 			}
 
@@ -59,7 +59,7 @@ namespace vm_util {
 				index += list.size();
 
 			// Out of range
-			if (index >= list.size())
+			if (index >= (ValueTypes::int_t) list.size())
 				return Value();
 
 			// Return indexed value
@@ -73,7 +73,7 @@ namespace vm_util {
 				index += str.size();
 
 			// Out of range
-			if (index >= str.size())
+			if (index >= (ValueTypes::int_t) str.size())
 				return Value();
 
 			// Return indexed value

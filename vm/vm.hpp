@@ -227,7 +227,7 @@ public:
 	std::vector<Value> eval_stack;
 
 	Frame(Runtime* rt, Closure body, unsigned int pos = 0, std::vector<Value> eval_stack = {}):
-			rt(rt), closure(body), pos(pos), eval_stack(std::move(eval_stack))
+			rt(rt), closure(std::move(body)), pos(pos), eval_stack(std::move(eval_stack))
 	{}
 
 	~Frame() {}
