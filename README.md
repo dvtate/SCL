@@ -130,7 +130,7 @@ if (gpa > 4 || gpa < 0, (:
 
 You could also implement a less useful `if` like so
 ```
-let tern =  (: i[1 + Int(i[0] != 0)] );
+let tern = (: o(i[1 + Int(i[0] != 0)]) );
 let if = (: tern(i)() );
 ```
 
