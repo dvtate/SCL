@@ -214,7 +214,7 @@ By default functions will implicitly return when they reach the end, however thi
 
 ```
 // Function that freezes thread for given duration
-let delay = import(delay)
+let delay = import("delay")
 
 // This is equivalent to JavaScript's window.setTimeout
 let set_timeout = (:
